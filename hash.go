@@ -13,6 +13,11 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+// ReturnSupportedHashes returns a list of supported hashes
+func ReturnSupportedHashes() [5]string {
+	return [5]string{"md5", "sha1", "sha256", "sha512", "blake2b-512"}
+}
+
 // Hashit hashes a file using the provided hash algorithm
 func Hashit(inFile string, hashalg string) ([]byte, error) {
 	fd, err := os.Open(inFile)

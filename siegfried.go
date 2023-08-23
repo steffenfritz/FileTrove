@@ -2,45 +2,88 @@ package filetrove
 
 import (
 	"github.com/richardlehane/siegfried"
+	"io"
+	"net/http"
 	"os"
-	"strconv"
 )
 
-// GetSiegfriedDB downloads the signature db
-func GetSiegfriedDB() {}
+// SiegfriedType is a struct for all the strings siegfried returns
+type SiegfriedType struct {
+	FileName            string
+	SizeInByte          int64
+	Registry            string
+	FMT                 string
+	FormatName          string
+	FormatVersion       string
+	MIMEType            string
+	IdentificationNote  string
+	IdentificationProof string
+	SiegOutput          string
+}
 
-func siegfriedIdent(s *siegfried.Siegfried, inFile string) (bool, string) {
+// GetSiegfriedDB downloads the signature db
+func GetSiegfriedDB() error {
+	sigurl := "http://www.itforarchivists.com/siegfried/latest"
+	// We download siegfried's database derived from DROID here
+	// TODO: Check license note with Richard
+	resp, err := http.Get(sigurl)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the signature file in the db subdirectory
+	out, err := os.Create("db/siegfried.sig")
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to the signature file
+	_, err = io.Copy(out, resp.Body)
+	return err
+
+}
+
+// SiegfiredIdent gets PRONOM metadata and the size of a single file
+func SiegfriedIdent(s *siegfried.Siegfried, inFile string) (SiegfriedType, error) {
+	var MetaOneFile SiegfriedType
 	var oneFile string
-	var resultBool bool
 
 	f, err := os.Open(inFile)
 	if err != nil {
-		return resultBool, err.Error()
+		return MetaOneFile, err
 	}
-
 	defer f.Close()
 
 	fi, _ := f.Stat()
+	MetaOneFile.SizeInByte = fi.Size()
 	if fi.Size() == 0 {
-		//return resultBool, "\"" + inFile + "\",0,,,,,,,"
-		return true, "\"" + inFile + "\",0,,,,,,,"
+		return MetaOneFile, err
 	}
 
 	ids, err := s.Identify(f, "", "")
 	if err != nil {
-		ret := inFile + " : " + err.Error()
-		return resultBool, ret
+		return MetaOneFile, err
 	}
 
 	for _, id := range ids {
 		values := id.Values()
-		for _, value := range values {
-			oneFile += "\"" + value + "\"" + ","
-		}
+		MetaOneFile.Registry = values[0]
+		MetaOneFile.FMT = values[1]
+		MetaOneFile.FormatName = values[2]
+		MetaOneFile.FormatVersion = values[3]
+		MetaOneFile.MIMEType = values[4]
+		MetaOneFile.IdentificationNote = values[5]
+		MetaOneFile.IdentificationProof = values[6]
 
-		oneFile = "\"" + inFile + "\",\"" + strconv.Itoa(int(fi.Size())) + "\"," + oneFile[:len(oneFile)-1] // remove last comma
 	}
 
-	return true, oneFile
+	//oneFile = "\"" + inFile + "\",\"" + strconv.Itoa(int(fi.Size())) + "\"," + oneFile[:len(oneFile)-1] // remove last comma
+	MetaOneFile.FileName = inFile
+	MetaOneFile.SizeInByte = fi.Size()
+	MetaOneFile.SiegOutput = oneFile
+
+	return MetaOneFile, nil
 
 }
