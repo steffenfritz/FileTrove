@@ -1,5 +1,7 @@
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/mattn/go-sqlite3 v1.14.17 h1:mCRHCLDUBXgpKAqIKsaAaAsrAlbkeomtRFKXh2L6YIM=
+github.com/mattn/go-sqlite3 v1.14.17/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
 github.com/richardlehane/characterize v1.0.0 h1:2MMnKFqYd+hsKpQrPkc5JjbcIzVBIfvSoaMd563GOj0=
 github.com/richardlehane/characterize v1.0.0/go.mod h1:9mhxzxtWkXoLQpkg+gt7ioK6//+3hrsv3VHkbj8kbuQ=
 github.com/richardlehane/match v1.0.5 h1:+tuXp28xaIPsvKbhHyuivce9qMEfE8nP9d0wSxJef9o=

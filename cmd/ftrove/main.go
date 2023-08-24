@@ -10,6 +10,12 @@ import (
 	ft "github.com/steffenfritz/FileTrove"
 )
 
+// Version holds the version of FileTrove and is set by the build system
+var Version string
+
+// Build holds the sha1 fingerprint of the build and is set by the build system
+var Build string
+
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
 
@@ -26,11 +32,12 @@ func main() {
 	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
+	//version := flag.BoolP("version", "v", false, "Show version and build.")
 
 	flag.Parse()
 
 	if len(*install) > 0 {
-		direrr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install)
+		direrr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
 			logger.Error("Could no create db directory.", slog.String("message", direrr.Error()))
 			os.Exit(1)
@@ -87,7 +94,7 @@ func main() {
 			println(hash, ":", hashsum)
 
 		}
-		// Get siegfried information for each file
+		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
 		if err != nil {
 			logger.Error("Could not identify file using siegfried", slog.String("message", err.Error()))
@@ -97,8 +104,6 @@ func main() {
 		println(oneFile.SizeInByte)
 		println(oneFile.MIMEType)
 
-		// -- PRONOM ID
-		// -- file size
 		// --check if in NSRL
 		// write to DB
 	}
