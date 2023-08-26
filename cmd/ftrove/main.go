@@ -29,8 +29,10 @@ func init() {
 }
 
 func main() {
+	// exportSessionToCSV
 	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
+	// listSessions
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	//version := flag.BoolP("version", "v", false, "Show version and build.")
 
@@ -39,11 +41,11 @@ func main() {
 	if len(*install) > 0 {
 		direrr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
-			logger.Error("Could no create db directory.", slog.String("message", direrr.Error()))
+			logger.Error("Could not create db directory.", slog.String("message", direrr.Error()))
 			os.Exit(1)
 		}
 		if trovedberr != nil {
-			logger.Error("Could no create FileTrove database.", slog.String("message", trovedberr.Error()))
+			logger.Error("Could not create FileTrove database.", slog.String("message", trovedberr.Error()))
 			os.Exit(1)
 		}
 		if siegfriederr != nil {
@@ -104,7 +106,16 @@ func main() {
 		println(oneFile.SizeInByte)
 		println(oneFile.MIMEType)
 
-		// --check if in NSRL
+		// Get file times
+		filetime, err := ft.GetFileTimes(file)
+		if err != nil {
+			logger.Error("Could not get access, change or birth time for file.", slog.String("message", err.Error()))
+		}
+
+		// DEBUG
+		println(filetime.Mtime)
+
+		// -- check if in NSRL
 		// write to DB
 	}
 

@@ -3,10 +3,12 @@ module github.com/steffenfritz/FileTrove
 go 1.20
 
 require (
+	github.com/djherbis/times v1.5.0
 	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/richardlehane/siegfried v1.10.1
 	github.com/spf13/pflag v1.0.5
+	go.etcd.io/bbolt v1.3.7
 	golang.org/x/crypto v0.11.0
 )
 
