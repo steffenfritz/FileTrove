@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/hex"
+	"fmt"
 	"github.com/richardlehane/siegfried"
 	flag "github.com/spf13/pflag"
 	"log/slog"
@@ -30,30 +32,45 @@ func init() {
 
 func main() {
 	// exportSessionToCSV
+	createNSRL := flag.String("creatensrl", "", "Create a BoltDB file from a text file. A source file MUST be provided.")
 	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	// listSessions
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
-	//version := flag.BoolP("version", "v", false, "Show version and build.")
+	version := flag.BoolP("version", "v", false, "Show version and build.")
 
 	flag.Parse()
+
+	if *version {
+		ft.PrintLicense()
+		fmt.Println("Version: " + Version + " Build: " + Build + "\n")
+		return
+	}
+
+	if len(*createNSRL) != 0 {
+		err := ft.CreateNSRLBoltDB(*createNSRL, "db/nsrl.db")
+		if err != nil {
+			logger.Error("Could not create BoltDB from NSRL text file", slog.String("error", err.Error()))
+		}
+		return
+	}
 
 	if len(*install) > 0 {
 		direrr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
-			logger.Error("Could not create db directory.", slog.String("message", direrr.Error()))
+			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
 			os.Exit(1)
 		}
 		if trovedberr != nil {
-			logger.Error("Could not create FileTrove database.", slog.String("message", trovedberr.Error()))
+			logger.Error("Could not create FileTrove database.", slog.String("error", trovedberr.Error()))
 			os.Exit(1)
 		}
 		if siegfriederr != nil {
-			logger.Error("Could not download or create siegfried database.", slog.String("message", siegfriederr.Error()))
+			logger.Error("Could not download or create siegfried database.", slog.String("error", siegfriederr.Error()))
 			os.Exit(1)
 		}
 		if nsrlerr != nil {
-			logger.Error("Could not download or create NSRL database.", slog.String("message", nsrlerr.Error()))
+			logger.Error("Could not download or create NSRL database.", slog.String("error", nsrlerr.Error()))
 			os.Exit(1)
 		}
 		logger.Info("Created all necessary files and directories successfully.")
@@ -72,50 +89,67 @@ func main() {
 	// TODO: Add dirlist do output
 	filelist, _, err := ft.CreateFileList(*inDir)
 	if err != nil {
-		logger.Error("An error occurred during the creation of the file list.", slog.String("message", err.Error()))
+		logger.Error("An error occurred during the creation of the file list.", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
 	// Initialize siegfried database
 	s, err := siegfried.Load("db/siegfried.sig")
 	if err != nil {
-		logger.Error("Could not read siegfried's database.", slog.String("message", err.Error()))
+		logger.Error("Could not read siegfried's database.", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	// Prepare BoltDB for reading hashes
+	db, err := ft.ConnectNSRL("db/nsrl.db")
+	if err != nil {
+		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
 	// Inspect every file in our list
 	for _, file := range filelist {
+
+		// Create hash sums for every file
+		hashsumsfile := make(map[string][]byte)
+
 		// Calculate all supported hash sums for each file
 		supportedHashes := ft.ReturnSupportedHashes()
 		for _, hash := range supportedHashes {
 			hashsum, err := ft.Hashit(file, hash)
 			if err != nil {
-
+				logger.Error("Could not hash file.", slog.String("error", err.Error()))
 			}
-			// debug
-			println(hash, ":", hashsum)
+			hashsumsfile[hash] = hashsum
 
 		}
 		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
 		if err != nil {
-			logger.Error("Could not identify file using siegfried", slog.String("message", err.Error()))
+			logger.Error("Could not identify file using siegfried", slog.String("error", err.Error()))
 		}
 		// DEBUG
 		println(oneFile.FileName)
 		println(oneFile.SizeInByte)
 		println(oneFile.MIMEType)
+		// ...
 
 		// Get file times
 		filetime, err := ft.GetFileTimes(file)
 		if err != nil {
-			logger.Error("Could not get access, change or birth time for file.", slog.String("message", err.Error()))
+			logger.Error("Could not get access, change or birth time for file.", slog.String("error", err.Error()))
 		}
 
 		// DEBUG
-		println(filetime.Mtime)
+		println(filetime.Mtime.String())
 
-		// -- check if in NSRL
+		// Check if the hash sum of the file is in the NSRL.
+		// We use the db connection created by ft.ConnectNSRL()
+		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(hex.EncodeToString(hashsumsfile["sha1"])))
+
+		// DEBUG
+		println(fileIsInNSRL)
+
 		// write to DB
 	}
 

@@ -17,17 +17,14 @@ build:
 build_all:
 	$(foreach GOOS, $(PLATFORMS),\
 	$(foreach GOARCH, $(ARCHITECTURES), $(shell export GOOS=$(GOOS); export GOARCH=$(GOARCH); go build $(BLDFLAGS) $(LDFLAGS) -v -o $(BINARY)-$(GOOS))))
-	mv ${BINARY}-darwin ${BINARY} && tar cvfz ${BINARY}_macos_$(VERSION).tar.gz ${BINARY}
-	rm ${BINARY}
-	mv ${BINARY}-linux ${BINARY} && tar cvfz ${BINARY}_linux_$(VERSION).tar.gz ${BINARY}
-	rm ${BINARY}
+	tar cvfz ${BINARY}_macos_$(VERSION).tar.gz ${BINARY}-darwin
+	tar cvfz ${BINARY}_linux_$(VERSION).tar.gz ${BINARY}-linux
 	mv ${BINARY}-windows ${BINARY}.exe && tar cvfz ${BINARY}_win_$(VERSION).tar.gz ${BINARY}.exe
-	rm ${BINARY}.exe
 
 
 clean:
 	rm -f '${BINARY}-linux'
 	rm -f '${BINARY}-darwin'
-	rm -f '${BINARY}-windows'
+	rm -f '${BINARY}.exe'
 
 .PHONY: clean build build_all all

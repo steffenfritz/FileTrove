@@ -13,6 +13,15 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+// HashSumsFile contains all hashes for a single file
+type HashSumsFile struct {
+	MD5        []byte
+	SHA1       []byte
+	SHA256     []byte
+	SHA512     []byte
+	BLAKE2B512 []byte
+}
+
 // ReturnSupportedHashes returns a list of supported hashes
 func ReturnSupportedHashes() [5]string {
 	return [5]string{"md5", "sha1", "sha256", "sha512", "blake2b-512"}

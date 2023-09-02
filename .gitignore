@@ -22,3 +22,6 @@ go.work
 cmd/ftrove/db
 ftrove
 .idea
+
+# Databases
+nsrl_sha1_uniq_*
