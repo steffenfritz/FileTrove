@@ -31,11 +31,14 @@ func init() {
 }
 
 func main() {
-	// exportSessionToCSV
+	// archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
 	createNSRL := flag.String("creatensrl", "", "Create a BoltDB file from a text file. A source file MUST be provided.")
-	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
+	// exportResultsToCSV
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
+	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
 	// listSessions
+	// projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
+
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	version := flag.BoolP("version", "v", false, "Show version and build.")
 
