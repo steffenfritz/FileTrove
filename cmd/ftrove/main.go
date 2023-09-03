@@ -59,9 +59,13 @@ func main() {
 	}
 
 	if len(*install) > 0 {
-		direrr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
+		direrr, logserr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
 			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
+			os.Exit(1)
+		}
+		if logserr != nil {
+			logger.Error("Could not create logs directory.", slog.String("error", direrr.Error()))
 			os.Exit(1)
 		}
 		if trovedberr != nil {
@@ -86,7 +90,7 @@ func main() {
 		// check local hashes against web page/online resource
 	}
 	// check if ready for run
-	// if not suggest downloads or exit
+	// if not suggest downloads and installation or exit
 
 	// Create file list
 	// TODO: Add dirlist do output
@@ -112,6 +116,9 @@ func main() {
 
 	// Inspect every file in our list
 	for _, file := range filelist {
+		var filemd ft.FileMD
+
+		filemd.Filename = file
 
 		// Create hash sums for every file
 		hashsumsfile := make(map[string][]byte)
@@ -124,18 +131,22 @@ func main() {
 				logger.Error("Could not hash file.", slog.String("error", err.Error()))
 			}
 			hashsumsfile[hash] = hashsum
-
 		}
+
+		filemd.Filemd5 = string(hashsumsfile["md5"])
+		filemd.Filesha1 = string(hashsumsfile["sha1"])
+		filemd.Filesha256 = string(hashsumsfile["sha256"])
+		filemd.Filesha256 = string(hashsumsfile["sha512"])
+		filemd.Fileblake2b = string(hashsumsfile["blake2b"])
+
 		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
 		if err != nil {
 			logger.Error("Could not identify file using siegfried", slog.String("error", err.Error()))
 		}
-		// DEBUG
-		println(oneFile.FileName)
-		println(oneFile.SizeInByte)
-		println(oneFile.MIMEType)
-		// ...
+		filemd.Filesize = oneFile.SizeInByte
+		filemd.Filesfmime = oneFile.MIMEType
+		// TODO: Continue
 
 		// Get file times
 		filetime, err := ft.GetFileTimes(file)
