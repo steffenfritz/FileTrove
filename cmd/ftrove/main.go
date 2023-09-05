@@ -44,6 +44,12 @@ func main() {
 
 	flag.Parse()
 
+	starttime := time.Now()
+
+	var sessionmd ft.SessionMD
+	sessionmd.Starttime = starttime.Format(time.RFC3339)
+	sessionmd.UUID, _ = ft.CreateUUID()
+
 	if *version {
 		ft.PrintLicense()
 		fmt.Println("Version: " + Version + " Build: " + Build + "\n")
@@ -92,11 +98,22 @@ func main() {
 	// check if ready for run
 	// if not suggest downloads and installation or exit
 
+	// Connect to FileTrove's database
+	ftdb, err := ft.ConnectFileTroveDB("db/filetrove.db")
+	if err != nil {
+		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
 	// Create file list
 	// TODO: Add dirlist do output
 	filelist, _, err := ft.CreateFileList(*inDir)
 	if err != nil {
 		logger.Error("An error occurred during the creation of the file list.", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
 		os.Exit(1)
 	}
 
@@ -104,6 +121,10 @@ func main() {
 	s, err := siegfried.Load("db/siegfried.sig")
 	if err != nil {
 		logger.Error("Could not read siegfried's database.", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
 		os.Exit(1)
 	}
 
@@ -111,6 +132,10 @@ func main() {
 	db, err := ft.ConnectNSRL("db/nsrl.db")
 	if err != nil {
 		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
 		os.Exit(1)
 	}
 
@@ -133,6 +158,7 @@ func main() {
 			hashsumsfile[hash] = hashsum
 		}
 
+		// Add all hash sums to the filemd struct for writing into the file database
 		filemd.Filemd5 = string(hashsumsfile["md5"])
 		filemd.Filesha1 = string(hashsumsfile["sha1"])
 		filemd.Filesha256 = string(hashsumsfile["sha256"])
@@ -146,7 +172,12 @@ func main() {
 		}
 		filemd.Filesize = oneFile.SizeInByte
 		filemd.Filesfmime = oneFile.MIMEType
-		// TODO: Continue
+		filemd.Filesfformatname = oneFile.FormatName
+		filemd.Filesfformatversion = oneFile.FormatVersion
+		filemd.Filesffmt = oneFile.FMT
+		filemd.Filesfidentnote = oneFile.IdentificationNote
+		filemd.Filesfidentproof = oneFile.IdentificationProof
+		filemd.Filesfregistry = oneFile.Registry
 
 		// Get file times
 		filetime, err := ft.GetFileTimes(file)
@@ -154,17 +185,29 @@ func main() {
 			logger.Error("Could not get access, change or birth time for file.", slog.String("error", err.Error()))
 		}
 
-		// DEBUG
-		println(filetime.Mtime.String())
+		filemd.Fileatime = filetime.Atime.String()
+		filemd.Filectime = filetime.Ctime.String()
+		filemd.Filemtime = filetime.Mtime.String()
 
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()
 		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(hex.EncodeToString(hashsumsfile["sha1"])))
 
-		// DEBUG
-		println(fileIsInNSRL)
+		if fileIsInNSRL {
+			filemd.Filensrl = "TRUE"
+		} else {
+			filemd.Filensrl = "FALSE"
+		}
 
 		// write to DB
+	}
+
+	endtime := time.Now()
+	sessionmd.Endtime = endtime.Format(time.RFC3339)
+	// Close database connection and quit FileTrove
+	err = ftdb.Close()
+	if err != nil {
+		logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
 	}
 
 }

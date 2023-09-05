@@ -9,8 +9,8 @@ import (
 type SessionMD struct {
 	UUID          string
 	Starttime     string
-	endtime       string
-	project       string
+	Endtime       string
+	Project       string
 	Archivistname string
 	Mountpoint    string
 }
@@ -30,9 +30,11 @@ type FileMD struct {
 	Filesfformatversion string
 	Filesfidentnote     string
 	Filesfidentproof    string
+	Filesfregistry      string
 	Filectime           string
 	Filemtime           string
 	Fileatime           string
+	Filensrl            string
 }
 
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
@@ -89,7 +91,8 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filesfidentproof TEXT,
 					   	filectime TEXT,
 					   	filemtime TEXT,
-					   	fileatime TEXT
+					   	fileatime TEXT,
+					   	filensrl TEXT
 					   ); `
 
 	_, err = db.Exec(initstatements)
