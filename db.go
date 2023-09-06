@@ -51,11 +51,10 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 	initstatements := `CREATE TABLE filetrove(version TEXT, initdate TEXT, lastupdate TEXT);
 					   CREATE TABLE sessionsmd(uuid TEXT, 
 					   	starttime TEXT,
-					   	endtime TEXT.
+					   	endtime TEXT,
 					   	project TEXT,
 					   	archivistname TEXT,
-					   	mountpoint TEXT,
-					   	
+					   	mountpoint TEXT
 					   );
 					   CREATE TABLE dublincore(uuid TEXT,
 					   	title TEXT,
@@ -77,11 +76,11 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   CREATE TABLE files(fileuuid TEXT,
 					   	sessionuuid TEXT,
 					   	filename TEXT,
-					   	filesize INT,
+					   	filesize INTEGER,
 					   	filemd5 TEXT,
 					   	filesha1 TEXT,
 					   	filesha256 TEXT,
-					   	filesha512 TEXT
+					   	filesha512 TEXT,
 					   	fileblake2b TEXT,
 					   	filesffmt TEXT,
 					   	filesfmime TEXT,
@@ -119,7 +118,15 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 	return db, nil
 }
 
-// InsertSession adds session metadata to database
-func InsertSession(db *sql.DB) {
+// InsertSession adds session metadata to the database
+func InsertSession(db *sql.DB, s SessionMD) error {
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, nil)
+	return err
+}
 
+// PrepInsertFile prepares a statement for the addition of a single file
+func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+
+	return prepin, err
 }

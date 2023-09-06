@@ -99,9 +99,28 @@ func main() {
 	// if not suggest downloads and installation or exit
 
 	// Connect to FileTrove's database
-	ftdb, err := ft.ConnectFileTroveDB("db/filetrove.db")
+	ftdb, err := ft.ConnectFileTroveDB("db")
 	if err != nil {
 		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	err = ft.InsertSession(ftdb, sessionmd)
+	if err != nil {
+		logger.Error("Could not add session to FileTrove database.", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
+		os.Exit(1)
+	}
+
+	prepInsertFile, err := ft.PrepInsertFile(ftdb)
+	if err != nil {
+		logger.Error("Could not prepare an insert statement.", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
 		os.Exit(1)
 	}
 
@@ -159,11 +178,11 @@ func main() {
 		}
 
 		// Add all hash sums to the filemd struct for writing into the file database
-		filemd.Filemd5 = string(hashsumsfile["md5"])
-		filemd.Filesha1 = string(hashsumsfile["sha1"])
-		filemd.Filesha256 = string(hashsumsfile["sha256"])
-		filemd.Filesha256 = string(hashsumsfile["sha512"])
-		filemd.Fileblake2b = string(hashsumsfile["blake2b"])
+		filemd.Filemd5 = hex.EncodeToString(hashsumsfile["md5"])
+		filemd.Filesha1 = hex.EncodeToString(hashsumsfile["sha1"])
+		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha256"])
+		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha512"])
+		filemd.Fileblake2b = hex.EncodeToString(hashsumsfile["blake2b"])
 
 		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
@@ -198,12 +217,25 @@ func main() {
 		} else {
 			filemd.Filensrl = "FALSE"
 		}
+		fileuuid, err := ft.CreateUUID()
+		if err != nil {
+			logger.Error("Could not create UUID for a file.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filesize,
+			filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
+			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
+			filemd.Filesfidentnote, filemd.Filesfidentnote, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
+			filemd.Filensrl)
 
-		// write to DB
+		if err != nil {
+			logger.Warn("Could not add file entry to FileTrove database.", slog.String("warn", err.Error()))
+		}
 	}
 
 	endtime := time.Now()
 	sessionmd.Endtime = endtime.Format(time.RFC3339)
+	// TODO: Update session with endtime
 	// Close database connection and quit FileTrove
 	err = ftdb.Close()
 	if err != nil {
