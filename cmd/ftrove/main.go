@@ -116,7 +116,7 @@ func main() {
 
 	prepInsertFile, err := ft.PrepInsertFile(ftdb)
 	if err != nil {
-		logger.Error("Could not prepare an insert statement.", slog.String("error", err.Error()))
+		logger.Error("Could not prepare an insert statement for file inserts.", slog.String("error", err.Error()))
 		err = ftdb.Close()
 		if err != nil {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
@@ -126,7 +126,7 @@ func main() {
 
 	// Create file list
 	// TODO: Add dirlist do output
-	filelist, _, err := ft.CreateFileList(*inDir)
+	filelist, dirlist, err := ft.CreateFileList(*inDir)
 	if err != nil {
 		logger.Error("An error occurred during the creation of the file list.", slog.String("error", err.Error()))
 		err = ftdb.Close()
@@ -230,6 +230,23 @@ func main() {
 
 		if err != nil {
 			logger.Warn("Could not add file entry to FileTrove database.", slog.String("warn", err.Error()))
+		}
+	}
+
+	// Add directory list to database
+	prepInsertDir, err := ft.PrepInsertDir(ftdb)
+	if err != nil {
+		logger.Error("Could not prepare an insert statement for directory inserts.", slog.String("error", err.Error()))
+	}
+	for _, direntry := range dirlist {
+		diruuid, err := ft.CreateUUID()
+		if err != nil {
+			logger.Error("Could not create UUID for a directory.", slog.String("error", err.Error()))
+		}
+		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry)
+
+		if err != nil {
+			logger.Warn("Could not add directory entry to FileTrove database.", slog.String("warn", err.Error()))
 		}
 	}
 

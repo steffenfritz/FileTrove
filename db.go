@@ -92,7 +92,10 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filemtime TEXT,
 					   	fileatime TEXT,
 					   	filensrl TEXT
-					   ); `
+					   ); 
+					   CREATE TABLE directories(diruuid TEXT,
+					    sessionuuid TEXT,
+					    dirname TEXT);`
 
 	_, err = db.Exec(initstatements)
 	if err != nil {
@@ -127,6 +130,13 @@ func InsertSession(db *sql.DB, s SessionMD) error {
 // PrepInsertFile prepares a statement for the addition of a single file
 func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
 	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertDir prepares a statement for the addition of a single directory
+func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?)")
 
 	return prepin, err
 }
