@@ -14,8 +14,8 @@ const (
 	MaxEntropyChunk = 256000
 )
 
-// entropy calculates the entropy of a file.
-func entropy(path string) (entropy float64, err error) {
+// Entropy calculates the entropy of a file up to a hard-coded file size.
+func Entropy(path string) (entropy float64, err error) {
 
 	f, err := os.Open(path)
 	if err != nil {

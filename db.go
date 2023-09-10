@@ -35,6 +35,7 @@ type FileMD struct {
 	Filemtime           string
 	Fileatime           string
 	Filensrl            string
+	Fileentropy         float64
 }
 
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
@@ -91,7 +92,8 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filectime TEXT,
 					   	filemtime TEXT,
 					   	fileatime TEXT,
-					   	filensrl TEXT
+					   	filensrl TEXT,
+					   	fileentropy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
 					    sessionuuid TEXT,
@@ -129,7 +131,7 @@ func InsertSession(db *sql.DB, s SessionMD) error {
 
 // PrepInsertFile prepares a statement for the addition of a single file
 func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 	return prepin, err
 }

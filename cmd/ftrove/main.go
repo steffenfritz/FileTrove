@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/richardlehane/siegfried"
 	flag "github.com/spf13/pflag"
+	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -35,7 +36,7 @@ func main() {
 	createNSRL := flag.String("creatensrl", "", "Create a BoltDB file from a text file. A source file MUST be provided.")
 	// exportResultsToCSV
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
-	install := flag.StringP("install", "I", "", "Install FileTrove into the given directory.")
+	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
 	// listSessions
 	// projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
@@ -92,6 +93,15 @@ func main() {
 		return
 	}
 
+	// Change logger to MultiWriter for output to logfile and os.Stdout
+	logfd, err := os.OpenFile("logs/errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logger.Error("Could not open error log file.", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+	logw := io.MultiWriter(os.Stdout, logfd)
+	logger = slog.New(slog.NewTextHandler(logw, nil))
+
 	if *updateFT {
 		// check local hashes against web page/online resource
 	}
@@ -104,6 +114,8 @@ func main() {
 		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
+
+	// Add new session to database
 	err = ft.InsertSession(ftdb, sessionmd)
 	if err != nil {
 		logger.Error("Could not add session to FileTrove database.", slog.String("error", err.Error()))
@@ -114,6 +126,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Prepare statement to add file scan results to database
 	prepInsertFile, err := ft.PrepInsertFile(ftdb)
 	if err != nil {
 		logger.Error("Could not prepare an insert statement for file inserts.", slog.String("error", err.Error()))
@@ -125,7 +138,6 @@ func main() {
 	}
 
 	// Create file list
-	// TODO: Add dirlist do output
 	filelist, dirlist, err := ft.CreateFileList(*inDir)
 	if err != nil {
 		logger.Error("An error occurred during the creation of the file list.", slog.String("error", err.Error()))
@@ -158,7 +170,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Inspect every file in our list
+	// Inspect every file in filelist
 	for _, file := range filelist {
 		var filemd ft.FileMD
 
@@ -214,9 +226,15 @@ func main() {
 
 		if fileIsInNSRL {
 			filemd.Filensrl = "TRUE"
-		} else {
-			filemd.Filensrl = "FALSE"
 		}
+
+		// Calculate entropy of the file
+		filemd.Fileentropy, err = ft.Entropy(file)
+		if err != nil {
+			logger.Warn("Could not calculate entropy for file.", slog.String("warning", err.Error()))
+		}
+
+		// Create a UUID for every file that is written to the database. This UUID is not stable!
 		fileuuid, err := ft.CreateUUID()
 		if err != nil {
 			logger.Error("Could not create UUID for a file.", slog.String("error", err.Error()))
@@ -226,14 +244,14 @@ func main() {
 			filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
 			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
 			filemd.Filesfidentnote, filemd.Filesfidentnote, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
-			filemd.Filensrl)
+			filemd.Filensrl, filemd.Fileentropy)
 
 		if err != nil {
 			logger.Warn("Could not add file entry to FileTrove database.", slog.String("warn", err.Error()))
 		}
 	}
 
-	// Add directory list to database
+	// Add directory list to database. The metadata for directories is very limited.
 	prepInsertDir, err := ft.PrepInsertDir(ftdb)
 	if err != nil {
 		logger.Error("Could not prepare an insert statement for directory inserts.", slog.String("error", err.Error()))
@@ -252,11 +270,17 @@ func main() {
 
 	endtime := time.Now()
 	sessionmd.Endtime = endtime.Format(time.RFC3339)
-	// TODO: Update session with endtime
+	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=\"" + sessionmd.Endtime + "\"WHERE uuid=\"" + sessionmd.UUID + "\"RETURNING *;")
+	if err != nil {
+		logger.Error("Could not write endtime to database.", slog.String("error", err.Error()))
+	}
 	// Close database connection and quit FileTrove
 	err = ftdb.Close()
 	if err != nil {
 		logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
 	}
-
+	err = logfd.Close()
+	if err != nil {
+		_ = fmt.Errorf("ERROR: Could not close error log file: " + err.Error())
+	}
 }

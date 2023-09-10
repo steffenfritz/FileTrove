@@ -13,7 +13,7 @@ func CreateFileList(rootDir string) ([]string, []string, error) {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() {
+		if !info.IsDir() && info.Type().IsRegular() {
 			fileList = append(fileList, path)
 		} else if info.IsDir() {
 			dirList = append(dirList, path)
