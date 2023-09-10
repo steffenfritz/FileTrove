@@ -2,7 +2,10 @@ package filetrove
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
+	"text/tabwriter"
 )
 
 // SessionMD holds the metadata written to table sessionsmd
@@ -126,6 +129,7 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
 	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, nil)
+
 	return err
 }
 
@@ -141,4 +145,30 @@ func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
 	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?)")
 
 	return prepin, err
+}
+
+// ExportSessions lists all sessions from the FileTrove database
+func ListSessions(db *sql.DB) error {
+	rows, err := db.Query("SELECT uuid, starttime, COALESCE(endtime, '') AS endtime, " +
+		"COALESCE(project, '') AS project, " +
+		"COALESCE(archivistname,'') AS archivistname, " +
+		"COALESCE(mountpoint,'') AS mountpoint FROM sessionsmd;")
+	if err != nil {
+		return err
+	}
+	defer rows.Close() // Schließen Sie die Zeilen am Ende.
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, '.', tabwriter.AlignRight|tabwriter.Debug)
+	fmt.Fprintln(w, "UUID\tStart Time\tEnd Time\tProject\tArchivist Name\tMount Point")
+
+	for rows.Next() {
+		var uuid, starttime, endtime, project, archivistname, mountpoint string
+		if err := rows.Scan(&uuid, &starttime, &endtime, &project, &archivistname, &mountpoint); err != nil {
+			return err
+		}
+		fmt.Fprintln(w, uuid+"\t"+starttime+"\t"+endtime+"\t"+project+"\t"+archivistname+"\t"+mountpoint)
+	}
+	w.Flush()
+
+	return err
 }

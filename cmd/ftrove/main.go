@@ -33,11 +33,10 @@ func init() {
 
 func main() {
 	// archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
-	createNSRL := flag.String("creatensrl", "", "Create a BoltDB file from a text file. A source file MUST be provided.")
 	// exportResultsToCSV
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
-	// listSessions
+	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans.")
 	// projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
@@ -54,14 +53,6 @@ func main() {
 	if *version {
 		ft.PrintLicense()
 		fmt.Println("Version: " + Version + " Build: " + Build + "\n")
-		return
-	}
-
-	if len(*createNSRL) != 0 {
-		err := ft.CreateNSRLBoltDB(*createNSRL, "db/nsrl.db")
-		if err != nil {
-			logger.Error("Could not create BoltDB from NSRL text file", slog.String("error", err.Error()))
-		}
 		return
 	}
 
@@ -113,6 +104,15 @@ func main() {
 	if err != nil {
 		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
 		os.Exit(1)
+	}
+
+	if *listSessions {
+		err := ft.ListSessions(ftdb)
+
+		if err != nil {
+			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
+		}
+		return
 	}
 
 	// Add new session to database
@@ -251,7 +251,7 @@ func main() {
 		}
 	}
 
-	// Add directory list to database. The metadata for directories is very limited.
+	// Add directory list to database. The metadata for directories is very limited so far.
 	prepInsertDir, err := ft.PrepInsertDir(ftdb)
 	if err != nil {
 		logger.Error("Could not prepare an insert statement for directory inserts.", slog.String("error", err.Error()))
