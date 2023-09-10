@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/richardlehane/siegfried"
+	"github.com/schollz/progressbar/v3"
 	flag "github.com/spf13/pflag"
 	"io"
 	"log/slog"
@@ -32,12 +33,12 @@ func init() {
 }
 
 func main() {
-	// archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
+	archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
 	// exportResultsToCSV
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans.")
-	// projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
+	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	version := flag.BoolP("version", "v", false, "Show version and build.")
@@ -49,6 +50,8 @@ func main() {
 	var sessionmd ft.SessionMD
 	sessionmd.Starttime = starttime.Format(time.RFC3339)
 	sessionmd.UUID, _ = ft.CreateUUID()
+	sessionmd.Archivistname = *archivistname
+	sessionmd.Project = *projectname
 
 	if *version {
 		ft.PrintLicense()
@@ -57,6 +60,7 @@ func main() {
 	}
 
 	if len(*install) > 0 {
+		logger.Info("FileTrove installation started. Version: " + Version)
 		direrr, logserr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
 			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
@@ -171,6 +175,8 @@ func main() {
 	}
 
 	// Inspect every file in filelist
+	// Set up the progress bar
+	bar := progressbar.Default(int64(len(filelist)))
 	for _, file := range filelist {
 		var filemd ft.FileMD
 
@@ -249,6 +255,7 @@ func main() {
 		if err != nil {
 			logger.Warn("Could not add file entry to FileTrove database.", slog.String("warn", err.Error()))
 		}
+		bar.Add(1)
 	}
 
 	// Add directory list to database. The metadata for directories is very limited so far.
