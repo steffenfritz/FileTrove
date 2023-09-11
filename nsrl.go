@@ -4,55 +4,85 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	bbolt "go.etcd.io/bbolt"
 	"os"
 )
 
-// CreateNSRLBoltDB creates a BoltDB file from a specific text file that contains one hash sum per line
 func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
-
-	// Create db file
-	db, err := bbolt.Open(nsrldbfile, 0600, &bbolt.Options{})
+	// Öffnen oder erstellen Sie die BoltDB-Datenbank
+	db, err := bbolt.Open(nsrldbfile, 0600, nil)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	// Create bucket
-	err = db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("sha1"))
+	file, err := os.Open(nsrlsourcefile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	batchSize := 50000
+	values := make([]string, 0, batchSize)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		hash := scanner.Text()
+		values = append(values, hash)
+
+		// Wenn die Batch-Größe erreicht ist, öffnen und schließen Sie die Transaktion
+		if len(values) == batchSize {
+			err := db.Update(func(tx *bbolt.Tx) error {
+				bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
+				if err != nil {
+					return err
+				}
+
+				// Fügen Sie die Werte in die Datenbank ein
+				for _, value := range values {
+					err := bucket.Put([]byte(value), []byte("TRUE")) // Hier können Sie Ihre eigenen Daten speichern
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+			values = values[:0] // Leeren Sie den Slice
+		}
+	}
+
+	// Fügen Sie eventuell verbleibende Werte in die Datenbank ein
+	if len(values) > 0 {
+		err := db.Update(func(tx *bbolt.Tx) error {
+			// Erstellen oder öffnen Sie den Eimer (Bucket)
+			bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
+			if err != nil {
+				return err
+			}
+
+			// Fügen Sie die verbleibenden Werte in die Datenbank ein
+			for _, value := range values {
+				err := bucket.Put([]byte(value), []byte("TRUE")) // Hier können Sie Ihre eigenen Daten speichern
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
 		if err != nil {
 			return err
 		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 
-	// Read the NSRL source file where each line MUST contain a single SHA1 hash
-	readFile, err := os.Open(nsrlsourcefile)
-	if err != nil {
-		return err
-	}
-	fileScanner := bufio.NewScanner(readFile)
+	fmt.Println("Daten wurden erfolgreich hinzugefügt.")
 
-	fileScanner.Split(bufio.ScanLines)
-
-	for fileScanner.Scan() {
-		// Add hashes to the sha1 bucket
-		db.Update(func(tx *bbolt.Tx) error {
-			bucket := tx.Bucket([]byte("sha1"))
-			if bucket == nil {
-				return errors.New("Could not connect to bucket.")
-			}
-			return bucket.Put([]byte(fileScanner.Text()), []byte("true"))
-		})
-	}
-
-	err = readFile.Close()
-
-	return err
+	return nil
 }
 
 // GetNSRL downloads the NSRL bolt database
