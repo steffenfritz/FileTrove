@@ -211,7 +211,7 @@ func main() {
 		filemd.Filesha1 = hex.EncodeToString(hashsumsfile["sha1"])
 		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha256"])
 		filemd.Filesha512 = hex.EncodeToString(hashsumsfile["sha512"])
-		filemd.Fileblake2b = hex.EncodeToString(hashsumsfile["blake2b"])
+		filemd.Fileblake2b = hex.EncodeToString(hashsumsfile["blake2b-512"])
 
 		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
@@ -253,7 +253,7 @@ func main() {
 		// Calculate entropy of the file
 		filemd.Fileentropy, err = ft.Entropy(file)
 		if err != nil {
-			logger.Warn("Could not calculate entropy for file.", slog.String("warning", err.Error()))
+			logger.Warn("Could not calculate entropy for file "+file, slog.String("warning", err.Error()))
 		}
 
 		// Create a UUID for every file that is written to the database. This UUID is not stable!

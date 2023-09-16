@@ -26,3 +26,6 @@ ftrove
 # Databases
 nsrl_sha1_uniq_*
 nsrl.db
+
+# Misc
+.DS_Store
