@@ -34,10 +34,10 @@ func init() {
 
 func main() {
 	archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
-	// exportResultsToCSV
+	exportSessionToCSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
-	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans.")
+	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
 	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
@@ -89,9 +89,9 @@ func main() {
 	}
 
 	// Change logger to MultiWriter for output to logfile and os.Stdout
-	logfd, err := os.OpenFile("logs/errors.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logfd, err := os.OpenFile("logs/filetrove.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		logger.Error("Could not open error log file.", slog.String("error", err.Error()))
+		logger.Error("Could not open filetrove log file.", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 	logw := io.MultiWriter(os.Stdout, logfd)
@@ -108,6 +108,17 @@ func main() {
 	if err != nil {
 		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
 		os.Exit(1)
+	}
+
+	if len(*exportSessionToCSV) != 0 {
+		logger.Info("Export session " + *exportSessionToCSV + " to a TSV file of the same name.")
+		err := ft.ExportSessionTSV(*exportSessionToCSV)
+		if err != nil {
+			logger.Error("Error while exporting session to TSV file.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		logger.Info("Export successful.")
+		return
 	}
 
 	if *listSessions {
@@ -199,7 +210,7 @@ func main() {
 		filemd.Filemd5 = hex.EncodeToString(hashsumsfile["md5"])
 		filemd.Filesha1 = hex.EncodeToString(hashsumsfile["sha1"])
 		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha256"])
-		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha512"])
+		filemd.Filesha512 = hex.EncodeToString(hashsumsfile["sha512"])
 		filemd.Fileblake2b = hex.EncodeToString(hashsumsfile["blake2b"])
 
 		// Get siegfried information for each file. These are those in the type SiegfriedType
@@ -229,9 +240,14 @@ func main() {
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()
 		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(hex.EncodeToString(hashsumsfile["sha1"])))
+		if err != nil {
+			logger.Warn("Could not get value from NSRL database.", slog.String("warn", err.Error()))
+		}
 
 		if fileIsInNSRL {
 			filemd.Filensrl = "TRUE"
+		} else {
+			filemd.Filensrl = "FALSE"
 		}
 
 		// Calculate entropy of the file

@@ -4,13 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
-	bbolt "go.etcd.io/bbolt"
+	"go.etcd.io/bbolt"
 	"os"
+	"strings"
 )
 
 func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
-	// Öffnen oder erstellen Sie die BoltDB-Datenbank
 	db, err := bbolt.Open(nsrldbfile, 0600, nil)
 	if err != nil {
 		return err
@@ -23,7 +22,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 	}
 	defer file.Close()
 
-	batchSize := 50000
+	batchSize := 100000
 	values := make([]string, 0, batchSize)
 
 	scanner := bufio.NewScanner(file)
@@ -31,7 +30,6 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 		hash := scanner.Text()
 		values = append(values, hash)
 
-		// Wenn die Batch-Größe erreicht ist, öffnen und schließen Sie die Transaktion
 		if len(values) == batchSize {
 			err := db.Update(func(tx *bbolt.Tx) error {
 				bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
@@ -39,9 +37,8 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 					return err
 				}
 
-				// Fügen Sie die Werte in die Datenbank ein
 				for _, value := range values {
-					err := bucket.Put([]byte(value), []byte("TRUE")) // Hier können Sie Ihre eigenen Daten speichern
+					err := bucket.Put([]byte(strings.ToLower(value)), []byte("true"))
 					if err != nil {
 						return err
 					}
@@ -52,22 +49,19 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 			if err != nil {
 				return err
 			}
-			values = values[:0] // Leeren Sie den Slice
+			values = values[:0]
 		}
 	}
 
-	// Fügen Sie eventuell verbleibende Werte in die Datenbank ein
 	if len(values) > 0 {
 		err := db.Update(func(tx *bbolt.Tx) error {
-			// Erstellen oder öffnen Sie den Eimer (Bucket)
 			bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
 			if err != nil {
 				return err
 			}
 
-			// Fügen Sie die verbleibenden Werte in die Datenbank ein
 			for _, value := range values {
-				err := bucket.Put([]byte(value), []byte("TRUE")) // Hier können Sie Ihre eigenen Daten speichern
+				err := bucket.Put([]byte(strings.ToLower(value)), []byte("true"))
 				if err != nil {
 					return err
 				}
@@ -79,8 +73,6 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 			return err
 		}
 	}
-
-	fmt.Println("Daten wurden erfolgreich hinzugefügt.")
 
 	return nil
 }
@@ -108,6 +100,7 @@ func GetValueNSRL(db *bbolt.DB, sha1hash []byte) (bool, error) {
 			return errors.New("Could not connect to bucket.")
 		}
 
+		// the byte array translates to UTF-8 "true"
 		fileIsInNSRL = bytes.Equal(b.Get(sha1hash), []byte{116, 114, 117, 101})
 		// return nil to complete the transaction
 		return nil

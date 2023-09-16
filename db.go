@@ -2,9 +2,13 @@ package filetrove
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"log"
 	"os"
+	"reflect"
+	"strconv"
 	"text/tabwriter"
 )
 
@@ -171,4 +175,81 @@ func ListSessions(db *sql.DB) error {
 	w.Flush()
 
 	return err
+}
+
+// ExportSessionTSV exports all file metadata from a session to a TSV file. Filtering is done by session UUID.
+func ExportSessionTSV(sessionuuid string) error {
+	// Öffnen Sie die SQLite-Datenbank-Verbindung.
+	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	outputFile, err := os.Create(sessionuuid + ".tsv")
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	tsvWriter := csv.NewWriter(outputFile)
+	tsvWriter.Comma = '\t'
+	defer tsvWriter.Flush()
+
+	query := "SELECT * FROM files WHERE sessionuuid=\"" + sessionuuid + "\""
+	rows, err := db.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	if err := tsvWriter.Write(columns); err != nil {
+		return err
+	}
+
+	// Loop to create TSV headings from row names
+	values := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(columns))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return err
+		}
+		var valueStrings []string
+		for _, value := range values {
+			if value == nil {
+				valueStrings = append(valueStrings, "")
+			} else {
+				//valueStrings = append(valueStrings, value.(string))
+				switch v := value.(type) {
+				case int64:
+					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))
+				case string:
+					valueStrings = append(valueStrings, string(v))
+				case float64:
+					valueStrings = append(valueStrings, strconv.FormatFloat(v, 'E', -1, 32))
+				default:
+					log.Printf("Unexpected Type: %s", reflect.TypeOf(value))
+					valueStrings = append(valueStrings, "")
+				}
+			}
+		}
+		if err := tsvWriter.Write(valueStrings); err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
