@@ -40,7 +40,7 @@ func main() {
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
-	updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
+	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	version := flag.BoolP("version", "v", false, "Show version and build.")
 
 	flag.Parse()
@@ -84,8 +84,15 @@ func main() {
 		}
 		logger.Info("Created all necessary files and directories successfully.")
 
-		// we return here and quit the program with exit code 0
+		// we return after the installation and quit the program with exit code 0
 		return
+	}
+
+	// Check if ready for run.
+	err := ft.CheckInstall()
+	if err != nil {
+		logger.Error("FileTrove is not ready. Please check previous output.")
+		os.Exit(-1)
 	}
 
 	// Change logger to MultiWriter for output to logfile and os.Stdout
@@ -97,11 +104,9 @@ func main() {
 	logw := io.MultiWriter(os.Stdout, logfd)
 	logger = slog.New(slog.NewTextHandler(logw, nil))
 
-	if *updateFT {
+	/*if *updateFT {
 		// check local hashes against web page/online resource
-	}
-	// check if ready for run
-	// if not suggest downloads and installation or exit
+	}*/
 
 	// Connect to FileTrove's database
 	ftdb, err := ft.ConnectFileTroveDB("db")
