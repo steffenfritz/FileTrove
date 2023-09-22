@@ -2,7 +2,7 @@ package filetrove
 
 import "fmt"
 
-func PrintLicense() {
+func PrintLicense(version string, build string) {
 	fmt.Println("\nFileTrove\n\n" +
 		"Copyright (C) 2023  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
 		"This program is free software: you can redistribute it and/or modify\n    " +
@@ -14,5 +14,7 @@ func PrintLicense() {
 		"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n    " +
 		"GNU Affero General Public License for more details.\n\n    " +
 		"You should have received a copy of the GNU Affero General Public License\n    " +
-		"along with this program.  If not, see <https://www.gnu.org/licenses/>.\v")
+		"along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\n" +
+		"Version: " + version + " Build: " + build + "\n",
+	)
 }

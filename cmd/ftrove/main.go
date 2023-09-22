@@ -27,6 +27,7 @@ var tsStartedFormated string
 var logger *slog.Logger
 
 func init() {
+
 	tsStarted := time.Now()
 	tsStartedFormated = tsStarted.Format("2006-01-02_15:04:05")
 	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -34,7 +35,11 @@ func init() {
 
 func main() {
 	archivistname := flag.StringP("archivist", "a", "", "The name of the person responsible for the scan.")
-	exportSessionToCSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
+	// createThumbsImages :=
+	// createStillsVideo :=
+	// getTextfileIdea :=
+	// grepYARA :=
+	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
@@ -54,8 +59,7 @@ func main() {
 	sessionmd.Project = *projectname
 
 	if *version {
-		ft.PrintLicense()
-		fmt.Println("Version: " + Version + " Build: " + Build + "\n")
+		ft.PrintLicense(Version, Build)
 		return
 	}
 
@@ -105,7 +109,7 @@ func main() {
 	logger = slog.New(slog.NewTextHandler(logw, nil))
 
 	/*if *updateFT {
-		// check local hashes against web page/online resource
+		// check local versions against web page/online resource
 	}*/
 
 	// Connect to FileTrove's database
@@ -115,11 +119,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if len(*exportSessionToCSV) != 0 {
-		logger.Info("Export session " + *exportSessionToCSV + " to a TSV file of the same name.")
-		err := ft.ExportSessionTSV(*exportSessionToCSV)
+	if len(*exportSessionToTSV) != 0 {
+		logger.Info("Export session " + *exportSessionToTSV + " to a TSV file of the same name.")
+		err := ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
-			logger.Error("Error while exporting session to TSV file.", slog.String("error", err.Error()))
+			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		err = ft.ExportSessionDirectoriesTSV(*exportSessionToTSV)
+		if err != nil {
+			logger.Error("Error while exporting directories from session to TSV file.", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
 		logger.Info("Export successful.")
@@ -128,7 +137,6 @@ func main() {
 
 	if *listSessions {
 		err := ft.ListSessions(ftdb)
-
 		if err != nil {
 			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
 		}
@@ -261,10 +269,10 @@ func main() {
 			logger.Warn("Could not calculate entropy for file "+file, slog.String("warning", err.Error()))
 		}
 
-		// Create a UUID for every file that is written to the database. This UUID is not stable!
+		// Create a UUID for every file that is written to the database. This UUID is not stable over several runs!
 		fileuuid, err := ft.CreateUUID()
 		if err != nil {
-			logger.Error("Could not create UUID for a file.", slog.String("error", err.Error()))
+			logger.Error("Could not create UUID for file "+file, slog.String("error", err.Error()))
 			os.Exit(1)
 		}
 		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filesize,
@@ -274,7 +282,7 @@ func main() {
 			filemd.Filensrl, filemd.Fileentropy)
 
 		if err != nil {
-			logger.Warn("Could not add file entry to FileTrove database.", slog.String("warn", err.Error()))
+			logger.Warn("Could not add file entry into FileTrove database. File: "+file, slog.String("warn", err.Error()))
 		}
 		bar.Add(1)
 	}
@@ -287,7 +295,7 @@ func main() {
 	for _, direntry := range dirlist {
 		diruuid, err := ft.CreateUUID()
 		if err != nil {
-			logger.Error("Could not create UUID for a directory.", slog.String("error", err.Error()))
+			logger.Error("Could not create UUID for directory "+direntry, slog.String("error", err.Error()))
 		}
 		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry)
 
