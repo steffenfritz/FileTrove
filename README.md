@@ -30,3 +30,34 @@ FileTrove also checks if the file is in the NSRL.
 For this check a 5.2GB BoltDB is needed and can be downloaded from https://archive.org/details/nsrl_20230918. You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository.
 
 All results are written into a SQLite database and can be exported to TSV files.
+
+## How to install
+1. Download a release from https://github.com/steffenfritz/FileTrove/releases
+2. Copy the file where you want to install ftrove
+3. Run "./ftrove --install ."  (Mind the period)
+	3. a) If you don't have already a NSRL database, you have to download it. Please be patient.
+	3. b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
+4. You are ready to go!
+
+## How to run
+"./ftrove -h" gives you all flags ftrove understands.
+
+A run only with necessary flags looks like this:
+
+./ftrove -i $DIRECTORY
+
+where $DIRECTORY is a directory you want to use as a starting point. FileTrove will walk this directory recursively down.
+
+## How to see the results
+
+You can export the results via "./ftrove -t $UUID" where $UUID is the session id. 
+Every indexing run gets its own session id. You get a list of all sessions using "./ftrove -l". 
+
+Example:
+
+1. ./ftrove -l
+2. ./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2 
+
+This will create two TSV files (directories and files) that can be read with Excel, Numbers and your preferred text editor. 
+
+You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser.
