@@ -29,4 +29,4 @@ FileTrove also checks if the file is in the NSRL.
 
 For this check a 5.2GB BoltDB is needed and can be downloaded from https://archive.org/details/nsrl_20230918. You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository.
 
-All results are written into a SQLite database and can be exportd to TSV files.
+All results are written into a SQLite database and can be exported to TSV files.
