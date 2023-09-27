@@ -2,11 +2,15 @@ package filetrove
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"strings"
 )
 
 // InstallFT creates and downloads necessary directories and databases and copies them to installPath
 func InstallFT(installPath string, version string, initdate string) (error, error, error, error, error) {
+	var choice string
+
 	dbdirerr := os.Mkdir(installPath+"/db", os.ModePerm)
 	if dbdirerr != nil {
 		return dbdirerr, nil, nil, nil, nil
@@ -20,9 +24,25 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 		return nil, nil, trovedberr, nil, nil
 	}
 	siegfriederr := GetSiegfriedDB()
-	GetNSRLDB()
 
-	return dbdirerr, logsdirerr, trovedberr, siegfriederr, nil
+	fmt.Print("Next step is to download the NSRL database which is 5.3GB. Proceed? [y/n]: ")
+	_, err := fmt.Scan(&choice)
+	if err != nil {
+		os.Exit(-1)
+	}
+
+	choice = strings.TrimSpace(choice)
+	choice = strings.ToLower(choice)
+
+	var nsrlerr error
+	if choice == "y" {
+		nsrlerr = GetNSRL()
+
+	} else {
+		log.Println("Skipping NSRL download. You have to copy an existing nsrl.db into the db directory.")
+	}
+
+	return dbdirerr, logsdirerr, trovedberr, siegfriederr, nsrlerr
 }
 
 // CheckInstall checks if all necessary file are available

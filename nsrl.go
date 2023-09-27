@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"github.com/schollz/progressbar/v3"
 	"go.etcd.io/bbolt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -77,8 +80,32 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 	return nil
 }
 
-// GetNSRL downloads the NSRL bolt database
-func GetNSRLDB() {}
+// GetNSRL downloads a prepared BoltDB database file from archive.org
+func GetNSRL() error {
+	req, err := http.NewRequest("GET", "https://archive.org/download/nsrl_20230918/nsrl.db", nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	f, err := os.OpenFile("db/nsrl.db", os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	bar := progressbar.DefaultBytes(
+		resp.ContentLength,
+		"downloading",
+	)
+	io.Copy(io.MultiWriter(f, bar), resp.Body)
+
+	return nil
+}
 
 // ConnectNSRL connects to local bbolt NSRL file
 func ConnectNSRL(nsrldbfile string) (*bbolt.DB, error) {

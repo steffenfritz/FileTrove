@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	ft "github.com/steffenfritz/FileTrove"
@@ -47,6 +49,7 @@ func main() {
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	version := flag.BoolP("version", "v", false, "Show version and build.")
+	verbose := flag.BoolP("verbose", "V", false, "Print messages also to the terminal (stdout).")
 
 	flag.Parse()
 
@@ -105,9 +108,16 @@ func main() {
 		logger.Error("Could not open filetrove log file.", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
-	logw := io.MultiWriter(os.Stdout, logfd)
-	logger = slog.New(slog.NewTextHandler(logw, nil))
+	if *verbose {
+		logger.Info("Redirecting logs to stdout and logs/filetrove.log")
+		logw := io.MultiWriter(os.Stdout, logfd)
+		logger = slog.New(slog.NewTextHandler(logw, nil))
+	} else {
+		logger.Info("Redirecting logs to logs/filetrove.log")
+		logw := io.Writer(logfd)
+		logger = slog.New(slog.NewTextHandler(logw, nil))
 
+	}
 	/*if *updateFT {
 		// check local versions against web page/online resource
 	}*/
@@ -305,6 +315,21 @@ func main() {
 	}
 
 	endtime := time.Now()
+
+	// Short report after run, written to stdout and log file
+	fmt.Println()
+	absPath, _ := filepath.Abs(*inDir)
+	logger.Info("Finished indexing of " + absPath)
+	logger.Info("Session UUID: " + sessionmd.UUID)
+	logger.Info("Number of indexed files: " + strconv.Itoa(len(filelist)))
+	logger.Info("Number of indexed directory names: " + strconv.Itoa(len(dirlist)))
+
+	runtime := endtime.Sub(starttime)
+	logger.Info("Indexing took: " + runtime.String())
+	logger.Info("All results are written to the sqlite database db/filetrove.db")
+	logger.Info("You can export the results with ./ftrove -t " + sessionmd.UUID)
+	// End short report
+
 	sessionmd.Endtime = endtime.Format(time.RFC3339)
 	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=\"" + sessionmd.Endtime + "\"WHERE uuid=\"" + sessionmd.UUID + "\"RETURNING *;")
 	if err != nil {
