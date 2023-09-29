@@ -35,9 +35,12 @@ All results are written into a SQLite database and can be exported to TSV files.
 1. Download a release from https://github.com/steffenfritz/FileTrove/releases
 2. Copy the file where you want to install ftrove
 3. Run "./ftrove --install ."  (Mind the period)
-	3. a) If you don't have already a NSRL database, you have to download it. Please be patient.
-	3. b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
-4. You are ready to go!
+   
+	a) If you don't have already a NSRL database, you have to download it. Please be patient.
+    
+	b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
+
+5. You are ready to go!
 
 ## How to run
 "./ftrove -h" gives you all flags ftrove understands.
