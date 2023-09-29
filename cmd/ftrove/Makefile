@@ -26,5 +26,6 @@ clean:
 	rm -f '${BINARY}-linux'
 	rm -f '${BINARY}-darwin'
 	rm -f '${BINARY}.exe'
+	rm -f ftrove_*.tar.gz
 
 .PHONY: clean build build_all all

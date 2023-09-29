@@ -3,9 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/richardlehane/siegfried"
-	"github.com/schollz/progressbar/v3"
-	flag "github.com/spf13/pflag"
 	"io"
 	"log/slog"
 	"os"
@@ -13,13 +10,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/richardlehane/siegfried"
+	"github.com/schollz/progressbar/v3"
+	flag "github.com/spf13/pflag"
+
 	ft "github.com/steffenfritz/FileTrove"
 )
 
-// Version holds the version of FileTrove and is set by the build system
+// version holds the version of FileTrove and is set by the build system, i.e. goreleaser
 var Version string
 
-// Build holds the sha1 fingerprint of the build and is set by the build system
+// commit holds the sha1 fingerprint of the build and is set by the build system, i.e. goreleaser
 var Build string
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
@@ -48,7 +49,7 @@ func main() {
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
-	version := flag.BoolP("version", "v", false, "Show version and build.")
+	printversion := flag.BoolP("version", "v", false, "Show version and build.")
 	verbose := flag.BoolP("verbose", "V", false, "Print messages also to the terminal (stdout).")
 
 	flag.Parse()
@@ -61,7 +62,7 @@ func main() {
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
 
-	if *version {
+	if *printversion {
 		ft.PrintLicense(Version, Build)
 		return
 	}
