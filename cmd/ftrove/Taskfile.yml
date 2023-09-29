@@ -1,0 +1,46 @@
+version: '3'
+env:
+  VERSION: 1.0.0-DEV-1
+  CGO_ENABLED: "1"
+
+tasks:
+  build:
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+    vars:
+      GIT_COMMIT:
+        sh: git log -n 1 --format=%h
+
+
+
+  build_linux_amd:
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+    env:
+      GOOS: "linux"
+      GOARCH: "amd64"
+      CC: "zig cc -target x86_64-linux-musl"
+      CXX: "zig cc -target x85_64-linux-musl"
+
+
+  build_windows_amd:
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+    env:
+      GOOS: "windows"
+      GOARCH: "amd64"
+      CC: "zig cc -target x86_64-windows-musl"
+      CXX: "zig cc -target x85_64-windows-musl"
+
+
+
+  clean:
+    desc: delete builds and testfiles
+    cmds:
+      - mv db/nsrl.db .
+      - rm -rf ftrove
+      - rm -rf ftrove_*
+      - rm -rf db
+      - rm -rf logs
+      - rm -rf dist
+      - rm -rf *.tsv

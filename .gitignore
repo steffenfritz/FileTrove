@@ -20,7 +20,6 @@
 # Go workspace file
 go.work
 cmd/ftrove/db
-ftrove
 .idea
 
 # Databases
