@@ -32,12 +32,15 @@ For this check a 5.2GB BoltDB is needed and can be downloaded from https://archi
 All results are written into a SQLite database and can be exported to TSV files.
 
 ## How to install
-1. Download a release from https://github.com/steffenfritz/FileTrove/releases
+1. ~~Download a release from https://github.com/steffenfritz/FileTrove/releases or~~ compile from source
 2. Copy the file where you want to install ftrove
 3. Run "./ftrove --install ."  (Mind the period)
-	3. a) If you don't have already a NSRL database, you have to download it. Please be patient.
-	3. b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
-4. You are ready to go!
+   
+	a) If you don't have already a NSRL database, you have to download it. Please be patient.
+    
+	b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
+
+5. You are ready to go!
 
 ## How to run
 "./ftrove -h" gives you all flags ftrove understands.
