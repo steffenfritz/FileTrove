@@ -32,6 +32,7 @@ For this check a 5.2GB BoltDB is needed and can be downloaded from https://archi
 
 All results are written into a SQLite database and can be exported to TSV files.
 
+
 ## How to install
 1. ~~Download a release from https://github.com/steffenfritz/FileTrove/releases or~~ compile from source
 2. Copy the file where you want to install ftrove
