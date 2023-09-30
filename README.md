@@ -54,7 +54,6 @@ A run only with necessary flags looks like this:
 where $DIRECTORY is a directory you want to use as a starting point. FileTrove will walk this directory recursively down.
 
 ## How to see the results
-
 You can export the results via "./ftrove -t $UUID" where $UUID is the session id. 
 Every indexing run gets its own session id. You get a list of all sessions using "./ftrove -l". 
 
@@ -66,4 +65,3 @@ Example:
 This will create two TSV files (directories and files) that can be read with Excel, Numbers and your preferred text editor. 
 
 You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/).
-
