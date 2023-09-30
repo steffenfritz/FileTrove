@@ -2,8 +2,9 @@ name: build
 
 on:
   push:
-  pull_request:
-
+    tags:        
+      - '*'
+  #pull_request:
 jobs:
   xgo:
     runs-on: ubuntu-latest
@@ -39,6 +40,4 @@ jobs:
       -
         name: Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: ftrove*
+        #if: startsWith(github.ref, 'refs/tags/')
