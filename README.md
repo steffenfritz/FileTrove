@@ -64,3 +64,4 @@ Example:
 This will create two TSV files (directories and files) that can be read with Excel, Numbers and your preferred text editor. 
 
 You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser.
+
