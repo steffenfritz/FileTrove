@@ -26,3 +26,4 @@ jobs:
           ldflags: -s -w
           buildmode: default
           trimpath: true
+          working_dir: ./cmd/ftrove
