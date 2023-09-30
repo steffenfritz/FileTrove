@@ -11,6 +11,15 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v4
+      - 
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       -
         name: Build
         uses: crazy-max/ghaction-xgo@v3
@@ -27,3 +36,9 @@ jobs:
           buildmode: default
           trimpath: true
           pkg: ./cmd/ftrove
+      -
+        name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ftrove*
