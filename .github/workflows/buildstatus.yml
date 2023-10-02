@@ -3,6 +3,9 @@ name: buildstatus
 on:
   push:
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
     branches:
       - master
 
