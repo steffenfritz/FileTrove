@@ -1,6 +1,8 @@
 # FileTrove
 STATUS: Development
 
+![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
+
 FileTrove indexes files and creates metadata from them.
 
 The single binary application walks a directory tree and identifies all regular files by type with siegfried, giving you the 
