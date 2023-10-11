@@ -28,3 +28,4 @@ nsrl.db
 
 # Misc
 .DS_Store
+testdata/noaccess.rtf

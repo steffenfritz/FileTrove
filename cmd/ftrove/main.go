@@ -62,6 +62,8 @@ func main() {
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
 
+	ft.PrintBanner()
+
 	if *printversion {
 		ft.PrintLicense(Version, Build)
 		return
@@ -119,6 +121,8 @@ func main() {
 		logger = slog.New(slog.NewTextHandler(logw, nil))
 
 	}
+	logger.Info("FileTrove started at " + starttime.String())
+
 	/*if *updateFT {
 		// check local versions against web page/online resource
 	}*/
@@ -131,7 +135,7 @@ func main() {
 	}
 
 	if len(*exportSessionToTSV) != 0 {
-		logger.Info("Export session " + *exportSessionToTSV + " to a TSV file of the same name.")
+		logger.Info("Export session " + *exportSessionToTSV + " to TSV files of the same name.")
 		err := ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
 			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))

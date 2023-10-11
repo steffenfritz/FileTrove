@@ -2,9 +2,10 @@ package filetrove
 
 import "fmt"
 
+// PrintLicense prints a short license text
 func PrintLicense(version string, build string) {
-	fmt.Println("\nFileTrove\n\n" +
-		"Copyright (C) 2023  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
+	fmt.Println("\n" +
+		"FileTrove Copyright (C) 2023  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
 		"This program is free software: you can redistribute it and/or modify\n    " +
 		"it under the terms of the GNU Affero General Public License as published\n    " +
 		"by the Free Software Foundation, either version 3 of the License, or\n    " +
@@ -17,4 +18,9 @@ func PrintLicense(version string, build string) {
 		"along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\n" +
 		"Version: " + version + " Build: " + build + "\n",
 	)
+}
+
+// PrintBanner prints a pre-generated ascii banner with the program name
+func PrintBanner() {
+	fmt.Println("\no--o   o     o-O-o                   \n|    o |       |                     \nO-o    | o-o   |   o-o o-o o   o o-o \n|    | | |-'   |   |   | |  \\ /  |-' \no    | o o-o   o   o   o-o   o   o-o \n                                     \n                                     ")
 }

@@ -12,7 +12,8 @@ func TestEntropy(t *testing.T) {
 		wantEntropy float64
 		wantErr     bool
 	}{
-		// TODO: Add test cases.
+		{"entropy", args{"testdata/emptyfile.txt"}, 0.0, false},
+		{"entropy", args{"testdata/white.jpg"}, 0.45, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

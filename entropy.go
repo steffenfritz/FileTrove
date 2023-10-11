@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// MaxFileSize is the max size file thatr should be processed. This defaults to 1 GB.
+	// MaxFileSize is the max size file that should be processed. This defaults to 1 GB.
 	MaxFileSize = 1073741824
 	// MaxEntropyChunk is the max byte size of a chunk read
 	MaxEntropyChunk = 256000
