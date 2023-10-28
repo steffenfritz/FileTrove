@@ -1,6 +1,6 @@
 version: '3'
 env:
-  VERSION: 1.0.0-DEV-1
+  VERSION: 1.0.0-DEV-3
   CGO_ENABLED: "1"
 
 tasks:
@@ -10,7 +10,6 @@ tasks:
     vars:
       GIT_COMMIT:
         sh: git log -n 1 --format=%h
-
 
 
   build_linux_amd:
@@ -31,7 +30,6 @@ tasks:
       GOARCH: "amd64"
       CC: "zig cc -target x86_64-windows-musl"
       CXX: "zig cc -target x85_64-windows-musl"
-
 
 
   clean:

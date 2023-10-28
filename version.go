@@ -1,6 +1,29 @@
 package filetrove
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+)
+
+// CheckVersion checks if the filetrove version is compatible to the database
+// Compatible means same version for now. This could change in the future.
+func CheckVersion(db *sql.DB, version string) (bool, string, error) {
+	var dbversion string
+
+	query := "SELECT version FROM filetrove;"
+	resultrow := db.QueryRow(query)
+
+	err := resultrow.Scan(&dbversion)
+	if err != nil {
+		return false, "", err
+	}
+
+	if dbversion == version {
+		return true, "", nil
+	}
+
+	return false, dbversion, nil
+}
 
 // PrintLicense prints a short license text
 func PrintLicense(version string, build string) {

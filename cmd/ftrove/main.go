@@ -42,6 +42,7 @@ func main() {
 	// createStillsVideo :=
 	// getTextfileIdea :=
 	// grepYARA :=
+	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
@@ -61,6 +62,9 @@ func main() {
 	sessionmd.UUID, _ = ft.CreateUUID()
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
+	if *exifData {
+		sessionmd.ExifFlag = "True"
+	}
 
 	ft.PrintBanner()
 
@@ -99,7 +103,7 @@ func main() {
 	}
 
 	// Check if ready for run.
-	err := ft.CheckInstall()
+	err := ft.CheckInstall(Version)
 	if err != nil {
 		logger.Error("FileTrove is not ready. Please check previous output.")
 		os.Exit(-1)
@@ -130,7 +134,7 @@ func main() {
 	// Connect to FileTrove's database
 	ftdb, err := ft.ConnectFileTroveDB("db")
 	if err != nil {
-		logger.Error("Could not connect to FileTrove's database.", slog.String("error", err.Error()))
+		logger.Error("Could not connect to FileTrove's database. Quitting.", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
@@ -319,9 +323,32 @@ func main() {
 		}
 	}
 
+	// EXIF data for jpeg and tiff files
+	if *exifData {
+		imagelist, err := ft.GetImageFiles(ftdb, sessionmd.UUID)
+		if err != nil {
+			logger.Error("Could not get image list from database.", slog.String("error", err.Error()))
+		}
+		for fileuuid, imagepath := range imagelist {
+			exifparsed, err := ft.ExifDecode(imagepath)
+			if err != nil {
+				logger.Error("Could not parse image for exif data. File: "+imagepath, slog.String("error", err.Error()))
+			}
+
+			exifuuid, err := ft.CreateUUID()
+			if err != nil {
+				logger.Error("Could not create UUID for exif entry.", slog.String("error", err.Error()))
+			}
+			err = ft.InsertExif(ftdb, exifuuid, sessionmd.UUID, fileuuid, exifparsed)
+			if err != nil {
+				logger.Error("Could not insert EXIF metadata into FileTrove database.", slog.String("error", err.Error()))
+			}
+		}
+	}
+
 	endtime := time.Now()
 
-	// Short report after run, written to stdout and log file
+	// Short report after run, written to stdout if verbose and always to the log file
 	fmt.Println()
 	absPath, _ := filepath.Abs(*inDir)
 	logger.Info("Finished indexing of " + absPath)
@@ -336,7 +363,7 @@ func main() {
 	// End short report
 
 	sessionmd.Endtime = endtime.Format(time.RFC3339)
-	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=\"" + sessionmd.Endtime + "\"WHERE uuid=\"" + sessionmd.UUID + "\"RETURNING *;")
+	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=\"" + sessionmd.Endtime + "\" WHERE uuid=\"" + sessionmd.UUID + "\"RETURNING *;")
 	if err != nil {
 		logger.Error("Could not write endtime to database.", slog.String("error", err.Error()))
 	}
