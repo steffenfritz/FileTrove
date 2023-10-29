@@ -138,9 +138,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *listSessions {
+		err := ft.ListSessions(ftdb)
+		if err != nil {
+			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
+		}
+		return
+	}
+
 	if len(*exportSessionToTSV) != 0 {
 		logger.Info("Export session " + *exportSessionToTSV + " to TSV files of the same name.")
-		err := ft.ExportSessionFilesTSV(*exportSessionToTSV)
+		sessionValues, err := ft.ExportSessionSessionTSV(*exportSessionToTSV)
+		if err != nil {
+			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		// DOC: Value 6 MUST be the flag result of EXIF. We translate for clarity.
+		exifFlagSet := sessionValues[6]
+
+		err = ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
 			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
 			os.Exit(1)
@@ -150,15 +166,16 @@ func main() {
 			logger.Error("Error while exporting directories from session to TSV file.", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-		logger.Info("Export successful.")
-		return
-	}
 
-	if *listSessions {
-		err := ft.ListSessions(ftdb)
-		if err != nil {
-			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
+		if exifFlagSet == "True" {
+			err = ft.ExportSessionEXIFTSV(*exportSessionToTSV)
+			if err != nil {
+				logger.Error("Error while exporting EXIF metadata from session to TSV file.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
 		}
+
+		logger.Info("Export successful.")
 		return
 	}
 
