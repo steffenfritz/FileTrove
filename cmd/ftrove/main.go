@@ -62,6 +62,7 @@ func main() {
 	sessionmd.UUID, _ = ft.CreateUUID()
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
+	sessionmd.Mountpoint, _ = filepath.Abs(*inDir)
 	if *exifData {
 		sessionmd.ExifFlag = "True"
 	}
@@ -102,8 +103,24 @@ func main() {
 		return
 	}
 
+	// Connect to FileTrove's database. We don't do this with the other ready checks because of the export usecase
+	// without a full install
+	ftdb, err := ft.ConnectFileTroveDB("db")
+	if err != nil {
+		logger.Error("Could not connect to FileTrove's database. Quitting.", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	if *listSessions {
+		err := ft.ListSessions(ftdb)
+		if err != nil {
+			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
+		}
+		return
+	}
+
 	// Check if ready for run.
-	err := ft.CheckInstall(Version)
+	err = ft.CheckInstall(Version)
 	if err != nil {
 		logger.Error("FileTrove is not ready. Please check previous output.")
 		os.Exit(-1)
@@ -130,21 +147,6 @@ func main() {
 	/*if *updateFT {
 		// check local versions against web page/online resource
 	}*/
-
-	// Connect to FileTrove's database
-	ftdb, err := ft.ConnectFileTroveDB("db")
-	if err != nil {
-		logger.Error("Could not connect to FileTrove's database. Quitting.", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-
-	if *listSessions {
-		err := ft.ListSessions(ftdb)
-		if err != nil {
-			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
-		}
-		return
-	}
 
 	if len(*exportSessionToTSV) != 0 {
 		logger.Info("Export session " + *exportSessionToTSV + " to TSV files of the same name.")

@@ -151,7 +151,7 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, nil, s.ExifFlag, s.Dublincoreflag)
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag)
 
 	return err
 }
