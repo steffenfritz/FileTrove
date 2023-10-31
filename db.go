@@ -14,12 +14,14 @@ import (
 
 // SessionMD holds the metadata written to table sessionsmd
 type SessionMD struct {
-	UUID          string
-	Starttime     string
-	Endtime       string
-	Project       string
-	Archivistname string
-	Mountpoint    string
+	UUID           string
+	Starttime      string
+	Endtime        string
+	Project        string
+	Archivistname  string
+	Mountpoint     string
+	ExifFlag       string
+	Dublincoreflag string
 }
 
 // FileMD holds the metadata for each inspected file and that is written to the table files
@@ -62,9 +64,12 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	endtime TEXT,
 					   	project TEXT,
 					   	archivistname TEXT,
-					   	mountpoint TEXT
+					   	mountpoint TEXT,
+					   	exifflag TEXT,
+					   	dublincoreflag TEXT
 					   );
 					   CREATE TABLE dublincore(uuid TEXT,
+					    sessionuuid TEXT,
 					   	title TEXT,
 					   	creator TEXT,
 					   	contributor TEXT,
@@ -104,7 +109,21 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
 					    sessionuuid TEXT,
-					    dirname TEXT);`
+					    dirname TEXT);
+                       CREATE TABLE exif(exifuuid TEXT,
+                         sessionuuid TEXT,
+                         fileuuid TEXT,
+                         exifversion TEXT,
+                         datetime TEXT,
+                         datetimeorig TEXT,
+                         artist TEXT,
+                         copyright TEXT,
+                         xptitle TEXT,
+                         xpcomment TEXT,
+                         xpauthor TEXT,
+                         xpkeywords TEXT,
+                         xpsubject TEXT
+                         );`
 
 	_, err = db.Exec(initstatements)
 	if err != nil {
@@ -132,7 +151,7 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, nil)
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project, s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag)
 
 	return err
 }
@@ -151,7 +170,7 @@ func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
 	return prepin, err
 }
 
-// ExportSessions lists all sessions from the FileTrove database
+// ListSessions lists all sessions from the FileTrove database
 func ListSessions(db *sql.DB) error {
 	rows, err := db.Query("SELECT rowid, uuid, starttime, COALESCE(endtime, '') AS endtime, " +
 		"COALESCE(project, '') AS project, " +
@@ -175,6 +194,83 @@ func ListSessions(db *sql.DB) error {
 	w.Flush()
 
 	return err
+}
+
+// ExportSessionSessionTSV exports all session metadata from a session to a TSV file. Filtering is done by session UUID.
+func ExportSessionSessionTSV(sessionuuid string) ([]string, error) {
+	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	outputFile, err := os.Create(sessionuuid + "_session.tsv")
+	if err != nil {
+		return nil, err
+	}
+	defer outputFile.Close()
+
+	tsvWriter := csv.NewWriter(outputFile)
+	tsvWriter.Comma = '\t'
+	defer tsvWriter.Flush()
+
+	query := "SELECT * FROM sessionsmd WHERE uuid=\"" + sessionuuid + "\""
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tsvWriter.Write(columns); err != nil {
+		return nil, err
+	}
+
+	// Loop to create TSV headings from row names
+	values := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(columns))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	var valueStrings []string
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return nil, err
+		}
+		//var valueStrings []string
+		for _, value := range values {
+			if value == nil {
+				valueStrings = append(valueStrings, "")
+			} else {
+				//valueStrings = append(valueStrings, value.(string))
+				switch v := value.(type) {
+				case int64:
+					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))
+				case string:
+					valueStrings = append(valueStrings, string(v))
+				case float64:
+					valueStrings = append(valueStrings, strconv.FormatFloat(v, 'E', -1, 32))
+				default:
+					log.Printf("Unexpected Type: %s", reflect.TypeOf(value))
+					valueStrings = append(valueStrings, "")
+				}
+			}
+		}
+		if err := tsvWriter.Write(valueStrings); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return valueStrings, nil
 }
 
 // ExportSessionFilesTSV exports all file metadata from a session to a TSV file. Filtering is done by session UUID.
@@ -327,4 +423,114 @@ func ExportSessionDirectoriesTSV(sessionuuid string) error {
 	}
 
 	return nil
+}
+
+// ExportSessionEXIFTSV exports all exif metadata from a session to a TSV file. Filtering is done by session UUID.
+func ExportSessionEXIFTSV(sessionuuid string) error {
+	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	outputFile, err := os.Create(sessionuuid + "_exif.tsv")
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	tsvWriter := csv.NewWriter(outputFile)
+	tsvWriter.Comma = '\t'
+	defer tsvWriter.Flush()
+
+	query := "SELECT * FROM exif WHERE sessionuuid=\"" + sessionuuid + "\""
+	rows, err := db.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	if err := tsvWriter.Write(columns); err != nil {
+		return err
+	}
+
+	// Loop to create TSV headings from row names
+	values := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(columns))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return err
+		}
+		var valueStrings []string
+		for _, value := range values {
+			if value == nil {
+				valueStrings = append(valueStrings, "")
+			} else {
+				//valueStrings = append(valueStrings, value.(string))
+				switch v := value.(type) {
+				case int64:
+					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))
+				case string:
+					valueStrings = append(valueStrings, string(v))
+				case float64:
+					valueStrings = append(valueStrings, strconv.FormatFloat(v, 'E', -1, 32))
+				default:
+					log.Printf("Unexpected Type: %s", reflect.TypeOf(value))
+					valueStrings = append(valueStrings, "")
+				}
+			}
+		}
+		if err := tsvWriter.Write(valueStrings); err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetImageFiles queries all files that have mime type image from a session
+func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
+	var filename string
+	var fileuuid string
+
+	query := "SELECT filename, fileuuid FROM files where sessionuuid=\"" + sessionuuid + "\" AND filesfmime=\"image/jpeg\" OR filesfmime=\"image/tiff\""
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	imagelist := make(map[string]string)
+
+	for rows.Next() {
+		if err := rows.Scan(&filename, &fileuuid); err != nil {
+			return imagelist, err
+		}
+		imagelist[fileuuid] = filename
+	}
+	if err = rows.Err(); err != nil {
+		return imagelist, err
+	}
+	return imagelist, nil
+}
+
+// InsertExif inserts exif metadata into the FileTrove database
+func InsertExif(db *sql.DB, exifuuid string, sessionid string, fileuuid string, e ExifParsed) error {
+	_, err := db.Exec("INSERT INTO exif VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", exifuuid, sessionid, fileuuid, e.ExifVersion, e.DateTime, e.DateTimeOrig, e.Artist, e.Copyright, e.XPTitle, e.XPComment, e.XPAuthor, e.XPKeywords, e.XPSubject)
+
+	return err
 }

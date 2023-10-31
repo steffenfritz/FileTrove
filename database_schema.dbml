@@ -1,0 +1,85 @@
+Table filetrove {
+  version TEXT
+  initdate TEXT
+  lastupdate TEXT
+}
+
+Table sessionsmd {
+  uuid TEXT
+  starttime TEXT
+  endtime TEXT
+  project TEXT
+  archivistname TEXT
+  mountpoint TEXT
+  exifflag TEXT
+  dublincoreflag TEXT
+}
+
+TABLE dublincore{
+  uuid TEXT
+  sessionuuid TEXT
+  title TEXT
+  creator TEXT
+  contributor TEXT
+  publisher TEXT
+  subject TEXT
+  description TEXT
+  date TEXT
+  language TEXT
+  type TEXT
+  format TEXT
+  identifier TEXT
+  source TEXT
+  relation TEXT
+  rights TEXT
+  coverage TEXT
+}
+
+TABLE files {fileuuid TEXT
+  sessionuuid TEXT
+  filename TEXT
+  filesize INTEGER
+  filemd5 TEXT
+  filesha1 TEXT
+  filesha256 TEXT
+  filesha512 TEXT
+  fileblake2b TEXT
+  filesffmt TEXT
+  filesfmime TEXT
+  filesfformatname TEXT
+  filesfformatversion TEXT
+  filesfidentnote TEXT
+  filesfidentproof TEXT
+  filectime TEXT
+  filemtime TEXT
+  fileatime TEXT
+  filensrl TEXT
+  fileentropy INTEGER
+}
+
+TABLE directories{
+  diruuid TEXT
+  sessionuuid TEXT
+  dirname TEXT
+}
+
+TABLE exif{
+  exifuuid TEXT
+  sessionuuid TEXT
+  fileuuid TEXT
+  exifversion TEXT
+  datetime TEXT
+  datetimeorig TEXT
+  artist TEXT
+  copyright TEXT
+  xptitle TEXT
+  xpcomment TEXT
+  xpauthor TEXT
+  xpkeywords TEXT
+  xpsubject TEXT
+}
+
+Ref: files.sessionuuid > sessionsmd.uuid
+Ref: exif.sessionuuid > sessionsmd.uuid
+Ref: directories.sessionuuid > sessionsmd.uuid
+Ref: dublincore.sessionuuid > sessionsmd.uuid

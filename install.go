@@ -25,7 +25,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	}
 	siegfriederr := GetSiegfriedDB()
 
-	fmt.Print("Next step is to download the NSRL database which is 5.3GB. Proceed? [y/n]: ")
+	fmt.Print("\nNext step is to download the NSRL database which is 5.3GB. Proceed? [y/n]: ")
 	_, err := fmt.Scan(&choice)
 	if err != nil {
 		os.Exit(-1)
@@ -46,7 +46,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 }
 
 // CheckInstall checks if all necessary file are available
-func CheckInstall() error {
+func CheckInstall(version string) error {
 	_, err := os.Stat("db/siegfried.sig")
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: siegfried signature file not installed.")
@@ -55,9 +55,26 @@ func CheckInstall() error {
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: filetrove database does not exist.")
 	}
-	_, err = os.Stat("db/nsrl.db")
-	if os.IsNotExist(err) {
+	_, dberr := os.Stat("db/nsrl.db")
+	if os.IsNotExist(dberr) {
 		fmt.Println("ERROR: nsrl database does not exist.")
+	}
+
+	if dberr == nil {
+		ftdb, connerr := ConnectFileTroveDB("db")
+		if connerr != nil {
+			fmt.Println("Could not connect or open database. Error: " + connerr.Error())
+			os.Exit(1)
+		}
+
+		compatible, dbversion, checkerr := CheckVersion(ftdb, version)
+		if checkerr != nil {
+			fmt.Println("Could not check database version. Error: " + checkerr.Error())
+		}
+		if !compatible {
+			fmt.Println("Database not compatible with this Version of FileTrove. Database version: " + dbversion)
+			os.Exit(1)
+		}
 	}
 
 	if err != nil {
