@@ -112,6 +112,7 @@ func main() {
 	}
 
 	if *listSessions {
+		fmt.Println("SESSION OVERVIEW\n")
 		err := ft.ListSessions(ftdb)
 		if err != nil {
 			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
