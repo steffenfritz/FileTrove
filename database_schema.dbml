@@ -81,5 +81,6 @@ TABLE exif{
 
 Ref: files.sessionuuid > sessionsmd.uuid
 Ref: exif.sessionuuid > sessionsmd.uuid
+Ref: exif.fileuuid > files.fileuuid
 Ref: directories.sessionuuid > sessionsmd.uuid
 Ref: dublincore.sessionuuid > sessionsmd.uuid
