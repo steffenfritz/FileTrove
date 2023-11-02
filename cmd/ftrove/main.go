@@ -42,6 +42,7 @@ func main() {
 	// createStillsVideo :=
 	// getTextfileIdea :=
 	// grepYARA :=
+	dublincore := flag.StringP("dublincore", "d", "", "Add DublinCore metadata as a JSON file for a session (not single files).")
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
@@ -65,6 +66,9 @@ func main() {
 	sessionmd.Mountpoint, _ = filepath.Abs(*inDir)
 	if *exifData {
 		sessionmd.ExifFlag = "True"
+	}
+	if len(*dublincore) > 0 {
+		sessionmd.Dublincoreflag = "True"
 	}
 
 	ft.PrintBanner()
@@ -123,7 +127,7 @@ func main() {
 	// Check if ready for run.
 	err = ft.CheckInstall(Version)
 	if err != nil {
-		logger.Error("FileTrove is not ready. Please check previous output.")
+		logger.Error("FileTrove is not ready. Please see previous output.")
 		os.Exit(-1)
 	}
 
@@ -158,6 +162,8 @@ func main() {
 		}
 		// DOC: Value 6 MUST be the flag result of EXIF. We translate for clarity.
 		exifFlagSet := sessionValues[6]
+		// DOC: Value 7 MUST be the flag result of DublinCore. We translate for clarity.
+		dcFlagSet := sessionValues[7]
 
 		err = ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
@@ -178,6 +184,15 @@ func main() {
 			}
 		}
 
+		if dcFlagSet == "True" {
+			err = ft.ExportSessionDCTSV(*exportSessionToTSV)
+			if err != nil {
+				logger.Error("Error while exporting DublinCore metadata from session to TSV file.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
+
+		}
+
 		logger.Info("Export successful.")
 		return
 	}
@@ -191,6 +206,22 @@ func main() {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
 		}
 		os.Exit(1)
+	}
+
+	// Add DublinCore metadata from json file to the database.
+	// The metadata is meant for a whole session not for single files, i.e. the resource is the "mountpoint"
+	if len(*dublincore) > 0 {
+		dc, err := ft.ReadDC(*dublincore)
+		if err != nil {
+			logger.Error("Could not read DublinCore JSON file.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		dcuuid, _ := ft.CreateUUID()
+		err = ft.InsertDC(ftdb, sessionmd.UUID, dcuuid, dc)
+		if err != nil {
+			logger.Error("Could not add DublinCore to FileTrove database.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
 	}
 
 	// Prepare statement to add file scan results to database
