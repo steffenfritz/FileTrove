@@ -25,7 +25,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v0.2.0 // indirect
-	golang.org/x/image v0.6.0 // indirect
+	golang.org/x/image v0.10.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
