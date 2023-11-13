@@ -28,10 +28,11 @@ Furthermore it creates and calculates
 * hash sums (md5, sha1, sha256, sha512 and blake2b-512)
 * the entropy of each file (up to 1GB)
 
+and it extracts some EXIF metadata and you can add your own DublinCore metadata to scans.
 
 FileTrove also checks if the file is in the NSRL. 
 
-For this check a 5.2GB BoltDB is needed and can be downloaded from https://archive.org/details/nsrl_20230918. You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository.
+For this check a 5.2GB BoltDB is needed and can be downloaded from https://archive.org/details/nsrl_20230918. You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
 
 All results are written into a SQLite database and can be exported to TSV files.
 
