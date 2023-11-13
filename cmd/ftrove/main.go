@@ -268,6 +268,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	nsrlcount := 0
+
 	// Inspect every file in filelist
 	// Set up the progress bar
 	bar := progressbar.Default(int64(len(filelist)))
@@ -329,6 +331,7 @@ func main() {
 
 		if fileIsInNSRL {
 			filemd.Filensrl = "TRUE"
+			nsrlcount += 1
 		} else {
 			filemd.Filensrl = "FALSE"
 		}
@@ -406,6 +409,7 @@ func main() {
 	logger.Info("Session UUID: " + sessionmd.UUID)
 	logger.Info("Number of indexed files: " + strconv.Itoa(len(filelist)))
 	logger.Info("Number of indexed directory names: " + strconv.Itoa(len(dirlist)))
+	logger.Info("Number of known files (NSRL=True): " + strconv.Itoa(nsrlcount))
 
 	runtime := endtime.Sub(starttime)
 	logger.Info("Indexing took: " + runtime.String())
