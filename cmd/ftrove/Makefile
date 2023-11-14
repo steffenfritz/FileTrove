@@ -1,7 +1,7 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 BINARY=ftrove
-VERSION=1.0.0-DEV-1
+VERSION=1.0.0-DEV-6
 BUILD=`git rev-parse --short HEAD`
 PLATFORMS=darwin linux windows
 ARCHITECTURES=amd64

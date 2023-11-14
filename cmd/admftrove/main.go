@@ -1,10 +1,11 @@
 package main
 
 import (
-	flag "github.com/spf13/pflag"
-	ft "github.com/steffenfritz/FileTrove"
 	"log/slog"
 	"os"
+
+	flag "github.com/spf13/pflag"
+	ft "github.com/steffenfritz/FileTrove"
 )
 
 // Version holds the version of ^FileTrove and is set by the build system
@@ -20,7 +21,7 @@ func main() {
 	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Format of the source file MUST be a SHA1 hash per line
-	createNSRL := flag.String("creatensrl", "", "Create a BoltDB file from a text file. A source file MUST be provided.")
+	createNSRL := flag.String("creatensrl", "", "Create or update a BoltDB file from a text file. A source file MUST be provided.")
 
 	flag.Parse()
 
