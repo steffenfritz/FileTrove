@@ -84,7 +84,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 
 // GetNSRL downloads a prepared BoltDB database file from archive.org
 func GetNSRL() error {
-	req, err := http.NewRequest("GET", "https://archive.org/download/nsrl_20230918/nsrl.db", nil)
+	req, err := http.NewRequest("GET", "https://archive.org/download/nsrl_modern_minimal_2023.06.01/nsrl.db", nil)
 	if err != nil {
 		return err
 	}
