@@ -39,6 +39,8 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 				if err != nil {
 					return err
 				}
+				// Reduce file size
+				bucket.FillPercent = 0.9
 
 				for _, value := range values {
 					err := bucket.Put([]byte(strings.ToLower(value)), []byte("true"))
