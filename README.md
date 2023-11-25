@@ -68,6 +68,6 @@ Example:
 1. `./ftrove -l`
 2. `./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2`
 
-This will create two TSV files (directories and files) that can be read with Excel, Numbers and your preferred text editor. 
+This will create several TSV files that can be read with Excel, Numbers and your preferred text editor. 
 
 You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/).
