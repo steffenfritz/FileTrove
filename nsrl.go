@@ -82,12 +82,13 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 	return nil
 }
 
-// GetNSRL downloads a prepared BoltDB database file from archive.org
+// GetNSRL downloads a prepared BoltDB database file from an online storage
 func GetNSRL() error {
-	req, err := http.NewRequest("GET", "https://archive.org/download/nsrl_modern_minimal_2023.06.01/nsrl.db", nil)
+	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db", nil)
 	if err != nil {
 		return err
 	}
+  
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -107,6 +108,11 @@ func GetNSRL() error {
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
+}
+
+// ChecksumNSRL checks a NSRL BoltDB's checksum that is provided with a sidecar file
+func ChecksumNSRL(nsrldbfile string) {
+	Hashit(nsrldbfile, "blake2b-512")
 }
 
 // ConnectNSRL connects to local bbolt NSRL file
