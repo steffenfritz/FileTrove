@@ -377,13 +377,14 @@ func main() {
 		}
 	}
 
-	// EXIF data for jpeg and tiff files
+	// EXIF data for jpeg and tiff
 	if *exifData {
 		imagelist, err := ft.GetImageFiles(ftdb, sessionmd.UUID)
 		if err != nil {
 			logger.Error("Could not get image list from database.", slog.String("error", err.Error()))
 		}
 		for fileuuid, imagepath := range imagelist {
+
 			exifparsed, err := ft.ExifDecode(imagepath)
 			if err != nil {
 				logger.Error("Could not parse image for exif data. File: "+imagepath, slog.String("error", err.Error()))

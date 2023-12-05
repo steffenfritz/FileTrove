@@ -17,7 +17,7 @@ func TestCreateFileList(t *testing.T) {
 		wantErr bool
 	}{
 		{"testdata file list", args{"testdata"}, []string{"testdata/.hiddenfile",
-			"testdata/directory/A_PDF_File.pdf", "testdata/emptyfile.txt", "testdata/images/screenshot_1.jpeg", "testdata/images/screenshot_1.jpeg_original", "testdata/images/screenshot_1.png", "testdata/images/screenshot_1.png_original", "testdata/images/screenshot_1.tiff", "testdata/images/screenshot_1.tiff_original", "testdata/noaccess.rtf", "testdata/textfile.txt", "testdata/transparent.png", "testdata/white.jpg"},
+			"testdata/directory/A_PDF_File.pdf", "testdata/dublincore_ex.json", "testdata/emptyfile.txt", "testdata/images/screenshot_1.jpeg", "testdata/images/screenshot_1.jpeg_original", "testdata/images/screenshot_1.png", "testdata/images/screenshot_1.png_original", "testdata/images/screenshot_1.tiff", "testdata/images/screenshot_1.tiff_original", "testdata/noaccess.rtf", "testdata/textfile.txt", "testdata/transparent.png", "testdata/white.jpg"},
 			[]string{"testdata", "testdata/.hiddendir", "testdata/directory", "testdata/images"}, false},
 	}
 	for _, tt := range tests {
