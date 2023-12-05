@@ -11,8 +11,8 @@ type ExifParsed struct {
 	DateTimeOrig string
 	Artist       string
 	Copyright    string
-	Area         string
-	Dimensions   string
+	Make         string
+	Software     string
 	XPTitle      string
 	XPComment    string
 	XPAuthor     string
@@ -68,25 +68,24 @@ func ExifDecode(fileName string) (ExifParsed, error) {
 		ep.Copyright = exCopyright.String()
 	}
 
-	// 0x001c	GPSAreaInformation	undef: As this is undef not sure if useful in the long run
-	exArea, err := imgdecoded.Get(exif.GPSAreaInformation)
+	exMake, err := imgdecoded.Get(exif.Make)
 	if err != nil {
-		ep.Area = "not found"
+		ep.Make = "not found"
 	} else {
-		ep.Area = exArea.String()
+		ep.Make = exMake.String()
 	}
 
-	exY, _ := imgdecoded.Get(exif.PixelYDimension)
-	exX, err := imgdecoded.Get(exif.PixelXDimension)
+	exSoftware, err := imgdecoded.Get(exif.Software)
 	if err != nil {
-		ep.Dimensions = "not found"
+		ep.Software = "not found"
 	} else {
-		ep.Dimensions = exY.String() + "x" + exX.String()
+		ep.Software = exSoftware.String()
 	}
 
+	// Microsoft part
 	exxptitle, err := imgdecoded.Get(exif.XPTitle)
 	if err != nil {
-		ep.Dimensions = "not found"
+		ep.XPTitle = "not found"
 	} else {
 		ep.XPTitle = exxptitle.String()
 	}

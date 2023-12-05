@@ -118,6 +118,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
                          datetimeorig TEXT,
                          artist TEXT,
                          copyright TEXT,
+						 make TEXT,
                          xptitle TEXT,
                          xpcomment TEXT,
                          xpauthor TEXT,
@@ -595,7 +596,8 @@ func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
 	var filename string
 	var fileuuid string
 
-	query := "SELECT filename, fileuuid FROM files where sessionuuid=\"" + sessionuuid + "\" AND filesfmime=\"image/jpeg\" OR filesfmime=\"image/tiff\""
+	query := "SELECT filename, fileuuid FROM files where sessionuuid=\"" + sessionuuid +
+		"\" AND filesfmime=\"image/jpeg\" OR filesfmime=\"image/tiff\""
 
 	rows, err := db.Query(query)
 	if err != nil {
@@ -619,7 +621,7 @@ func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
 
 // InsertExif inserts exif metadata into the FileTrove database
 func InsertExif(db *sql.DB, exifuuid string, sessionid string, fileuuid string, e ExifParsed) error {
-	_, err := db.Exec("INSERT INTO exif VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", exifuuid, sessionid, fileuuid, e.ExifVersion, e.DateTime, e.DateTimeOrig, e.Artist, e.Copyright, e.XPTitle, e.XPComment, e.XPAuthor, e.XPKeywords, e.XPSubject)
+	_, err := db.Exec("INSERT INTO exif VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", exifuuid, sessionid, fileuuid, e.ExifVersion, e.DateTime, e.DateTimeOrig, e.Artist, e.Copyright, e.Make, e.XPTitle, e.XPComment, e.XPAuthor, e.XPKeywords, e.XPSubject)
 
 	return err
 }
