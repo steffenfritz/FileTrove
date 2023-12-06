@@ -32,7 +32,7 @@ and it extracts some EXIF metadata and you can add your own DublinCore metadata 
 
 FileTrove also checks if the file is in the NSRL. 
 
-For this check a 3.2GB BoltDB is needed and can be downloaded from https://archive.org/details/nsrl_modern_minimal_2023.06.01. You should use torrent for that!
+For this check a 3.2GB BoltDB is needed and can be downloaded with FileTrive during the installation. 
 
 You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
 
@@ -70,4 +70,5 @@ Example:
 
 This will create several TSV files that can be read with Excel, Numbers and your preferred text editor. 
 
-You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/).
+
+You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/). Sqliteviz is also a neat tool to visualize the data (https://sqliteviz.com/app/#/).
