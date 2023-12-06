@@ -71,5 +71,11 @@ func main() {
 			return
 		}
 
+		// Update version 1.0.0-DEV-6 --> 1.0.0-DEV-7
+		if instversion == "1.0.0-DEV-6" {
+			logger.Info("There is no update path from 1.0.0-DEV-6 to 1.0.0.-DEV-7. Please backup database and recreate with --install flag.")
+			return
+		}
+
 	}
 }

@@ -118,7 +118,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
                          datetimeorig TEXT,
                          artist TEXT,
                          copyright TEXT,
-						 make TEXT,
+                         make TEXT,
                          xptitle TEXT,
                          xpcomment TEXT,
                          xpauthor TEXT,
