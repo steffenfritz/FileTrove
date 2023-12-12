@@ -72,3 +72,6 @@ This will create several TSV files that can be read with Excel, Numbers and your
 
 
 You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/). Sqliteviz is also a neat tool to visualize the data (https://sqliteviz.com/app/#/).
+
+## Background
+FileTrove is the successor of [filedriller](https://github.com/steffenfritz/filedriller) and based on my iPres 2021 paper [Marrying siegfried and the National Software Reference Library](https://phaidra.univie.ac.at/detail/o:1424904)
