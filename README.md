@@ -1,5 +1,6 @@
 # FileTrove
-STATUS: Development
+STATUS:  Development
+VERSION: v1.0.0-DEV-8
 
 ![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -30,9 +31,9 @@ Furthermore it creates and calculates
 
 and it extracts some EXIF metadata and you can add your own DublinCore metadata to scans.
 
-FileTrove also checks if the file is in the NSRL. 
+FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
 
-For this check a 3.2GB BoltDB is needed and can be downloaded with FileTrive during the installation. 
+For this check a 3.2GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
 
 You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
 
