@@ -23,7 +23,7 @@ type SiegfriedType struct {
 
 // GetSiegfriedDB downloads the signature db
 func GetSiegfriedDB() error {
-	sigurl := "http://www.itforarchivists.com/siegfried/latest"
+	sigurl := "https://www.itforarchivists.com/siegfried/latest/1_11/default"
 	// We download siegfried's database derived from DROID here
 	// TODO: Check license note with Richard
 	resp, err := http.Get(sigurl)
