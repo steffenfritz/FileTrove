@@ -1,5 +1,6 @@
 # FileTrove
 STATUS:  Development
+
 VERSION: v1.0.0-DEV-8
 
 ![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
