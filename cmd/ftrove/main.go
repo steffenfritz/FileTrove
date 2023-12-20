@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/richardlehane/siegfried"
@@ -283,13 +284,31 @@ func main() {
 
 		// Calculate all supported hash sums for each file
 		supportedHashes := ft.ReturnSupportedHashes()
+
+		// Mutex lock on write hashes to map and
+		// create waitgroup to prevent outside of the
+		// clojure access, i.e. the NSRL check
+		var mutex = &sync.Mutex{}
+		var wg sync.WaitGroup
+
 		for _, hash := range supportedHashes {
-			hashsum, err := ft.Hashit(file, hash)
-			if err != nil {
-				logger.Error("Could not hash file.", slog.String("error", err.Error()))
-			}
-			hashsumsfile[hash] = hashsum
+			wg.Add(1)
+
+			go func(hash string) {
+				defer wg.Done()
+
+				hashsum, err := ft.Hashit(file, hash)
+				if err != nil {
+					logger.Error("Could not hash file.", slog.String("error", err.Error()))
+				}
+
+				mutex.Lock()
+				hashsumsfile[hash] = hashsum
+				mutex.Unlock()
+			}(hash)
 		}
+
+		wg.Wait()
 
 		// Add all hash sums to the filemd struct for writing into the file database
 		filemd.Filemd5 = hex.EncodeToString(hashsumsfile["md5"])
