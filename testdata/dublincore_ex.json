@@ -1,8 +1,17 @@
 {
-  "Title":"Test set",
-  "Creator":"Steffen Fritz",
-  "Contributer":"",
-  "Date":"2023-11-02",
-  "Language":"en",
-  "Rights":"AGPL 3"
+  "Title": "Test set",
+  "Creator": "Steffen Fritz",
+  "Subject": "Example DublinCore entry",
+  "Description": "This is an example for a json file that holds all 15 DC elements.",
+  "Publisher": "You can add a publisher here.",
+  "Contributer": "Steffen Fritz",
+  "Date": "2023-11-02",
+  "Type": "The Dublin Core™ Resource Type (DC.Type) element is used to describe the category or genre of the content of the resource.",
+  "Format": "The file format, physical medium, or dimensions of the resource.",
+  "Identifier": "An unambiguous reference to the resource within a given context.",
+  "Source": "A related resource from which the described resource is derived.",
+  "Language": "en",
+  "Relation": "http://purl.org/dc/elements/1.1/relation",
+  "Coverage": "The spatial or temporal topic of the resource, spatial applicability of the resource, or jurisdiction under which the resource is relevant.",
+  "Rights": "AGPL 3. (c) Steffen Fritz 2023-"
 }
