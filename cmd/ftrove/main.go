@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -50,6 +51,7 @@ func main() {
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
+	resumeuuid := flag.StringP("resumeuuid", "r", "", "Resume an aborted session. Provide the session uuid.")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	printversion := flag.BoolP("version", "v", false, "Show version and build.")
@@ -59,6 +61,7 @@ func main() {
 
 	starttime := time.Now()
 
+	// Init new session with flags
 	var sessionmd ft.SessionMD
 	sessionmd.Starttime = starttime.Format(time.RFC3339)
 	sessionmd.UUID, _ = ft.CreateUUID()
@@ -72,6 +75,7 @@ func main() {
 		sessionmd.Dublincoreflag = "True"
 	}
 
+	// Print banner or version on startup
 	ft.PrintBanner()
 
 	if *printversion {
@@ -79,6 +83,7 @@ func main() {
 		return
 	}
 
+	// Start installation
 	if len(*install) > 0 {
 		logger.Info("FileTrove installation started. Version: " + Version)
 		direrr, logserr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
@@ -116,6 +121,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// list all started sessions and quit
 	if *listSessions {
 		fmt.Println("SESSION OVERVIEW\n")
 		err := ft.ListSessions(ftdb)
@@ -126,6 +132,8 @@ func main() {
 	}
 
 	// Check if ready for run.
+	// DEBUG: Set version for debugging
+	Version = "1.0.0-DEV-8"
 	err = ft.CheckInstall(Version)
 	if err != nil {
 		logger.Error("FileTrove is not ready. Please see previous output.")
@@ -154,6 +162,7 @@ func main() {
 		// check local versions against web page/online resource
 	}*/
 
+	// Export a specific session to TSV files
 	if len(*exportSessionToTSV) != 0 {
 		logger.Info("Export session " + *exportSessionToTSV + " to TSV files of the same name.")
 		sessionValues, err := ft.ExportSessionSessionTSV(*exportSessionToTSV)
@@ -198,31 +207,50 @@ func main() {
 		return
 	}
 
-	// Add new session to database
-	err = ft.InsertSession(ftdb, sessionmd)
-	if err != nil {
-		logger.Error("Could not add session to FileTrove database.", slog.String("error", err.Error()))
-		err = ftdb.Close()
-		if err != nil {
-			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
-		}
-		os.Exit(1)
-	}
+	// Init type for resuming a session
+	var ri ft.ResumeInfo
 
-	// Add DublinCore metadata from json file to the database.
-	// The metadata is meant for a whole session not for single files, i.e. the resource is the "mountpoint"
-	if len(*dublincore) > 0 {
-		dc, err := ft.ReadDC(*dublincore)
+	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
+	if len(*resumeuuid) == 0 {
+		// Add new session to database
+		err = ft.InsertSession(ftdb, sessionmd)
 		if err != nil {
-			logger.Error("Could not read DublinCore JSON file.", slog.String("error", err.Error()))
+			logger.Error("Could not add session to FileTrove database.", slog.String("error", err.Error()))
+			err = ftdb.Close()
+			if err != nil {
+				logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+			}
 			os.Exit(1)
 		}
-		dcuuid, _ := ft.CreateUUID()
-		err = ft.InsertDC(ftdb, sessionmd.UUID, dcuuid, dc)
-		if err != nil {
-			logger.Error("Could not add DublinCore to FileTrove database.", slog.String("error", err.Error()))
-			os.Exit(1)
+
+		// Add DublinCore metadata from json file to the database.
+		// The metadata is meant for a whole session not for single files, i.e. the resource is the "mountpoint"
+		if len(*dublincore) > 0 {
+			dc, err := ft.ReadDC(*dublincore)
+			if err != nil {
+				logger.Error("Could not read DublinCore JSON file.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
+			dcuuid, _ := ft.CreateUUID()
+			err = ft.InsertDC(ftdb, sessionmd.UUID, dcuuid, dc)
+			if err != nil {
+				logger.Error("Could not add DublinCore to FileTrove database.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
 		}
+	} else {
+		// for session resuming: read files already processed. This list ist compared to already
+		// processed files. The diff updates the input file list
+		ri, err = ft.ResumeLatestEntry(ftdb, *resumeuuid)
+		if err != nil {
+			logger.Error("Could not get session information for resuming.", slog.String("error", err.Error()))
+		}
+
+		// Set the flag inDir to the mountpoint we read from the database
+		*inDir = ri.Mountpoint
+
+		// Overwrite the new session uuid with the resumed session's uuid
+		sessionmd.UUID = *resumeuuid
 	}
 
 	// Prepare statement to add file scan results to database
@@ -247,6 +275,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// If we resumeuuid, we update the file list to start with the file after the last entry
+	if len(*resumeuuid) > 0 {
+		fileIndex := slices.Index(filelist, ri.LastFile)
+		if fileIndex == -1 {
+			logger.Error("Could not find the last indexed file in the new file list.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+
+		filelist = filelist[fileIndex+1:]
+	}
+
 	// Initialize siegfried database
 	s, err := siegfried.Load("db/siegfried.sig")
 	if err != nil {
@@ -269,6 +308,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	// ToDo: Count all nsrl entries for resumed runs.
+	// However, this is just relevant for the output after the run, not for the results in the database.
 	nsrlcount := 0
 
 	// Inspect every file in filelist
