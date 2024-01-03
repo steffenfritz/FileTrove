@@ -32,7 +32,6 @@ var tsStartedFormated string
 var logger *slog.Logger
 
 func init() {
-
 	tsStarted := time.Now()
 	tsStartedFormated = tsStarted.Format("2006-01-02_15:04:05")
 	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -132,8 +131,6 @@ func main() {
 	}
 
 	// Check if ready for run.
-	// DEBUG: Set version for debugging
-	Version = "1.0.0-DEV-8"
 	err = ft.CheckInstall(Version)
 	if err != nil {
 		logger.Error("FileTrove is not ready. Please see previous output.")
@@ -157,6 +154,9 @@ func main() {
 
 	}
 	logger.Info("FileTrove started at " + starttime.String())
+	if len(*resumeuuid) > 0 {
+		logger.Info("Resuming session " + *resumeuuid)
+	}
 
 	/*if *updateFT {
 		// check local versions against web page/online resource
@@ -209,6 +209,10 @@ func main() {
 
 	// Init type for resuming a session
 	var ri ft.ResumeInfo
+	// Set up the file counter
+	filecount := 0
+	// Set up the counter for files that are in NSRL. This is just relevant for the short summary and log file entry.
+	nsrlcount := 0
 
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
 	if len(*resumeuuid) == 0 {
@@ -240,10 +244,16 @@ func main() {
 		}
 	} else {
 		// for session resuming: read files already processed. This list ist compared to already
-		// processed files. The diff updates the input file list
+		// processed files. The diff updates the input file list.
+		// We also fetch information like processed files from the session that was cancelled.
 		ri, err = ft.ResumeLatestEntry(ftdb, *resumeuuid)
 		if err != nil {
 			logger.Error("Could not get session information for resuming.", slog.String("error", err.Error()))
+			err = ftdb.Close()
+			if err != nil {
+				logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+			}
+			os.Exit(1)
 		}
 
 		// Set the flag inDir to the mountpoint we read from the database
@@ -251,6 +261,12 @@ func main() {
 
 		// Overwrite the new session uuid with the resumed session's uuid
 		sessionmd.UUID = *resumeuuid
+
+		// Overwrite filecount with already processed files
+		filecount = ri.ProcessedFiles
+
+		// Overwrite the NSRL counter
+		nsrlcount = ri.NSRLFiles
 	}
 
 	// Prepare statement to add file scan results to database
@@ -284,6 +300,14 @@ func main() {
 		}
 
 		filelist = filelist[fileIndex+1:]
+		if len(filelist) == 0 {
+			logger.Info("Input list is empty, no files are left to process. Quitting.", slog.String("info", "Input file of resumed session is empty."))
+			err = ftdb.Close()
+			if err != nil {
+				logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+			}
+			return
+		}
 	}
 
 	// Initialize siegfried database
@@ -307,10 +331,6 @@ func main() {
 		}
 		os.Exit(1)
 	}
-
-	// ToDo: Count all nsrl entries for resumed runs.
-	// However, this is just relevant for the output after the run, not for the results in the database.
-	nsrlcount := 0
 
 	// Inspect every file in filelist
 	// Set up the progress bar
@@ -417,6 +437,8 @@ func main() {
 		if err != nil {
 			logger.Warn("Could not add file entry into FileTrove database. File: "+file, slog.String("warn", err.Error()))
 		}
+
+		filecount += 1
 		bar.Add(1)
 	}
 
@@ -468,7 +490,7 @@ func main() {
 	absPath, _ := filepath.Abs(*inDir)
 	logger.Info("Finished indexing of " + absPath)
 	logger.Info("Session UUID: " + sessionmd.UUID)
-	logger.Info("Number of indexed files: " + strconv.Itoa(len(filelist)))
+	logger.Info("Number of indexed files: " + strconv.Itoa(filecount))
 	logger.Info("Number of indexed directory names: " + strconv.Itoa(len(dirlist)))
 	logger.Info("Number of known files (NSRL=True): " + strconv.Itoa(nsrlcount))
 
