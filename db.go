@@ -3,6 +3,7 @@ package filetrove
 import (
 	"database/sql"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -45,6 +46,15 @@ type FileMD struct {
 	Fileatime           string
 	Filensrl            string
 	Fileentropy         float64
+}
+
+// ResumeInfo holds information from the database needed for resuming a session
+type ResumeInfo struct {
+	Rowid          int
+	LastFile       string
+	Mountpoint     string
+	ProcessedFiles int
+	NSRLFiles      int
 }
 
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
@@ -190,7 +200,7 @@ func ListSessions(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	defer rows.Close() // Schließen Sie die Zeilen am Ende.
+	defer rows.Close()
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 0, '.', tabwriter.AlignRight|tabwriter.Debug)
 	fmt.Fprintln(w, "ROWID\tUUID\tStart Time\tEnd Time\tProject\tArchivist Name\tMount Point")
@@ -621,7 +631,51 @@ func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
 
 // InsertExif inserts exif metadata into the FileTrove database
 func InsertExif(db *sql.DB, exifuuid string, sessionid string, fileuuid string, e ExifParsed) error {
+	// ToDo: Change to prepared statement
 	_, err := db.Exec("INSERT INTO exif VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", exifuuid, sessionid, fileuuid, e.ExifVersion, e.DateTime, e.DateTimeOrig, e.Artist, e.Copyright, e.Make, e.XPTitle, e.XPComment, e.XPAuthor, e.XPKeywords, e.XPSubject)
 
 	return err
+}
+
+// ResumeLatestEntry gets the rowid and filepath of the latest entry of a session.
+func ResumeLatestEntry(db *sql.DB, sessionuuid string) (ResumeInfo, error) {
+	var ri ResumeInfo
+
+	// Get latest file and count of all files of resumed session
+	stmt, err := db.Prepare("SELECT MAX(rowid),filename,COUNT(*) FROM files WHERE sessionuuid = ?")
+	if err != nil {
+		return ri, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(sessionuuid).Scan(&ri.Rowid, &ri.LastFile, &ri.ProcessedFiles)
+	if err == sql.ErrNoRows {
+		return ri, errors.New("No rows matched your session uuid. Either you have a typo, wrong database or no files have been written before.")
+	}
+
+	// Get all NSRL == true files from resumed session
+	stmt, err = db.Prepare("SELECT COUNT(*) FROM files WHERE sessionuuid = ? AND filensrl='TRUE'")
+	if err != nil {
+		return ri, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(sessionuuid).Scan(&ri.NSRLFiles)
+	if err == sql.ErrNoRows {
+		return ri, errors.New("No rows matched your session uuid. Either you have a typo, wrong database or no files have been written before.")
+	}
+
+	// Get the mountpoint from the resumed session due to the fact that the resume flag does not need or accept the input flag
+	stmt, err = db.Prepare("SELECT mountpoint FROM sessionsmd WHERE uuid = ?")
+	if err != nil {
+		return ri, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(sessionuuid).Scan(&ri.Mountpoint)
+	if err == sql.ErrNoRows {
+		return ri, errors.New("No rows matched your session uuid. Either you have a typo, wrong database or no files have been written before.")
+	}
+
+	return ri, err
 }
