@@ -50,7 +50,7 @@ func main() {
 	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
-	resumeuuid := flag.StringP("resumeuuid", "r", "", "Resume an aborted session. Provide the session uuid.")
+	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	printversion := flag.BoolP("version", "v", false, "Show version and build.")
