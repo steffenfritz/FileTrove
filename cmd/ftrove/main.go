@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -84,6 +85,9 @@ func main() {
 
 	// Start installation
 	if len(*install) > 0 {
+		if strings.HasSuffix(*install, "/") {
+			*install = strings.TrimRight(*install, "/")
+		}
 		logger.Info("FileTrove installation started. Version: " + Version)
 		direrr, logserr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
