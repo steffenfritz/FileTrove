@@ -36,7 +36,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 
 	var nsrlerr error
 	if choice == "y" {
-		nsrlerr = GetNSRL()
+		nsrlerr = GetNSRL(installPath)
 
 	} else {
 		log.Println("Skipping NSRL download. You have to copy an existing nsrl.db into the db directory.")
