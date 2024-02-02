@@ -9,11 +9,12 @@ import (
 	ft "github.com/steffenfritz/FileTrove"
 )
 
-// Version holds the version of ^FileTrove and is set by the build system
-var Version string
+// Version holds the version of FileTrove and is set by the build system
+var Version string = "v1.0.0-DEV-11"
 
+// Build is not usd anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system
-var Build string
+//var Build string
 
 // logger is the structured logger that is used for all logging levels
 var logger *slog.Logger
@@ -125,6 +126,23 @@ func main() {
 				return
 			}
 			logger.Info("FileTrove database updated to version 1.0.0-DEV-10.")
+			return
+		}
+
+		// Update version 1.0.0-DEV-10 --> 1.0.0-DEV-11
+		if instversion == "1.0.0-DEV-10" {
+			_, err = ftdb.Exec("UPDATE filetrove SET version = '1.0.0-DEV-11' where version = '1.0.0-DEV-10'")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+			updatetime := time.Now().Format(time.RFC3339)
+			_, err = ftdb.Exec("UPDATE filetrove SET lastupdate = ?", updatetime)
+			if err != nil {
+				logger.Error("Could not update last update time.", slog.String("error", err.Error()))
+				return
+			}
+			logger.Info("FileTrove database updated to version 1.0.0-DEV-11.")
 			return
 		}
 

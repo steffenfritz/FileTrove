@@ -20,11 +20,12 @@ import (
 	ft "github.com/steffenfritz/FileTrove"
 )
 
-// version holds the version of FileTrove and is set by the build system, i.e. goreleaser
-var Version string
+// version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
+var Version string = "v1.0.0-DEV-11"
 
-// commit holds the sha1 fingerprint of the build and is set by the build system, i.e. goreleaser
-var Build string
+// Build not used anymore since DEV-11
+// Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
+//var Build string
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
@@ -79,7 +80,8 @@ func main() {
 	ft.PrintBanner()
 
 	if *printversion {
-		ft.PrintLicense(Version, Build)
+		//ft.PrintLicense(Version, Build)
+		ft.PrintLicense(Version)
 		return
 	}
 

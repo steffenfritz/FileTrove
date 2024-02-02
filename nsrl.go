@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"github.com/schollz/progressbar/v3"
-	"go.etcd.io/bbolt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/schollz/progressbar/v3"
+	"go.etcd.io/bbolt"
 )
 
 func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
@@ -83,19 +84,19 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 }
 
 // GetNSRL downloads a prepared BoltDB database file from an online storage
-func GetNSRL() error {
+func GetNSRL(install string) error {
 	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db", nil)
 	if err != nil {
 		return err
 	}
-  
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	f, err := os.OpenFile("db/nsrl.db", os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(install+"/db/nsrl.db", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
