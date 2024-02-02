@@ -23,7 +23,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	if trovedberr != nil {
 		return nil, nil, trovedberr, nil, nil
 	}
-	siegfriederr := GetSiegfriedDB()
+	siegfriederr := GetSiegfriedDB(installPath)
 
 	fmt.Print("\nNext step is to download the NSRL database which is 3.5GB. Proceed? [y/n]: ")
 	_, err := fmt.Scan(&choice)

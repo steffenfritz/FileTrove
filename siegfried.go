@@ -1,10 +1,11 @@
 package filetrove
 
 import (
-	"github.com/richardlehane/siegfried"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/richardlehane/siegfried"
 )
 
 // SiegfriedType is a struct for all the strings siegfried returns
@@ -22,7 +23,7 @@ type SiegfriedType struct {
 }
 
 // GetSiegfriedDB downloads the signature db
-func GetSiegfriedDB() error {
+func GetSiegfriedDB(installPath string) error {
 	sigurl := "https://www.itforarchivists.com/siegfried/latest/1_11/default"
 	// We download siegfried's database derived from DROID here
 	// TODO: Check license note with Richard
@@ -33,7 +34,7 @@ func GetSiegfriedDB() error {
 	defer resp.Body.Close()
 
 	// Create the signature file in the db subdirectory
-	out, err := os.Create("db/siegfried.sig")
+	out, err := os.Create(installPath + "/db/siegfried.sig")
 	if err != nil {
 		return err
 	}
