@@ -21,7 +21,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-12"
+var Version string = "v1.0.0-DEV-13"
 
 // Build not used anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
@@ -437,7 +437,7 @@ func main() {
 		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filesize,
 			filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
 			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
-			filemd.Filesfidentnote, filemd.Filesfidentnote, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
+			filemd.Filesfidentnote, filemd.Filesfidentproof, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
 			filemd.Filensrl, filemd.Fileentropy)
 
 		if err != nil {
