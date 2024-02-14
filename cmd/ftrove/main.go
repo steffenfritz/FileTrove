@@ -21,7 +21,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-11"
+var Version string = "v1.0.0-DEV-12"
 
 // Build not used anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
@@ -49,7 +49,7 @@ func main() {
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
-	install := flag.StringP("install", "", "", "Install FileTrove into the given directory.")
+	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
