@@ -53,6 +53,7 @@ func main() {
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
+	timezone := flag.StringP("timezone", "z", "", "Set the time zone to a region in which the timestamps of files are to be translated. If this flag is not set, the local time zone is used. Example: Europe/Berlin")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	printversion := flag.BoolP("version", "v", false, "Show version and build.")
@@ -404,9 +405,21 @@ func main() {
 			logger.Error("Could not get access, change or birth time for file.", slog.String("error", err.Error()))
 		}
 
-		filemd.Fileatime = filetime.Atime.String()
-		filemd.Filectime = filetime.Ctime.String()
-		filemd.Filemtime = filetime.Mtime.String()
+		// Use specific timezone for the translation of timestamps
+		if len(*timezone) != 0 {
+			// Check if timezone string is valid
+			timeIn, err := time.LoadLocation(*timezone)
+			if err != nil {
+				logger.Error("Timezone string is not valid. Example: Europe/Berlin", slog.String("error", err.Error()))
+			}
+			filemd.Fileatime = filetime.Atime.In(timeIn).String()
+			filemd.Filectime = filetime.Ctime.In(timeIn).String()
+			filemd.Filemtime = filetime.Mtime.In(timeIn).String()
+		} else {
+			filemd.Fileatime = filetime.Atime.String()
+			filemd.Filectime = filetime.Ctime.String()
+			filemd.Filemtime = filetime.Mtime.String()
+		}
 
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()
