@@ -5,12 +5,13 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
 	"text/tabwriter"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // SessionMD holds the metadata written to table sessionsmd
@@ -115,11 +116,13 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filemtime TEXT,
 					   	fileatime TEXT,
 					   	filensrl TEXT,
-					   	fileentropy INTEGER
+					   	fileentropy INTEGER,
+						hierarchy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
 					    sessionuuid TEXT,
-					    dirname TEXT);
+					    dirname TEXT,
+						hierarchy INTEGER);
                        CREATE TABLE exif(exifuuid TEXT,
                          sessionuuid TEXT,
                          fileuuid TEXT,
@@ -179,14 +182,14 @@ func InsertDC(db *sql.DB, sessionuuid string, dcuuid string, dc DublinCore) erro
 
 // PrepInsertFile prepares a statement for the addition of a single file
 func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 	return prepin, err
 }
 
 // PrepInsertDir prepares a statement for the addition of a single directory
 func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?)")
 
 	return prepin, err
 }

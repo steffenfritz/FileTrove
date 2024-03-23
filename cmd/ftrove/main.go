@@ -447,11 +447,14 @@ func main() {
 			logger.Error("Could not create UUID for file "+file, slog.String("error", err.Error()))
 			os.Exit(1)
 		}
+
+		filehierarchy := strings.Count(file, string(os.PathSeparator))
+
 		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filesize,
 			filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
 			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
 			filemd.Filesfidentnote, filemd.Filesfidentproof, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
-			filemd.Filensrl, filemd.Fileentropy)
+			filemd.Filensrl, filemd.Fileentropy, filehierarchy)
 
 		if err != nil {
 			logger.Warn("Could not add file entry into FileTrove database. File: "+file, slog.String("warn", err.Error()))
@@ -471,7 +474,10 @@ func main() {
 		if err != nil {
 			logger.Error("Could not create UUID for directory "+direntry, slog.String("error", err.Error()))
 		}
-		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry)
+
+		dirhierarchy := strings.Count(direntry, string(os.PathSeparator))
+
+		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry, dirhierarchy)
 
 		if err != nil {
 			logger.Warn("Could not add directory entry to FileTrove database.", slog.String("warn", err.Error()))
