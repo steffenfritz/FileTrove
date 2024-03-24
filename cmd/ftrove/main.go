@@ -21,7 +21,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-13"
+var Version string = "v1.0.0-DEV-14"
 
 // Build not used anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
