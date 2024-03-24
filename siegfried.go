@@ -22,10 +22,12 @@ type SiegfriedType struct {
 	SiegOutput          string
 }
 
+const SiegfriedVersion = "1_11"
+
 // GetSiegfriedDB downloads the signature db
 func GetSiegfriedDB(installPath string) error {
-	sigurl := "https://www.itforarchivists.com/siegfried/latest/1_11/default"
-	// We download siegfried's database derived from DROID here
+	sigurl := "https://www.itforarchivists.com/siegfried/latest/" + SiegfriedVersion + "/default"
+	// We download siegfried's database derived from DROID here, PRONOM based
 	// TODO: Check license note with Richard
 	resp, err := http.Get(sigurl)
 	if err != nil {

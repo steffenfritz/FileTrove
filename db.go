@@ -26,7 +26,7 @@ type SessionMD struct {
 	Dublincoreflag     string
 	Filetroveversion   string
 	Nsrlversion        string
-	Sfsignatureversion string
+	Sfversion          string
 	Filetrovedbversion string
 	Goversion          string
 }
@@ -86,7 +86,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						filetroveversion TEXT,
 						filetrovedbversion TEXT,
 						nsrlversion TEXT,
-						sfsignatureversion TEXT,
+						siegfriedversion TEXT,
 						goversion TEXT
 					   );
 					   CREATE TABLE dublincore(uuid TEXT,
@@ -177,7 +177,7 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 func InsertSession(db *sql.DB, s SessionMD) error {
 	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
 		s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag, s.Filetroveversion, s.Filetrovedbversion,
-		s.Nsrlversion, s.Sfsignatureversion, s.Goversion)
+		s.Nsrlversion, s.Sfversion, s.Goversion)
 
 	return err
 }
