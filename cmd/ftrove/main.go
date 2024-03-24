@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -21,11 +22,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-13"
-
-// Build not used anymore since DEV-11
-// Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
-//var Build string
+var Version string = "v1.0.0-DEV-14"
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
@@ -70,6 +67,8 @@ func main() {
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
 	sessionmd.Mountpoint, _ = filepath.Abs(*inDir)
+	sessionmd.Goversion = runtime.Version()
+
 	if *exifData {
 		sessionmd.ExifFlag = "True"
 	}

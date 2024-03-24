@@ -24,12 +24,13 @@ func main() {
 
 	// Format of the source file MUST be a SHA1 hash per line
 	createNSRL := flag.String("creatensrl", "", "Create or update a BoltDB file from a text file. A source file MUST be provided.")
+	nsrlversion := flag.String("nsrlversion", "", "NSRL version flag. This string will be used for ftrove's session information.")
 	updateDB := flag.String("updatedb", "", "Update a filetrove sqlite database to the next version. Expects the directory of the database file.")
 
 	flag.Parse()
 
 	if len(*createNSRL) != 0 {
-		err := ft.CreateNSRLBoltDB(*createNSRL, "nsrl.db")
+		err := ft.CreateNSRLBoltDB(*createNSRL, *nsrlversion, "nsrl.db")
 		if err != nil {
 			logger.Error("Could not create BoltDB from NSRL text file", slog.String("error", err.Error()))
 		}
@@ -183,6 +184,11 @@ func main() {
 		// Update version 1.0.0-DEV-13 --> 1.0.0-DEV-14
 		if instversion == "1.0.0-DEV-13" {
 			_, err = ftdb.Exec("ALTER TABLE files ADD hierarchy INTEGER")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+			_, err = ftdb.Exec("ALTER TABLE directories ADD hierarchy INTEGER")
 			if err != nil {
 				logger.Error("Could not update database", slog.String("error", err.Error()))
 				return

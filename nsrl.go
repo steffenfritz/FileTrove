@@ -13,7 +13,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
+func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile string) error {
 	db, err := bbolt.Open(nsrldbfile, 0600, nil)
 	if err != nil {
 		return err
@@ -57,6 +57,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 			}
 			values = values[:0]
 		}
+
 	}
 
 	if len(values) > 0 {
@@ -72,6 +73,12 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 					return err
 				}
 			}
+			// After the last sha1 was put into the boltdb,
+			// we add the key nsrlversion with the value provided via flag
+			err = bucket.Put([]byte("nsrlversion"), []byte(nsrlversion))
+			if err != nil {
+				return err
+			}
 			return nil
 		})
 
@@ -79,7 +86,6 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
