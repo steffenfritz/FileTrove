@@ -8,10 +8,10 @@ VERSION: v1.0.0-DEV-14
 
 FileTrove indexes files and creates metadata from them.
 
-The single binary application walks a directory tree and identifies all regular files by type with siegfried, giving you the 
+The single binary application walks a directory tree and identifies all regular files by type with [siegfried](https://github.com/richardlehane/siegfried), giving you the 
 
 * MIME type
-* PRONOM identifier
+* [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier
 * Format version
 * Identification proof and note
 
@@ -30,7 +30,7 @@ Furthermore it creates and calculates
 * hash sums (md5, sha1, sha256, sha512 and blake2b-512)
 * the entropy of each file (up to 1GB)
 
-and it extracts some EXIF metadata and you can add your own DublinCore metadata to scans.
+and it extracts some EXIF metadata and you can add your own [DublinCore Elements](https://www.dublincore.org/specifications/dublin-core/usageguide/elements/) metadata to scans.
 
 FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
 
