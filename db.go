@@ -16,14 +16,19 @@ import (
 
 // SessionMD holds the metadata written to table sessionsmd
 type SessionMD struct {
-	UUID           string
-	Starttime      string
-	Endtime        string
-	Project        string
-	Archivistname  string
-	Mountpoint     string
-	ExifFlag       string
-	Dublincoreflag string
+	UUID               string
+	Starttime          string
+	Endtime            string
+	Project            string
+	Archivistname      string
+	Mountpoint         string
+	ExifFlag           string
+	Dublincoreflag     string
+	Filetroveversion   string
+	Nsrlversion        string
+	Sfversion          string
+	Filetrovedbversion string
+	Goversion          string
 }
 
 // FileMD holds the metadata for each inspected file and that is written to the table files
@@ -77,7 +82,12 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	archivistname TEXT,
 					   	mountpoint TEXT,
 					   	exifflag TEXT,
-					   	dublincoreflag TEXT
+					   	dublincoreflag TEXT,
+						filetroveversion TEXT,
+						filetrovedbversion TEXT,
+						nsrlversion TEXT,
+						siegfriedversion TEXT,
+						goversion TEXT
 					   );
 					   CREATE TABLE dublincore(uuid TEXT,
 					    sessionuuid TEXT,
@@ -165,8 +175,9 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
-		s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag)
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
+		s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag, s.Filetroveversion, s.Filetrovedbversion,
+		s.Nsrlversion, s.Sfversion, s.Goversion)
 
 	return err
 }

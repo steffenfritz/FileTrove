@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,10 +23,6 @@ import (
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
 var Version string = "v1.0.0-DEV-14"
-
-// Build not used anymore since DEV-11
-// Build holds the sha1 fingerprint of the build and is set by the build system, e.g. task, make
-//var Build string
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
@@ -70,6 +67,11 @@ func main() {
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
 	sessionmd.Mountpoint, _ = filepath.Abs(*inDir)
+	sessionmd.Goversion = runtime.Version()
+	sessionmd.Filetroveversion = Version
+	sessionmd.Filetrovedbversion = Version // this might be redundant due to the fact that the db aligns with FT's version
+	sessionmd.Sfversion = ft.SiegfriedVersion
+
 	if *exifData {
 		sessionmd.ExifFlag = "True"
 	}
@@ -221,9 +223,26 @@ func main() {
 	// Set up the counter for files that are in NSRL. This is just relevant for the short summary and log file entry.
 	nsrlcount := 0
 
+	// Prepare BoltDB for reading hashes
+	db, err := ft.ConnectNSRL("db/nsrl.db")
+	if err != nil {
+		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
+		err = ftdb.Close()
+		if err != nil {
+			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
+		}
+		os.Exit(1)
+	}
+
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
 	if len(*resumeuuid) == 0 {
 		// Add new session to database
+		nsrlversion, err := ft.GetNSRLVersion(db)
+		if err != nil {
+			logger.Error("Could not get NSRL version from NSRL database.", slog.String("error", err.Error()))
+		}
+		sessionmd.Nsrlversion = nsrlversion
+
 		err = ft.InsertSession(ftdb, sessionmd)
 		if err != nil {
 			logger.Error("Could not add session to FileTrove database.", slog.String("error", err.Error()))
@@ -321,17 +340,6 @@ func main() {
 	s, err := siegfried.Load("db/siegfried.sig")
 	if err != nil {
 		logger.Error("Could not read siegfried's database.", slog.String("error", err.Error()))
-		err = ftdb.Close()
-		if err != nil {
-			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
-		}
-		os.Exit(1)
-	}
-
-	// Prepare BoltDB for reading hashes
-	db, err := ft.ConnectNSRL("db/nsrl.db")
-	if err != nil {
-		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
 		err = ftdb.Close()
 		if err != nil {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))

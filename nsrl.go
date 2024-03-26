@@ -13,7 +13,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
+func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile string) error {
 	db, err := bbolt.Open(nsrldbfile, 0600, nil)
 	if err != nil {
 		return err
@@ -57,6 +57,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 			}
 			values = values[:0]
 		}
+
 	}
 
 	if len(values) > 0 {
@@ -72,12 +73,28 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrldbfile string) error {
 					return err
 				}
 			}
+
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
+	}
+	// After the last sha1 was put into the boltdb
+	// we add the key nsrlversion with the value provided via flag
+	err = db.Update(func(tx *bbolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
+		if err != nil {
+			return err
+		}
+		err = bucket.Put([]byte("nsrlversion"), []byte(nsrlversion))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -142,4 +159,22 @@ func GetValueNSRL(db *bbolt.DB, sha1hash []byte) (bool, error) {
 		return nil
 	})
 	return fileIsInNSRL, err
+}
+
+// GetNSRLVersion from BoltDB
+func GetNSRLVersion(db *bbolt.DB) (string, error) {
+	var nsrlVersion string
+
+	err := db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte("sha1"))
+		if b == nil {
+			return errors.New("Could not connect to bucket.")
+		}
+
+		// the byte array translates to UTF-8 "true"
+		nsrlVersion = string(b.Get([]byte("nsrlversion")))
+		// return nil to complete the transaction
+		return nil
+	})
+	return nsrlVersion, err
 }
