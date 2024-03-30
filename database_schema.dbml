@@ -13,6 +13,11 @@ Table sessionsmd {
   mountpoint TEXT
   exifflag TEXT
   dublincoreflag TEXT
+  filetroveversion TEXT
+  filetrovedbversion TEXT
+  nsrlversion TEXT
+  siegfriedversion TEXT
+  goversion TEXT
 }
 
 TABLE dublincore{
@@ -55,12 +60,14 @@ TABLE files {fileuuid TEXT
   fileatime TEXT
   filensrl TEXT
   fileentropy INTEGER
+  hierarchy INTEGER
 }
 
 TABLE directories{
   diruuid TEXT
   sessionuuid TEXT
   dirname TEXT
+  hierarchy INTEGER
 }
 
 TABLE exif{
