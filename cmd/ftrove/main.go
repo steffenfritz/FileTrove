@@ -109,6 +109,9 @@ func main() {
 		}
 		if siegfriederr != nil {
 			logger.Error("Could not download or create siegfried database.", slog.String("error", siegfriederr.Error()))
+			if strings.HasPrefix(nsrlerr.Error(), "Could not download siegfried") {
+				logger.Info("Could not download siegfried signature file. You have to copy siegfried.sig into the db directory. See the documentation.")
+			}
 			os.Exit(1)
 		}
 		if nsrlerr != nil {

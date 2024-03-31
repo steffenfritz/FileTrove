@@ -1,6 +1,7 @@
 package filetrove
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -34,6 +35,10 @@ func GetSiegfriedDB(installPath string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return errors.New("Could not download siegfried signature. Server returned: " + resp.Status)
+	}
 
 	// Create the signature file in the db subdirectory
 	out, err := os.Create(installPath + "/db/siegfried.sig")
