@@ -102,7 +102,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile stri
 
 // GetNSRL downloads a prepared BoltDB database file from an online storage
 func GetNSRL(install string) error {
-	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db", nil)
+	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl1.db", nil)
 	if err != nil {
 		return err
 	}
@@ -112,6 +112,10 @@ func GetNSRL(install string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return errors.New("Could not download NSRL database. Server returned: " + resp.Status)
+	}
 
 	f, err := os.OpenFile(install+"/db/nsrl.db", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

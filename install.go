@@ -25,7 +25,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	}
 	siegfriederr := GetSiegfriedDB(installPath)
 
-	fmt.Print("\nNext step is to download the NSRL database which is 3.5GB. Proceed? [y/n]: ")
+	fmt.Print("\nNext step is to download the NSRL database which is 4 GB. Proceed? [y/n]: ")
 	_, err := fmt.Scan(&choice)
 	if err != nil {
 		os.Exit(-1)
@@ -37,8 +37,9 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	var nsrlerr error
 	if choice == "y" {
 		nsrlerr = GetNSRL(installPath)
+	}
 
-	} else {
+	if choice == "n" {
 		log.Println("Skipping NSRL download. You have to copy an existing nsrl.db into the db directory.")
 	}
 
