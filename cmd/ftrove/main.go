@@ -22,7 +22,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-14"
+var Version string = "v1.0.0-DEV-15"
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
@@ -484,14 +484,41 @@ func main() {
 		logger.Error("Could not prepare an insert statement for directory inserts.", slog.String("error", err.Error()))
 	}
 	for _, direntry := range dirlist {
+		var dirmd ft.DirMD
+
 		diruuid, err := ft.CreateUUID()
 		if err != nil {
 			logger.Error("Could not create UUID for directory "+direntry, slog.String("error", err.Error()))
 		}
 
+		dirtime, err := ft.GetFileTimes(direntry)
+		if err != nil {
+			logger.Error("Could not get timestamps of directory "+direntry, slog.String("error", err.Error()))
+		}
+
+		// Use specific timezone for the translation of timestamps
+		if len(*timezone) != 0 {
+			// Check if timezone string is valid
+			timeIn, err := time.LoadLocation(*timezone)
+			if err != nil {
+				logger.Error("Timezone string is not valid. Example: Europe/Berlin", slog.String("error", err.Error()))
+			}
+			dirmd.Diratime = dirtime.Atime.In(timeIn).String()
+			dirmd.Dirctime = dirtime.Ctime.In(timeIn).String()
+			dirmd.Dirmtime = dirtime.Mtime.In(timeIn).String()
+		} else {
+			dirmd.Diratime = dirtime.Atime.String()
+			dirmd.Dirctime = dirtime.Ctime.String()
+			dirmd.Dirmtime = dirtime.Mtime.String()
+		}
+
 		dirhierarchy := strings.Count(direntry, string(os.PathSeparator))
 
-		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry, dirhierarchy)
+		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry,
+			dirtime.Ctime.String(),
+			dirtime.Mtime.String(),
+			dirtime.Atime.String(),
+			dirhierarchy)
 
 		if err != nil {
 			logger.Warn("Could not add directory entry to FileTrove database.", slog.String("warn", err.Error()))

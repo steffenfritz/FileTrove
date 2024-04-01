@@ -54,6 +54,13 @@ type FileMD struct {
 	Fileentropy         float64
 }
 
+type DirMD struct {
+	Dirname  string
+	Dirctime string
+	Dirmtime string
+	Diratime string
+}
+
 // ResumeInfo holds information from the database needed for resuming a session
 type ResumeInfo struct {
 	Rowid          int
@@ -130,8 +137,11 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						hierarchy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
-					    sessionuuid TEXT,
+					    sessionuuid TEXTa,
 					    dirname TEXT,
+						dircttime TEXT,
+						dirmtime TEXT,
+						diratime TEXT,
 						hierarchy INTEGER);
                        CREATE TABLE exif(exifuuid TEXT,
                          sessionuuid TEXT,
@@ -200,7 +210,7 @@ func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
 
 // PrepInsertDir prepares a statement for the addition of a single directory
 func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?,?,?,?)")
 
 	return prepin, err
 }

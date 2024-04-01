@@ -209,5 +209,47 @@ func main() {
 			logger.Info("FileTrove database updated to version 1.0.0-DEV-14.")
 			return
 		}
+
+		// Update version 1.0.0-DEV-14 --> 1.0.0-DEV-15
+		if instversion == "1.0.0-DEV-14" {
+			_, err = ftdb.Exec("ALTER TABLE directories RENAME TO directories_temp")
+			if err != nil {
+				logger.Error("Could not create temporary database for migration", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("CREATE TABLE directories(diruuid TEXT, sessionuuid TEXT, dirname TEXT, dircttime TEXT, dirmtime TEXT, diratime TEXT, hierarchy INTEGER)")
+			if err != nil {
+				logger.Error("Could not create new directories table for migration", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("INSERT INTO directories(diruuid, sessionuuid, dirname, hierarchy) SELECT diruuid, sessionuuid, dirname, hierarchy FROM directories_temp;")
+			if err != nil {
+				logger.Error("Could not copy old directories table to new one for migration", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("DROP TABLE directories_temp")
+			if err != nil {
+				logger.Error("Could not delete directories_temp table after migration", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("UPDATE filetrove SET version = '1.0.0-DEV-15' where version = '1.0.0-DEV-14'")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+
+			updatetime := time.Now().Format(time.RFC3339)
+			_, err = ftdb.Exec("UPDATE filetrove SET lastupdate = ?", updatetime)
+			if err != nil {
+				logger.Error("Could not update last update time.", slog.String("error", err.Error()))
+				return
+			}
+			logger.Info("FileTrove database updated to version 1.0.0-DEV-15.")
+			return
+		}
 	}
 }

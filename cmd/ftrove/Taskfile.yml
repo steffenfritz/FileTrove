@@ -1,6 +1,6 @@
 version: '3'
 env:
-  VERSION: 1.0.0-DEV-14
+  VERSION: 1.0.0-DEV-15
   CGO_ENABLED: "1"
 
 tasks:
