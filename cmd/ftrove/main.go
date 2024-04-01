@@ -153,7 +153,7 @@ func main() {
 	}
 
 	// Change logger to MultiWriter for output to logfile and os.Stdout
-	logfd, err := os.OpenFile("logs/filetrove.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logfd, err := os.OpenFile(filepath.Join("logs", "filetrove.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		logger.Error("Could not open filetrove log file.", slog.String("error", err.Error()))
 		os.Exit(1)
@@ -230,7 +230,7 @@ func main() {
 	nsrlcount := 0
 
 	// Prepare BoltDB for reading hashes
-	db, err := ft.ConnectNSRL("db/nsrl.db")
+	db, err := ft.ConnectNSRL(filepath.Join("db", "nsrl.db"))
 	if err != nil {
 		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
 		err = ftdb.Close()
@@ -343,7 +343,7 @@ func main() {
 	}
 
 	// Initialize siegfried database
-	s, err := siegfried.Load("db/siegfried.sig")
+	s, err := siegfried.Load(filepath.Join("db", "siegfried.sig"))
 	if err != nil {
 		logger.Error("Could not read siegfried's database.", slog.String("error", err.Error()))
 		err = ftdb.Close()

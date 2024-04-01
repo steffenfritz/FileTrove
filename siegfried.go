@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/richardlehane/siegfried"
 )
@@ -41,7 +42,7 @@ func GetSiegfriedDB(installPath string) error {
 	}
 
 	// Create the signature file in the db subdirectory
-	out, err := os.Create(installPath + "/db/siegfried.sig")
+	out, err := os.Create(filepath.Join(installPath, "db", "siegfried.sig"))
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,6 @@ func SiegfriedIdent(s *siegfried.Siegfried, inFile string) (SiegfriedType, error
 
 	}
 
-	//oneFile = "\"" + inFile + "\",\"" + strconv.Itoa(int(fi.Size())) + "\"," + oneFile[:len(oneFile)-1] // remove last comma
 	MetaOneFile.FileName = inFile
 	MetaOneFile.SizeInByte = fi.Size()
 	MetaOneFile.SiegOutput = oneFile

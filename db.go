@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"text/tabwriter"
@@ -73,7 +74,7 @@ type ResumeInfo struct {
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
 // It contains information like configurations, sessions and db versions.
 func CreateFileTroveDB(dbpath string, version string, initdate string) error {
-	db, err := sql.Open("sqlite3", dbpath+"/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join(dbpath, "filetrove.db"))
 
 	if err != nil {
 		return err
@@ -174,7 +175,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 
 // ConnectFileTroveDB creates a connection to an existing sqlite database.
 func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbpath+"/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join(dbpath, "filetrove.db"))
 
 	if err != nil {
 		return nil, err
@@ -244,7 +245,7 @@ func ListSessions(db *sql.DB) error {
 // ExportSessionSessionTSV exports all session metadata from a session to a TSV file.
 // Filtering is done by session UUID.
 func ExportSessionSessionTSV(sessionuuid string) ([]string, error) {
-	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +323,7 @@ func ExportSessionSessionTSV(sessionuuid string) ([]string, error) {
 // ExportSessionFilesTSV exports all file metadata from a session to a TSV file.
 // Filtering is done by session UUID.
 func ExportSessionFilesTSV(sessionuuid string) error {
-	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
 		return err
 	}
@@ -399,7 +400,7 @@ func ExportSessionFilesTSV(sessionuuid string) error {
 // ExportSessionDirectoriesTSV exports all directory metadata from a session to a TSV file.
 // Filtering is done by session UUID.
 func ExportSessionDirectoriesTSV(sessionuuid string) error {
-	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
 		return err
 	}
@@ -475,7 +476,7 @@ func ExportSessionDirectoriesTSV(sessionuuid string) error {
 
 // ExportSessionEXIFTSV exports all exif metadata from a session to a TSV file. Filtering is done by session UUID.
 func ExportSessionEXIFTSV(sessionuuid string) error {
-	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
 		return err
 	}
@@ -551,7 +552,7 @@ func ExportSessionEXIFTSV(sessionuuid string) error {
 
 // ExportSessionDCTSV exports all exif metadata from a session to a TSV file. Filtering is done by session UUID.
 func ExportSessionDCTSV(sessionuuid string) error {
-	db, err := sql.Open("sqlite3", "db/filetrove.db")
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
 		return err
 	}
