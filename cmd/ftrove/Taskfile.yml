@@ -35,10 +35,10 @@ tasks:
   clean:
     desc: delete builds and testfiles
     cmds:
-      - mv db/nsrl.db .
       - rm -rf ftrove
       - rm -rf ftrove_*
-      - rm -rf db
       - rm -rf logs
       - rm -rf dist
       - rm -rf *.tsv
+      - mv db/nsrl.db .
+      - rm -rf db

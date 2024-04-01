@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/schollz/progressbar/v3"
@@ -117,7 +118,7 @@ func GetNSRL(install string) error {
 		return errors.New("Could not download NSRL database. Server returned: " + resp.Status)
 	}
 
-	f, err := os.OpenFile(install+"/db/nsrl.db", os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filepath.Join(install, "db", "nsrl.db"), os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

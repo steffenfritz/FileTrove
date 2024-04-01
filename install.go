@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -11,15 +12,15 @@ import (
 func InstallFT(installPath string, version string, initdate string) (error, error, error, error, error) {
 	var choice string
 
-	dbdirerr := os.Mkdir(installPath+"/db", os.ModePerm)
+	dbdirerr := os.Mkdir(filepath.Join(installPath, "db"), os.ModePerm)
 	if dbdirerr != nil {
 		return dbdirerr, nil, nil, nil, nil
 	}
-	logsdirerr := os.Mkdir(installPath+"/logs", os.ModePerm)
+	logsdirerr := os.Mkdir(filepath.Join(installPath, "logs"), os.ModePerm)
 	if logsdirerr != nil {
 		return nil, logsdirerr, nil, nil, nil
 	}
-	trovedberr := CreateFileTroveDB(installPath+"/db", version, initdate)
+	trovedberr := CreateFileTroveDB(filepath.Join(installPath, "db"), version, initdate)
 	if trovedberr != nil {
 		return nil, nil, trovedberr, nil, nil
 	}
@@ -48,15 +49,15 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 
 // CheckInstall checks if all necessary file are available
 func CheckInstall(version string) error {
-	_, err := os.Stat("db/siegfried.sig")
+	_, err := os.Stat(filepath.Join("db", "siegfried.sig"))
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: siegfried signature file not installed.")
 	}
-	_, err = os.Stat("db/filetrove.db")
+	_, err = os.Stat(filepath.Join("db", "filetrove.db"))
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: filetrove database does not exist.")
 	}
-	_, dberr := os.Stat("db/nsrl.db")
+	_, dberr := os.Stat(filepath.Join("db", "nsrl.db"))
 	if os.IsNotExist(dberr) {
 		fmt.Println("ERROR: nsrl database does not exist.")
 	}

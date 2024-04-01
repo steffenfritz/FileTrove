@@ -26,10 +26,10 @@ func CheckVersion(db *sql.DB, version string) (bool, string, error) {
 }
 
 // PrintLicense prints a short license text
-//func PrintLicense(version string, build string) {
+// func PrintLicense(version string, build string) {
 func PrintLicense(version string) {
 	fmt.Println("\n" +
-		"FileTrove Copyright (C) 2023  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
+		"FileTrove Copyright (C) 2023-2024  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
 		"This program is free software: you can redistribute it and/or modify\n    " +
 		"it under the terms of the GNU Affero General Public License as published\n    " +
 		"by the Free Software Foundation, either version 3 of the License, or\n    " +
