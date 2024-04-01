@@ -218,13 +218,7 @@ func main() {
 				return
 			}
 
-			_, err = ftdb.Exec("CREATE TABLE directories(diruuid TEXT, " +
-				"sessionuuid TEXT, " +
-				"dirname TEXT, " +
-				"dircttime TEXT, " +
-				"dirmtime TEXT, " +
-				"diratime TEXT, " +
-				"hierarchy INTEGER")
+			_, err = ftdb.Exec("CREATE TABLE directories(diruuid TEXT, sessionuuid TEXT, dirname TEXT, dircttime TEXT, dirmtime TEXT, diratime TEXT, hierarchy INTEGER)")
 			if err != nil {
 				logger.Error("Could not create new directories table for migration", slog.String("error", err.Error()))
 				return
