@@ -137,7 +137,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						hierarchy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
-					    sessionuuid TEXTa,
+					    sessionuuid TEXT,
 					    dirname TEXT,
 						dircttime TEXT,
 						dirmtime TEXT,
