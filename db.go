@@ -71,6 +71,10 @@ type ResumeInfo struct {
 	NSRLFiles      int
 }
 
+// SessionInfo holds information for printing session information
+type SessionInfo struct {
+}
+
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
 // It contains information like configurations, sessions and db versions.
 func CreateFileTroveDB(dbpath string, version string, initdate string) error {
@@ -703,4 +707,8 @@ func ResumeLatestEntry(db *sql.DB, sessionuuid string) (ResumeInfo, error) {
 	}
 
 	return ri, err
+}
+
+func GetSessionInfo(db *sql.DB, sessionuuid string) (SessionInfo, error) {
+
 }
