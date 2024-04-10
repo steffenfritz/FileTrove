@@ -121,7 +121,10 @@ func main() {
 			}
 			os.Exit(1)
 		}
+		// We put an an extra newline here due to the mixed output from install function and the logging here
+		fmt.Println()
 		logger.Info("Created all necessary files and directories successfully.")
+		fmt.Println()
 
 		// we return after the installation and quit the program with exit code 0
 		return
