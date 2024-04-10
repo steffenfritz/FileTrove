@@ -12,6 +12,10 @@ import (
 func InstallFT(installPath string, version string, initdate string) (error, error, error, error, error) {
 	var choice string
 
+	// Printing an additional newline
+	fmt.Println()
+
+	fmt.Println("Creating database and logfile directories.")
 	dbdirerr := os.Mkdir(filepath.Join(installPath, "db"), os.ModePerm)
 	if dbdirerr != nil {
 		return dbdirerr, nil, nil, nil, nil
@@ -20,13 +24,15 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	if logsdirerr != nil {
 		return nil, logsdirerr, nil, nil, nil
 	}
+	fmt.Println("Creating filetrove database.")
 	trovedberr := CreateFileTroveDB(filepath.Join(installPath, "db"), version, initdate)
 	if trovedberr != nil {
 		return nil, nil, trovedberr, nil, nil
 	}
+	fmt.Println("Downloading signature database.")
 	siegfriederr := GetSiegfriedDB(installPath)
 
-	fmt.Print("\nNext step is to download the NSRL database which is 4 GB. Proceed? [y/n]: ")
+	fmt.Print("\nNext step is to download the NSRL database which is 1.4 GB compressed. Proceed? [y/n]: ")
 	_, err := fmt.Scan(&choice)
 	if err != nil {
 		os.Exit(-1)
@@ -38,6 +44,12 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	var nsrlerr error
 	if choice == "y" {
 		nsrlerr = GetNSRL(installPath)
+		zippedFile := filepath.Join(installPath, "db", "nsrl.db.gz")
+		fmt.Println("\nUnzipping NSRL database.")
+		nsrlerr = UnzipNSRL(zippedFile, filepath.Join(installPath, "db"))
+		if nsrlerr == nil {
+			fmt.Println("NSRL database extracted. You can safely delete nsrl.db.gz in the db directory.")
+		}
 	}
 
 	if choice == "n" {

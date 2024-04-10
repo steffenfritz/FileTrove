@@ -3,6 +3,7 @@ package filetrove
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"io"
 	"net/http"
@@ -103,7 +104,7 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile stri
 
 // GetNSRL downloads a prepared BoltDB database file from an online storage
 func GetNSRL(install string) error {
-	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db", nil)
+	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db.gz", nil)
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func GetNSRL(install string) error {
 		return errors.New("Could not download NSRL database. Server returned: " + resp.Status)
 	}
 
-	f, err := os.OpenFile(filepath.Join(install, "db", "nsrl.db"), os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filepath.Join(install, "db", "nsrl.db.gz"), os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -131,6 +132,42 @@ func GetNSRL(install string) error {
 	io.Copy(io.MultiWriter(f, bar), resp.Body)
 
 	return nil
+}
+
+// UnzipNSRL unzips the nsrl.db.gz file and returns an error if it fails
+func UnzipNSRL(nsrlZipFile string, outputDir string) error {
+	// Open the gzip file for reading
+	gzipFile, err := os.Open(nsrlZipFile)
+	if err != nil {
+		return errors.New("Could not open nsrl.db.gz file: " + err.Error())
+	}
+	defer gzipFile.Close()
+
+	// Create the corresponding output file
+	outputFile, err := os.Create(filepath.Join(outputDir, "nsrl.db"))
+	if err != nil {
+		return errors.New("Could not create output file: " + err.Error())
+	}
+	defer outputFile.Close()
+
+	// Create a gzip reader
+	gzipReader, err := gzip.NewReader(gzipFile)
+	if err != nil {
+		return errors.New("Could not create gzip reader:" + err.Error())
+	}
+	defer gzipReader.Close()
+
+	// Set up progress bar
+	bar := progressbar.DefaultBytes(
+		-1,
+		"Uncompressing NSRL database",
+	)
+	// Copy the contents of the gzip file to the output file
+	_, err = io.Copy(io.MultiWriter(outputFile, bar), gzipReader)
+	if err != nil {
+		return errors.New("Could not copy gzip content: " + err.Error())
+	}
+	return err
 }
 
 // ChecksumNSRL checks a NSRL BoltDB's checksum that is provided with a sidecar file
