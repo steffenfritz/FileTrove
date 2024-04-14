@@ -67,6 +67,7 @@ func main() {
 	sessionmd.Archivistname = *archivistname
 	sessionmd.Project = *projectname
 	sessionmd.Mountpoint, _ = filepath.Abs(*inDir)
+	sessionmd.Pathseparator = string(os.PathSeparator)
 	sessionmd.Goversion = runtime.Version()
 	sessionmd.Filetroveversion = Version
 	sessionmd.Filetrovedbversion = Version // this might be redundant due to the fact that the db aligns with FT's version
@@ -362,7 +363,7 @@ func main() {
 	for _, file := range filelist {
 		var filemd ft.FileMD
 
-		filemd.Filename = file
+		//filemd.Filename = file
 
 		// Create hash sums for every file
 		hashsumsfile := make(map[string][]byte)
@@ -395,6 +396,13 @@ func main() {
 
 		wg.Wait()
 
+		filemd.Filename = filepath.Base(file)
+		filemd.Filepath = file
+		// This is a workaround of the not-so-perfect handling of golang's filepath.Ext() function
+		//see https://github.com/golang/go/issues/66814
+		if filepath.Ext(file) != filepath.Base(file) {
+			filemd.Filenameextension = filepath.Ext(file)
+		}
 		// Add all hash sums to the filemd struct for writing into the file database
 		filemd.Filemd5 = hex.EncodeToString(hashsumsfile["md5"])
 		filemd.Filesha1 = hex.EncodeToString(hashsumsfile["sha1"])
@@ -467,8 +475,8 @@ func main() {
 
 		filehierarchy := strings.Count(file, string(os.PathSeparator))
 
-		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filesize,
-			filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
+		_, err = prepInsertFile.Exec(fileuuid, sessionmd.UUID, filemd.Filename, filemd.Filepath, filemd.Filenameextension,
+			filemd.Filesize, filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
 			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
 			filemd.Filesfidentnote, filemd.Filesfidentproof, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
 			filemd.Filensrl, filemd.Fileentropy, filehierarchy)
@@ -515,9 +523,12 @@ func main() {
 			dirmd.Dirmtime = dirtime.Mtime.String()
 		}
 
+		dirnamelist := strings.Split(direntry, string(os.PathSeparator))
+		dirname := dirnamelist[len(dirnamelist)-1]
+
 		dirhierarchy := strings.Count(direntry, string(os.PathSeparator))
 
-		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, direntry,
+		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, dirname, direntry,
 			dirtime.Ctime.String(),
 			dirtime.Mtime.String(),
 			dirtime.Atime.String(),
