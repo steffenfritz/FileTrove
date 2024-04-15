@@ -3,6 +3,8 @@ STATUS:  Development
 
 VERSION: v1.0.0-DEV-15
 
+NOTE: The next release DEV-16 will be the last DEV release. The following will be a feature freeze BETA version. (2024-04-15)
+
 ![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
