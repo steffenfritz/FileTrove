@@ -251,5 +251,12 @@ func main() {
 			logger.Info("FileTrove database updated to version 1.0.0-DEV-15.")
 			return
 		}
+
+		// Update version 1.0.0-DEV-15 --> 1.0.0-DEV-16
+		if instversion == "1.0.0-DEV-15" {
+			logger.Info("FileTrove database cannot be updated to version 1.0.0-DEV-16 from your version. See changelog.")
+			return
+		}
+
 	}
 }
