@@ -23,6 +23,7 @@ type SessionMD struct {
 	Project            string
 	Archivistname      string
 	Mountpoint         string
+	Pathseparator      string
 	ExifFlag           string
 	Dublincoreflag     string
 	Filetroveversion   string
@@ -35,6 +36,8 @@ type SessionMD struct {
 // FileMD holds the metadata for each inspected file and that is written to the table files
 type FileMD struct {
 	Filename            string
+	Filepath            string
+	Filenameextension   string
 	Filesize            int64
 	Filemd5             string
 	Filesha1            string
@@ -57,6 +60,7 @@ type FileMD struct {
 
 type DirMD struct {
 	Dirname  string
+	Dirpath  string
 	Dirctime string
 	Dirmtime string
 	Diratime string
@@ -93,6 +97,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	project TEXT,
 					   	archivistname TEXT,
 					   	mountpoint TEXT,
+						pathseparator TEXT,
 					   	exifflag TEXT,
 					   	dublincoreflag TEXT,
 						filetroveversion TEXT,
@@ -122,6 +127,8 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   CREATE TABLE files(fileuuid TEXT,
 					   	sessionuuid TEXT,
 					   	filename TEXT,
+						filepath TEXT,
+						filenameextension TEXT,
 					   	filesize INTEGER,
 					   	filemd5 TEXT,
 					   	filesha1 TEXT,
@@ -144,6 +151,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   CREATE TABLE directories(diruuid TEXT,
 					    sessionuuid TEXT,
 					    dirname TEXT,
+						dirpath TEXT,
 						dircttime TEXT,
 						dirmtime TEXT,
 						diratime TEXT,
@@ -190,8 +198,8 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
-		s.Archivistname, s.Mountpoint, s.ExifFlag, s.Dublincoreflag, s.Filetroveversion, s.Filetrovedbversion,
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
+		s.Archivistname, s.Mountpoint, s.Pathseparator, s.ExifFlag, s.Dublincoreflag, s.Filetroveversion, s.Filetrovedbversion,
 		s.Nsrlversion, s.Sfversion, s.Goversion)
 
 	return err
@@ -208,14 +216,14 @@ func InsertDC(db *sql.DB, sessionuuid string, dcuuid string, dc DublinCore) erro
 
 // PrepInsertFile prepares a statement for the addition of a single file
 func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 	return prepin, err
 }
 
 // PrepInsertDir prepares a statement for the addition of a single directory
 func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?,?,?,?,?)")
 
 	return prepin, err
 }
@@ -671,7 +679,7 @@ func ResumeLatestEntry(db *sql.DB, sessionuuid string) (ResumeInfo, error) {
 	var ri ResumeInfo
 
 	// Get latest file and count of all files of resumed session
-	stmt, err := db.Prepare("SELECT MAX(rowid),filename,COUNT(*) FROM files WHERE sessionuuid = ?")
+	stmt, err := db.Prepare("SELECT MAX(rowid),filepath,COUNT(*) FROM files WHERE sessionuuid = ?")
 	if err != nil {
 		return ri, err
 	}
