@@ -16,7 +16,7 @@ The single binary application walks a directory tree and identifies all regular 
 * [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier
 * Format version
 * Identification proof and note
-
+* filename extension
 
 os.Stat() is giving you the
 
@@ -24,6 +24,8 @@ os.Stat() is giving you the
 * File creation time
 * File modification time
 * File access time
+
+* and the same for directories
 
 
 Furthermore it creates and calculates
@@ -36,7 +38,7 @@ and it extracts some EXIF metadata and you can add your own [DublinCore Elements
 
 FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
 
-For this check a 3.2GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
+For this check a 4.0GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
 
 You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
 
