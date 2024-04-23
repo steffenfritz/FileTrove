@@ -48,6 +48,7 @@ func main() {
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
+	listSession := flag.StringP("list-session", "L", "", "List information about a single session.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
 	timezone := flag.StringP("timezone", "z", "", "Set the time zone to a region in which the timestamps of files are to be translated. If this flag is not set, the local time zone is used. Example: Europe/Berlin")
@@ -146,6 +147,24 @@ func main() {
 		if err != nil {
 			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
 		}
+		return
+	}
+
+	// Print info about a single session
+	if len(*listSession) > 0 {
+		fmt.Println("SESSION INFORMATION\n")
+		smd, err := ft.ListSession(ftdb, *listSession)
+		if err != nil {
+			logger.Error("Could not query single session.", slog.String("error", err.Error()))
+		}
+
+		fmt.Println("Session UUID:\t" + smd.Sessionmd.UUID)
+		fmt.Println("Project:\t" + smd.Sessionmd.Project)
+		fmt.Println("Archivist:\t" + smd.Sessionmd.Archivistname)
+		fmt.Println("Mountpoint:\t" + smd.Sessionmd.Mountpoint)
+		fmt.Println("File Count:\t" + strconv.Itoa(smd.Filecount))
+		fmt.Println("NSRL Count:\t" + strconv.Itoa(smd.Nsrlcount))
+
 		return
 	}
 

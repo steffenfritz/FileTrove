@@ -33,6 +33,19 @@ type SessionMD struct {
 	Goversion          string
 }
 
+// SessionInfo holds information about a single session
+type SessionInfoMD struct {
+	Sessionmd        SessionMD
+	Rowid            string
+	Filecount        int
+	Oldestfile       string
+	Oldestfiledate   string
+	Youngestfile     string
+	Youngestfiledate string
+	Nsrlcount        int
+	Difffiletypes    int
+}
+
 // FileMD holds the metadata for each inspected file and that is written to the table files
 type FileMD struct {
 	Filename            string
@@ -73,6 +86,10 @@ type ResumeInfo struct {
 	Mountpoint     string
 	ProcessedFiles int
 	NSRLFiles      int
+}
+
+// SessionInfo holds information for printing session information
+type SessionInfo struct {
 }
 
 // CreateFileTroveDB creates a new an empty sqlite database for FileTrove.
@@ -243,11 +260,57 @@ func ListSessions(db *sql.DB) error {
 		if err := rows.Scan(&rowid, &uuid, &starttime, &endtime, &project, &archivistname, &mountpoint); err != nil {
 			return err
 		}
+
 		fmt.Fprintln(w, rowid+"\t"+uuid+"\t"+starttime+"\t"+endtime+"\t"+project+"\t"+archivistname+"\t"+mountpoint)
 	}
 	w.Flush()
 
 	return err
+}
+
+// ListSession returns information summary about a single session
+func ListSession(db *sql.DB, sessionuuid string) (SessionInfoMD, error) {
+	var smd SessionInfoMD
+	// Prepare project query
+	sessionquery, err := db.Prepare("SELECT rowid, uuid, starttime, COALESCE(endtime, '') AS endtime, " +
+		"COALESCE(project, '') AS project, " +
+		"COALESCE(archivistname,'') AS archivistname, " +
+		"COALESCE(mountpoint,'') AS mountpoint FROM sessionsmd WHERE uuid=?")
+	if err != nil {
+		return smd, err
+	}
+
+	sessionrow := sessionquery.QueryRow(sessionuuid)
+
+	if err := sessionrow.Scan(&smd.Rowid,
+		&smd.Sessionmd.UUID,
+		&smd.Sessionmd.Starttime,
+		&smd.Sessionmd.Endtime,
+		&smd.Sessionmd.Project,
+		&smd.Sessionmd.Archivistname,
+		&smd.Sessionmd.Mountpoint); err != nil {
+		return smd, err
+	}
+
+	filesquery, err := db.Prepare("SELECT COUNT(filename) FROM files WHERE sessionuuid=?")
+	if err != nil {
+		return smd, err
+	}
+	filerows := filesquery.QueryRow(sessionuuid)
+	if err = filerows.Scan(&smd.Filecount); err != nil {
+		return smd, err
+	}
+
+	nsrlquery, err := db.Prepare("SELECT COUNT(filename) FROM files WHERE sessionuuid=? AND filensrl='TRUE'")
+	if err != nil {
+		return smd, err
+	}
+	nsrlrows := nsrlquery.QueryRow(sessionuuid)
+	if err = nsrlrows.Scan(&smd.Nsrlcount); err != nil {
+		return smd, err
+	}
+
+	return smd, err
 }
 
 // ExportSessionSessionTSV exports all session metadata from a session to a TSV file.

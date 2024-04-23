@@ -43,6 +43,9 @@ TABLE dublincore{
 TABLE files {fileuuid TEXT
   sessionuuid TEXT
   filename TEXT
+  filepath TEXT
+  filepath TEXT
+  filenameextension TEXT
   filesize INTEGER
   filemd5 TEXT
   filesha1 TEXT
@@ -67,6 +70,10 @@ TABLE directories{
   diruuid TEXT
   sessionuuid TEXT
   dirname TEXT
+  dirpath TEXT
+  dirctime TEXT
+  dirmtime TEXT
+  diratime TEXT
   hierarchy INTEGER
 }
 
