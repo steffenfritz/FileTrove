@@ -46,7 +46,7 @@ All results are written into a SQLite database and can be exported to TSV files.
 
 
 ## How to install
-1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source.
+1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source (using _task build_ in cmd/ftrove (https://taskfile.dev)).
 2. Copy the file where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
 3. Run `./ftrove --install .`  (Mind the period)
    
