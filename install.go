@@ -48,6 +48,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 		fmt.Println("\nUnzipping NSRL database.")
 		nsrlerr = UnzipNSRL(zippedFile, filepath.Join(installPath, "db"))
 		if nsrlerr == nil {
+			println()
 			fmt.Println("NSRL database extracted. You can safely delete nsrl.db.gz in the db directory.")
 		}
 	}

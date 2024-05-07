@@ -10,7 +10,7 @@ import (
 )
 
 // Version holds the version of FileTrove and is set by the build system
-var Version string = "v1.0.0-DEV-14"
+var Version string = "v1.0.0-DEV-16"
 
 // Build is not used anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system

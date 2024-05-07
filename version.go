@@ -40,7 +40,6 @@ func PrintLicense(version string) {
 		"GNU Affero General Public License for more details.\n\n    " +
 		"You should have received a copy of the GNU Affero General Public License\n    " +
 		"along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\n" +
-		//"Version: " + version + " Build: " + build + "\n",
 		"Version: " + version + "\n",
 	)
 }
