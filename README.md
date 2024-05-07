@@ -1,12 +1,18 @@
-# FileTrove
+<p align="center">
+<img src="https://github.com/steffenfritz/FileTrove/assets/16431534/b8c1456d-08bb-48bb-afcf-5e99db8466b9" width="350">
+</p>
+
+
+![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 STATUS:  Development
 
 VERSION: v1.0.0-DEV-16
 
 NOTE: Release DEV-16 is the last DEV release. The next one will be a feature freeze BETA version. (2024-04-23)
 
-![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+## About
 
 FileTrove indexes files and creates metadata from them.
 
