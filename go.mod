@@ -10,7 +10,7 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/schollz/progressbar/v3 v3.14.1
 	github.com/spf13/pflag v1.0.5
-	go.etcd.io/bbolt v1.3.8
+	go.etcd.io/bbolt v1.3.10
 	golang.org/x/crypto v0.17.0
 )
 
