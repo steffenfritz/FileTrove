@@ -60,7 +60,7 @@ jobs:
           pkg: ./cmd/admftrove
       - 
         name: Create Release
-        uses: actions/create-release@8d93430eddafb926c668181c71f579556f68668c # v1.0.0
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1.1.4
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
