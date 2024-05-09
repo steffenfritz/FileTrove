@@ -20,9 +20,9 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - 
-        uses: actions/cache@v4
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
           path: |
             ~/.cache/go-build
@@ -32,7 +32,7 @@ jobs:
             ${{ runner.os }}-go-
       -
         name: Build
-        uses: crazy-max/ghaction-xgo@v3
+        uses: crazy-max/ghaction-xgo@682253ce1d3dd7a78c5120c703c9f3811dbf8cb2 # v3.0.0
         with:
           xgo_version: latest
           go_version: 1.21
