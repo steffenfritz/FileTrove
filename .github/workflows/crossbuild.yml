@@ -5,6 +5,9 @@ on:
     tags:        
       - '*'
   #pull_request:
+permissions:
+  contents: read
+
 jobs:
   xgo:
     runs-on: ubuntu-latest
