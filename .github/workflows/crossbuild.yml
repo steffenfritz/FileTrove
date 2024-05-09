@@ -16,9 +16,9 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
       - 
-        uses: actions/cache@v3
+        uses: actions/cache@e12d46a63a90f2fae62d114769bbf2a179198b5c # v3.3.3
         with:
           path: |
             ~/.cache/go-build
@@ -28,7 +28,7 @@ jobs:
             ${{ runner.os }}-go-
       -
         name: Build ftrove
-        uses: crazy-max/ghaction-xgo@v3
+        uses: crazy-max/ghaction-xgo@682253ce1d3dd7a78c5120c703c9f3811dbf8cb2 # v3.0.0
         with:
           xgo_version: latest
           go_version: 1.21
@@ -44,7 +44,7 @@ jobs:
           pkg: ./cmd/ftrove
       -
         name: Build admftrove
-        uses: crazy-max/ghaction-xgo@v3
+        uses: crazy-max/ghaction-xgo@682253ce1d3dd7a78c5120c703c9f3811dbf8cb2 # v3.0.0
         with:
           xgo_version: latest
           go_version: 1.21
@@ -60,7 +60,7 @@ jobs:
           pkg: ./cmd/admftrove
       - 
         name: Create Release
-        uses: actions/create-release@v1.0.0
+        uses: actions/create-release@8d93430eddafb926c668181c71f579556f68668c # v1.0.0
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +71,7 @@ jobs:
           prerelease: false
       - 
         name: Upload Release Assets
-        uses: glentiki/xbin-release-action@v1.0.0
+        uses: glentiki/xbin-release-action@736088fa1388541bd9224f2749445ee3bd8890a5 # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
