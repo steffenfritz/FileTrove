@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
+      - 'database_schema.dbml'
+      - 'workflows'
+      - 'SECURITY.md'
     branches:
       - main
 
