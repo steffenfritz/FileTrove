@@ -7,7 +7,7 @@ on:
       - 'README.md'
       - 'LICENSE'
     branches:
-      - master
+      - main
 
 permissions:
   contents: read
