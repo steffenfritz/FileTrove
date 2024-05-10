@@ -55,7 +55,7 @@ github.com/richardlehane/siegfried/pkg/wikidata/internal/mappings
 # github.com/richardlehane/xmldetect v1.0.2
 ## explicit; go 1.12
 github.com/richardlehane/xmldetect
-# github.com/rivo/uniseg v0.4.4
+# github.com/rivo/uniseg v0.4.7
 ## explicit; go 1.18
 github.com/rivo/uniseg
 # github.com/ross-spencer/spargo v0.4.1
@@ -69,7 +69,7 @@ github.com/ross-spencer/wikiprov/pkg/wikiprov
 ## explicit
 github.com/rwcarlsen/goexif/exif
 github.com/rwcarlsen/goexif/tiff
-# github.com/schollz/progressbar/v3 v3.14.1
+# github.com/schollz/progressbar/v3 v3.14.2
 ## explicit; go 1.13
 github.com/schollz/progressbar/v3
 # github.com/spf13/pflag v1.0.5

@@ -8,7 +8,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/richardlehane/siegfried v1.11.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
-	github.com/schollz/progressbar/v3 v3.14.1
+	github.com/schollz/progressbar/v3 v3.14.2
 	github.com/spf13/pflag v1.0.5
 	go.etcd.io/bbolt v1.3.10
 	golang.org/x/crypto v0.23.0
@@ -21,7 +21,7 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.3 // indirect
 	github.com/richardlehane/xmldetect v1.0.2 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v0.2.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
