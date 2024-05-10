@@ -54,7 +54,7 @@ func GetSiegfriedDB(installPath string) error {
 
 }
 
-// SiegfiredIdent gets PRONOM metadata and the size of a single file
+// SiegfriedIdent gets PRONOM metadata and the size of a single file
 func SiegfriedIdent(s *siegfried.Siegfried, inFile string) (SiegfriedType, error) {
 	var MetaOneFile SiegfriedType
 	var oneFile string
