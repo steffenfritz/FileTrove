@@ -31,3 +31,15 @@ func TestCreateFileTroveDB(t *testing.T) {
 		println("Could not remove test file: filetrove.db")
 	}
 }
+
+// FuzzCreateFileTroveDB fuzzes three input string values
+func FuzzCreateFileTroveDB(f *testing.F) {
+	f.Fuzz(func(t *testing.T, a string, b string, c string) {
+		CreateFileTroveDB(a, b, c)
+		err := os.Remove(a)
+		if err != nil {
+			println("Could not remove test file")
+		}
+
+	})
+}
