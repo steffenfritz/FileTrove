@@ -8,11 +8,13 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/steffenfritz/FileTrove.svg)](https://pkg.go.dev/github.com/steffenfritz/FileTrove)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/steffenfritz/FileTrove/badge)](https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove)
 
-STATUS:  Development
+STATUS:  Development 
 
 VERSION: v1.0.0-DEV-16
 
-NOTE: Release DEV-16 is the last DEV release. The next one will be a feature freeze BETA version. (2024-04-23)
+NOTES: 
+- Release DEV-16 is the last DEV release. The next one will be a feature freeze BETA version. (2024-04-23)
+- Preparing FileTrove for BETA release by working on OpenSSF issues: https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove (2024-05-12)
 
 ## About
 
