@@ -13,6 +13,8 @@ Table sessionsmd {
   mountpoint TEXT
   exifflag TEXT
   dublincoreflag TEXT
+  yaraflag TEXT
+  yarasource TEXT
   filetroveversion TEXT
   filetrovedbversion TEXT
   nsrlversion TEXT
@@ -93,8 +95,17 @@ TABLE exif{
   xpsubject TEXT
 }
 
+TABLE yara{
+  yaraentryuuid TEXT
+  sessionuuid TEXT
+  fileuuid TEXT
+  rulename TEXT
+}
+
 Ref: files.sessionuuid > sessionsmd.uuid
 Ref: exif.sessionuuid > sessionsmd.uuid
 Ref: exif.fileuuid > files.fileuuid
 Ref: directories.sessionuuid > sessionsmd.uuid
 Ref: dublincore.sessionuuid > sessionsmd.uuid
+Ref: yara.sessionuuid > sessionsmd.uuid
+Ref: yara.fileuuid > files.fileuuid

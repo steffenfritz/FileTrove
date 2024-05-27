@@ -1,8 +1,11 @@
 module github.com/steffenfritz/FileTrove
 
-go 1.20
+go 1.21
+
+toolchain go1.22.3
 
 require (
+	github.com/VirusTotal/yara-x/go v0.3.0
 	github.com/djherbis/times v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
@@ -28,4 +31,5 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 )
