@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	yara_x "github.com/VirusTotal/yara-x/go"
 	"io"
 	"log/slog"
 	"os"
@@ -15,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	yara_x "github.com/VirusTotal/yara-x/go"
+
 	"github.com/richardlehane/siegfried"
 	"github.com/schollz/progressbar/v3"
 	flag "github.com/spf13/pflag"
@@ -23,7 +24,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-DEV-16"
+var Version string = "v1.0.0-BETA-1"
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
