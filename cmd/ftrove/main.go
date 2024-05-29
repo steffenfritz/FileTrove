@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	yara_x "github.com/VirusTotal/yara-x/go"
 	"io"
 	"log/slog"
 	"os"
@@ -41,7 +42,7 @@ func main() {
 	// createThumbsImages :=
 	// createStillsVideo :=
 	// getTextfileIdea :=
-	// grepYARA :=
+	grepYARA := flag.StringP("yararules", "y", "", "Provide a YARA rule file and scan all files for matches.")
 	dublincore := flag.StringP("dublincore", "d", "", "Add DublinCore metadata as a JSON file for a session (not single files).")
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
@@ -79,6 +80,10 @@ func main() {
 	}
 	if len(*dublincore) > 0 {
 		sessionmd.Dublincoreflag = "True"
+	}
+	if len(*grepYARA) > 0 {
+		sessionmd.Yaraflag = "True"
+		sessionmd.Yarasource = *grepYARA
 	}
 
 	// Print banner or version on startup
@@ -208,10 +213,12 @@ func main() {
 			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-		// DOC: Value 6 MUST be the flag result of EXIF. We translate for clarity.
-		exifFlagSet := sessionValues[6]
-		// DOC: Value 7 MUST be the flag result of DublinCore. We translate for clarity.
-		dcFlagSet := sessionValues[7]
+		// DOC: Value 7 MUST be the flag result of EXIF. We translate for clarity.
+		exifFlagSet := sessionValues[7]
+		// DOC: Value 8 MUST be the flag result of DublinCore. We translate for clarity.
+		dcFlagSet := sessionValues[8]
+		// DOC: Value 9 MUST be the flag result of YARA. We translate for clarity.
+		yaraFlagSet := sessionValues[9]
 
 		err = ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
@@ -236,6 +243,15 @@ func main() {
 			err = ft.ExportSessionDCTSV(*exportSessionToTSV)
 			if err != nil {
 				logger.Error("Error while exporting DublinCore metadata from session to TSV file.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
+
+		}
+
+		if yaraFlagSet == "True" {
+			err = ft.ExportYaraTSV(*exportSessionToTSV)
+			if err != nil {
+				logger.Error("Error while exporting YARA identified files from session to TSV file.", slog.String("error", err.Error()))
 				os.Exit(1)
 			}
 
@@ -322,6 +338,8 @@ func main() {
 
 		// Overwrite the NSRL counter
 		nsrlcount = ri.NSRLFiles
+
+		// ToDo: Get Yara information for resuming sessions
 	}
 
 	// Prepare statement to add file scan results to database
@@ -374,6 +392,23 @@ func main() {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
 		}
 		os.Exit(1)
+	}
+
+	// Compile YARA rule if flag provided, used later
+	var checkYara bool
+	var yaraRules *yara_x.Rules
+	prepYaraInsert, err := ft.PrepInsertYara(ftdb)
+	if err != nil {
+		logger.Error("Could not prepare an insert statement for YARA inserts.", slog.String("error", err.Error()))
+	}
+
+	if len(*grepYARA) > 0 {
+		checkYara = true
+		yaraRules, err = ft.YaraCompile(*grepYARA)
+		if err != nil {
+			logger.Error("Could not compile the YARA rules.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
 	}
 
 	// Inspect every file in filelist
@@ -504,6 +539,28 @@ func main() {
 			logger.Warn("Could not add file entry into FileTrove database. File: "+file, slog.String("warn", err.Error()))
 		}
 
+		// Check for YARA rules
+		if checkYara {
+			matches, err := ft.YaraScan(yaraRules, file)
+			if err != nil {
+				logger.Warn("Could not scan YARA rules", slog.String("error", err.Error()))
+			}
+
+			if len(matches) > 0 {
+				for _, match := range matches {
+					yarauuid, err := ft.CreateUUID()
+					if err != nil {
+						logger.Warn("Could not create UUID for YARA rule", slog.String("error", err.Error()))
+					}
+					_, err = prepYaraInsert.Exec(yarauuid, sessionmd.UUID, fileuuid, match.Identifier())
+					if err != nil {
+						logger.Warn("Could not add YARA identification", slog.String("error", err.Error()))
+					}
+				}
+			}
+
+		}
+
 		filecount += 1
 		bar.Add(1)
 	}
@@ -565,6 +622,8 @@ func main() {
 			logger.Error("Could not get image list from database.", slog.String("error", err.Error()))
 		}
 		for fileuuid, imagepath := range imagelist {
+			// debug
+			println(imagepath)
 
 			exifparsed, err := ft.ExifDecode(imagepath)
 			if err != nil {
