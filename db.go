@@ -26,6 +26,8 @@ type SessionMD struct {
 	Pathseparator      string
 	ExifFlag           string
 	Dublincoreflag     string
+	Yaraflag           string
+	Yarasource         string
 	Filetroveversion   string
 	Nsrlversion        string
 	Sfversion          string
@@ -113,6 +115,8 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						pathseparator TEXT,
 					   	exifflag TEXT,
 					   	dublincoreflag TEXT,
+						yaraflag TEXT,
+						yarasource TEXT,
 						filetroveversion TEXT,
 						filetrovedbversion TEXT,
 						nsrlversion TEXT,
@@ -183,7 +187,11 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
                          xpauthor TEXT,
                          xpkeywords TEXT,
                          xpsubject TEXT
-                         );`
+                         );
+						CREATE TABLE yara(yaraentryuuid TEXT,
+						  sessionuuid TEXT,
+						  fileuuid TEXT,
+						  rulename TEXT);`
 
 	_, err = db.Exec(initstatements)
 	if err != nil {
@@ -211,8 +219,8 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
-		s.Archivistname, s.Mountpoint, s.Pathseparator, s.ExifFlag, s.Dublincoreflag, s.Filetroveversion, s.Filetrovedbversion,
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
+		s.Archivistname, s.Mountpoint, s.Pathseparator, s.ExifFlag, s.Dublincoreflag, s.Yaraflag, s.Yarasource, s.Filetroveversion, s.Filetrovedbversion,
 		s.Nsrlversion, s.Sfversion, s.Goversion)
 
 	return err
@@ -237,6 +245,13 @@ func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
 // PrepInsertDir prepares a statement for the addition of a single directory
 func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
 	prepin, err := db.Prepare("INSERT INTO directories VALUES(?,?,?,?,?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertYara prepares a statement for the addition of a matching YARA rule
+func PrepInsertYara(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO yara VALUES(?,?,?,?)")
 
 	return prepin, err
 }
@@ -621,7 +636,7 @@ func ExportSessionEXIFTSV(sessionuuid string) error {
 	return nil
 }
 
-// ExportSessionDCTSV exports all exif metadata from a session to a TSV file. Filtering is done by session UUID.
+// ExportSessionDCTSV exports all Dublin Core metadata from a session to a TSV file. Filtering is done by session UUID.
 func ExportSessionDCTSV(sessionuuid string) error {
 	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
 	if err != nil {
@@ -697,12 +712,88 @@ func ExportSessionDCTSV(sessionuuid string) error {
 	return nil
 }
 
+// ExportYaraTSV exports all files that matched YARA rules to a TSV file. Filtering is done by session UUID.
+func ExportYaraTSV(sessionuuid string) error {
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	outputFile, err := os.Create(sessionuuid + "_yara.tsv")
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	tsvWriter := csv.NewWriter(outputFile)
+	tsvWriter.Comma = '\t'
+	defer tsvWriter.Flush()
+
+	query := "SELECT * FROM yara WHERE sessionuuid=\"" + sessionuuid + "\""
+	rows, err := db.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	if err := tsvWriter.Write(columns); err != nil {
+		return err
+	}
+
+	// Loop to create TSV headings from row names
+	values := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(columns))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return err
+		}
+		var valueStrings []string
+		for _, value := range values {
+			if value == nil {
+				valueStrings = append(valueStrings, "")
+			} else {
+				//valueStrings = append(valueStrings, value.(string))
+				switch v := value.(type) {
+				case int64:
+					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))
+				case string:
+					valueStrings = append(valueStrings, string(v))
+				case float64:
+					valueStrings = append(valueStrings, strconv.FormatFloat(v, 'E', -1, 32))
+				default:
+					log.Printf("Unexpected Type: %s", reflect.TypeOf(value))
+					valueStrings = append(valueStrings, "")
+				}
+			}
+		}
+		if err := tsvWriter.Write(valueStrings); err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetImageFiles queries all files that have mime type image from a session
 func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
-	var filename string
+	var filepath string
 	var fileuuid string
 
-	query := "SELECT filename, fileuuid FROM files where sessionuuid=\"" + sessionuuid +
+	query := "SELECT filepath, fileuuid FROM files where sessionuuid=\"" + sessionuuid +
 		"\" AND filesfmime=\"image/jpeg\" OR filesfmime=\"image/tiff\""
 
 	rows, err := db.Query(query)
@@ -714,10 +805,10 @@ func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
 	imagelist := make(map[string]string)
 
 	for rows.Next() {
-		if err := rows.Scan(&filename, &fileuuid); err != nil {
+		if err := rows.Scan(&filepath, &fileuuid); err != nil {
 			return imagelist, err
 		}
-		imagelist[fileuuid] = filename
+		imagelist[fileuuid] = filepath
 	}
 	if err = rows.Err(); err != nil {
 		return imagelist, err
