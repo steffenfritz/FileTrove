@@ -11,6 +11,16 @@ tasks:
       GIT_COMMIT:
         sh: git log -n 1 --format=%h
 
+  changetest:
+    cmds:
+      - go test -v ../../
+      - task: build
+      - ./ftrove --install .
+      - ./ftrove -i ../../testdata -d ../../testdata/dublincore_ex.json -e -p "testing a change. full test." -z "Europe/Berlin"
+      - ./ftrove -l
+      - sqlite3 db/filetrove.db "select * from files;" ".exit"
+      - sqlite3 db/filetrove.db "select * from directories;" ".exit"
+      - task: clean
 
   build_linux_amd:
     cmds:
