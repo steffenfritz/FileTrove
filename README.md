@@ -84,7 +84,7 @@ If a rule matches on a file the rule name, the session UUID and the file UUID is
 The YARA rule file itself is not stored in FileTrove's database.
 
 
-To compile FileTrove with YARA-X support 
+### To compile FileTrove with YARA-X support 
 
 1. Install Golang: https://go.dev/doc/install
 2. Install Task build tool: https://taskfile.dev
