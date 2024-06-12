@@ -4,6 +4,12 @@ on:
   push:
     tags:        
       - '*'
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - 'database_schema.dbml'
+      - 'workflows'
+      - 'SECURITY.md'
   #pull_request:
 permissions:
   contents: read

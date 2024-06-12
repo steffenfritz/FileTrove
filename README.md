@@ -11,13 +11,11 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/steffenfritz/FileTrove/badge)](https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8952/badge)](https://www.bestpractices.dev/projects/8952)
 
-STATUS:  Development 
 
-VERSION: v1.0.0-DEV-16
+VERSION: v1.0.0-BETA.1
 
-NOTES: 
-- Release DEV-16 is the last DEV release. The next one will be a feature freeze BETA version. (2024-04-23)
-- Preparing FileTrove for BETA release by working on OpenSSF issues: https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove (2024-05-12)
+NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-BETA-16 (without YARA support) or build it by yourself, see below for instructions.
+
 
 ## About
 
@@ -47,13 +45,19 @@ Furthermore it creates and calculates
 * hash sums (md5, sha1, sha256, sha512 and blake2b-512)
 * the entropy of each file (up to 1GB)
 
-and it extracts some EXIF metadata and you can add your own [DublinCore Elements](https://www.dublincore.org/specifications/dublin-core/usageguide/elements/) metadata to scans.
+* and it extracts some EXIF metadata and 
+* you can add your own [DublinCore Elements](https://www.dublincore.org/specifications/dublin-core/usageguide/elements/) metadata to scans.
 
-FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
+
+* A very powerful feature is FileTrove's ability to consume *YARA-X* rule files.
+
+
+* FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
 
 For this check a 4.0GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
 
 You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
+
 
 All results are written into a SQLite database and can be exported to TSV files.
 
@@ -68,6 +72,27 @@ All results are written into a SQLite database and can be exported to TSV files.
 	b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
 
 4. You are ready to go!
+
+### A word on YARA
+The YARA module needs a C library that is not part of FileTrove and is not yet installed during installation.
+It has to be installed or build for your platform. More information can be found here: https://virustotal.github.io/yara-x/docs/api/c/c-/#building-the-c-library
+
+A YARA example rule file can be found in the testdata/yara directory in this repository.
+
+If a rule matches on a file the rule name, the session UUID and the file UUID is written into the table *yara*.
+
+The YARA rule file itself is not stored in FileTrove's database.
+
+
+To compile FileTrove with YARA-X support 
+
+1. Install Golang: https://go.dev/doc/install
+2. Install Task build tool: https://taskfile.dev
+3. Install the YARA-X C library: https://virustotal.github.io/yara-x/docs/api/c/c-/#building-the-c-library
+4. Checkout this repo into your go workspace (e.g. /home/user/go/src): _git clone https://github.com/steffenfritz/FileTrove.git_
+5. Change into directory: e.g. _cd /home/user/go/src/steffenfritz/FileTrove/cmd/ftrove_
+6. Start build: _task build_
+
 
 ## How to run
 `./ftrove -h` gives you all flags ftrove understands.
