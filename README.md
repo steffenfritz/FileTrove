@@ -69,7 +69,7 @@ All results are written into a SQLite database and can be exported to TSV files.
    
 	a) If you don't have already a NSRL database, you have to download it. Please be patient.
     
-	b) If you have a NSRL database copy/move it do the "db" directory that ftrove just created.
+	b) If you have a NSRL database copy/move it to the "db" directory that ftrove just created.
 
 4. You are ready to go!
 
