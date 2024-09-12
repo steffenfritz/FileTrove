@@ -20,7 +20,7 @@ func YaraCompile(ruleFile string) (*yarax.Rules, error) {
 
 // YaraScan receives pre-compiled rules and checks if one or more rules match on the input file
 // For that check it has to read files into []byte. While YARA itself is fast this might become a bottleneck.
-func YaraScan(rules *yarax.Rules, inFile string) ([]*yarax.Rule, error) {
+func YaraScan(rules *yarax.Rules, inFile string) (*yarax.ScanResults, error) {
 	fileRead, err := os.ReadFile(inFile)
 	if err != nil {
 		return nil, err
