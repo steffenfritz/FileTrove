@@ -14,7 +14,7 @@
 
 VERSION: v1.0.0-BETA.1
 
-NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-BETA-16 (without YARA support) or build it by yourself, see below for instructions.
+NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions.
 
 
 ## About
