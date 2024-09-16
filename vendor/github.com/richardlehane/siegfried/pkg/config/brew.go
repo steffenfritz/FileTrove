@@ -2,6 +2,7 @@
 
 package config
 
-func init() {
-	siegfried.home = "/usr/share/siegfried"
+func defaultHome() string {
+	// this value is replaced by homebrew with the user's share location
+	return "/usr/share/siegfried"
 }

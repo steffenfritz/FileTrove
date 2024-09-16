@@ -1,20 +1,20 @@
 module github.com/steffenfritz/FileTrove
 
-go 1.21
+go 1.22
 
-toolchain go1.22.3
+toolchain go1.23.1
 
 require (
-	github.com/VirusTotal/yara-x/go v0.3.0
+	github.com/VirusTotal/yara-x/go v0.8.0
 	github.com/djherbis/times v1.6.0
 	github.com/google/uuid v1.6.0
-	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/richardlehane/siegfried v1.11.0
+	github.com/mattn/go-sqlite3 v1.14.23
+	github.com/richardlehane/siegfried v1.11.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
-	github.com/schollz/progressbar/v3 v3.14.2
+	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/spf13/pflag v1.0.5
-	go.etcd.io/bbolt v1.3.10
-	golang.org/x/crypto v0.23.0
+	go.etcd.io/bbolt v1.3.11
+	golang.org/x/crypto v0.27.0
 )
 
 require (
@@ -27,9 +27,9 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v0.2.0 // indirect
-	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	golang.org/x/image v0.20.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/term v0.24.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 )

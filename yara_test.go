@@ -65,7 +65,9 @@ func TestYaraScan(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(got[0].Identifier(), tt.want) {
+			matchedRule := got.MatchingRules()[0]
+
+			if !reflect.DeepEqual(matchedRule.Identifier(), tt.want) {
 				t.Errorf("YaraScan() got = %v, want %v", got, tt.want)
 			}
 		})

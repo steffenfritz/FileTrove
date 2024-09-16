@@ -547,15 +547,18 @@ func main() {
 				logger.Warn("Could not scan YARA rules", slog.String("error", err.Error()))
 			}
 
-			if len(matches) > 0 {
-				for _, match := range matches {
-					yarauuid, err := ft.CreateUUID()
-					if err != nil {
-						logger.Warn("Could not create UUID for YARA rule", slog.String("error", err.Error()))
-					}
-					_, err = prepYaraInsert.Exec(yarauuid, sessionmd.UUID, fileuuid, match.Identifier())
-					if err != nil {
-						logger.Warn("Could not add YARA identification", slog.String("error", err.Error()))
+			// As matches could be nil we check for it here
+			if matches != nil {
+				if len(matches.MatchingRules()) > 0 {
+					for _, match := range matches.MatchingRules() {
+						yarauuid, err := ft.CreateUUID()
+						if err != nil {
+							logger.Warn("Could not create UUID for YARA rule", slog.String("error", err.Error()))
+						}
+						_, err = prepYaraInsert.Exec(yarauuid, sessionmd.UUID, fileuuid, match.Identifier())
+						if err != nil {
+							logger.Warn("Could not add YARA identification", slog.String("error", err.Error()))
+						}
 					}
 				}
 			}
