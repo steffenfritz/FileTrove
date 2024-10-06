@@ -68,7 +68,7 @@ jobs:
 
       # Clone the yara-x repository
       - name: Clone yara-x repository
-        run: git clone git@github.com:VirusTotal/yara-x.git
+        run: git clone https://github.com/VirusTotal/yara-x.git
         # Optional: Change to a specific branch if needed
         # run: git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
 
