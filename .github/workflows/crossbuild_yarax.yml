@@ -1,0 +1,105 @@
+name: Build and Cross-Compile Go & Rust Project
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+        arch: [x64, arm64]
+        include:
+          # macOS x64
+          - platform: macos-latest
+            arch: x64
+          # Linux x64
+          - platform: ubuntu-latest
+            arch: x64
+          # Linux ARM64
+          - platform: ubuntu-latest
+            arch: arm64
+          # Windows x64
+          - platform: windows-latest
+            arch: x64
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup Rust and install cargo-c
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Install cargo-c for Rust
+        run: cargo install cargo-c
+
+      # Install dependencies based on platform
+      - name: Install dependencies on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install go
+          brew install mingw-w64  # Required for Windows cross-compiling if needed in future
+
+      - name: Install dependencies on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc musl-tools libssl-dev pkg-config
+
+      - name: Install dependencies on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install golang --version=1.20.3
+          choco install mingw
+
+      # Build the Rust C library (cross-compiling if needed)
+      - name: Build Rust C library
+        run: |
+          if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
+            rustup target add x86_64-unknown-linux-gnu
+            cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu
+          elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
+            rustup target add aarch64-unknown-linux-gnu
+            cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu
+          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            rustup target add x86_64-apple-darwin
+            cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin
+          elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            rustup target add x86_64-pc-windows-gnu
+            cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu
+          fi
+
+      # Build Go project (Cross-compiling for each platform)
+      - name: Build Go project
+        run: |
+          if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
+            CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/myprogram
+          elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
+            CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -o build/linux_arm64/myprogram
+          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
+            CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o build/mac64/myprogram
+          elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/myprogram.exe
+          fi
+
+      # Upload the build artifacts (binaries and libraries)
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            build/
+
