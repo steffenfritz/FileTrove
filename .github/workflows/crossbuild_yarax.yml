@@ -70,7 +70,7 @@ jobs:
       - name: Clone yara-x repository and build
         run: | 
           git clone https://github.com/VirusTotal/yara-x.git
-          git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
+          #git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
           cd yara-x
           
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
