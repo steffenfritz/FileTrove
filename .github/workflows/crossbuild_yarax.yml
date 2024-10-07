@@ -81,8 +81,9 @@ jobs:
         run: | 
           git clone https://github.com/VirusTotal/yara-x.git
           #git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
-          mkdir -p $GITHUB_WORKSPACE/local/lib  # Erstelle das Verzeichnis für die Library
+          mkdir -p $GITHUB_WORKSPACE/local/lib
           mkdir -p $GITHUB_WORKSPACE/local/include
+          mkdir -p $GITHUB_WORKSPACE/local/lib/pkgconfig
           cd yara-x
 
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
@@ -109,6 +110,7 @@ jobs:
         run: |
           export LIBRARY_PATH=$GITHUB_WORKSPACE/local/lib
           export C_INCLUDE_PATH=$GITHUB_WORKSPACE/local/include
+          export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
           
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/ftrove
