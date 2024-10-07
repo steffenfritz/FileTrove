@@ -34,7 +34,7 @@ jobs:
     steps:
       # Checkout the code
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Setup Rust and install cargo-c
       - name: Set up Rust
@@ -43,6 +43,16 @@ jobs:
           profile: minimal
           toolchain: stable
           components: rustfmt, clippy
+
+      - name: Cache Rust build
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install cargo-c for Rust
         run: cargo install cargo-c
@@ -77,15 +87,20 @@ jobs:
 
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             rustup target add x86_64-unknown-linux-gnu
+            export CC_x86_64_unknown_linux_gnu=gcc
             cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             rustup target add aarch64-unknown-linux-gnu
+            export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
             cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
             rustup target add x86_64-apple-darwin
+            export CC_x86_64_apple_darwin=clang
+            export CXX_x86_64_apple_darwin=clang++
             cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             rustup target add x86_64-pc-windows-gnu
+            export CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
             cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu --prefix=$GITHUB_WORKSPACE/local
           fi
 
