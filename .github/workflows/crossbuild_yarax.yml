@@ -1,7 +1,7 @@
 name: Build and Cross-Compile Go & Rust Project
 
 on:
-  workflow_dispatch:  # Ermöglicht manuelles Auslösen des Workflows
+  workflow_dispatch:  # Enable manual triggering
   push:
     branches:
       - main
@@ -68,11 +68,11 @@ jobs:
 
       # Clone the yara-x repository
       - name: Clone yara-x repository and build
-        run: git clone https://github.com/VirusTotal/yara-x.git
-        # Optional: Change to a specific branch if needed
-        # run: git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
-      # Build the Rust C library (cross-compiling if needed)
-        run: cd yara-x  # Wechsel ins yara-x Verzeichnis
+        run: | 
+          git clone https://github.com/VirusTotal/yara-x.git
+          git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
+          cd yara-x
+          
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             rustup target add x86_64-unknown-linux-gnu
             cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu
@@ -86,7 +86,7 @@ jobs:
             rustup target add x86_64-pc-windows-gnu
             cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu
           fi
-        working-directory: ./yara-x  # Setze hier das korrekte Verzeichnis
+        working-directory: ./yara-x  # Set working directory
 
       # Build Go project (Cross-compiling for each platform)
       - name: Build Go project
