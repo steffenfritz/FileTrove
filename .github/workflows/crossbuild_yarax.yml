@@ -71,34 +71,38 @@ jobs:
         run: | 
           git clone https://github.com/VirusTotal/yara-x.git
           #git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
+          mkdir -p $GITHUB_WORKSPACE/local/lib  # Erstelle das Verzeichnis für die Library
+          mkdir -p $GITHUB_WORKSPACE/local/include
           cd yara-x
-          
+
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             rustup target add x86_64-unknown-linux-gnu
-            cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu
+            cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             rustup target add aarch64-unknown-linux-gnu
-            cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu
+            cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
             rustup target add x86_64-apple-darwin
-            cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin
+            cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             rustup target add x86_64-pc-windows-gnu
-            cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu
+            cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu --prefix=$GITHUB_WORKSPACE/local
           fi
-          #working-directory: ./yara-x  # Set working directory
 
       # Build Go project (Cross-compiling for each platform)
       - name: Build Go project
         run: |
+          export LIBRARY_PATH=$GITHUB_WORKSPACE/local/lib
+          export C_INCLUDE_PATH=$GITHUB_WORKSPACE/local/include
+          
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
-            CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/myprogram
+            CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/ftrove
           elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
-            CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -o build/linux_arm64/myprogram
+            CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -o build/linux_arm64/ftrove
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o build/mac64/myprogram
+            CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o build/mac64/ftrove
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
-            CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/myprogram.exe
+            CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/ftrove.exe
           fi
 
       # Upload the build artifacts (binaries and libraries)
