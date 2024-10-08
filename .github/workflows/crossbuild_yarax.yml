@@ -44,15 +44,15 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Cache Rust build
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          #- name: Cache Rust build
+          #uses: actions/cache@v3
+          #with:
+          #path: |
+          #~/.cargo/registry
+          #~/.cargo/git
+          #key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          #restore-keys: |
+          #${{ runner.os }}-cargo-
 
       - name: Install cargo-c for Rust
         run: cargo install cargo-c
