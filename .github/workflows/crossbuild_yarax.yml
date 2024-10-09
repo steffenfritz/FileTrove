@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies on Linux
         if: runner.os == 'Linux'
         run: |
-          :qsudo apt-get update
+          sudo apt-get update
           sudo apt-get install -y gcc musl-tools libssl-dev pkg-config gcc-aarch64-linux-gnu
 
       - name: Install dependencies on Windows
