@@ -44,15 +44,15 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-          #- name: Cache Rust build
-          #uses: actions/cache@v3
-          #with:
-          #path: |
-          #~/.cargo/registry
-          #~/.cargo/git
-          #key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          #restore-keys: |
-          #${{ runner.os }}-cargo-
+      - name: Cache Rust build
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install cargo-c for Rust
         run: cargo install cargo-c
@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies on Linux
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          :qsudo apt-get update
           sudo apt-get install -y gcc musl-tools libssl-dev pkg-config gcc-aarch64-linux-gnu
 
       - name: Install dependencies on Windows
@@ -89,19 +89,23 @@ jobs:
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             rustup target add x86_64-unknown-linux-gnu
             export CC_x86_64_unknown_linux_gnu=gcc
+            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
             cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
             rustup target add aarch64-unknown-linux-gnu
             export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
             cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
+            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
           elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
             rustup target add x86_64-apple-darwin
             export CC_x86_64_apple_darwin=clang
             export CXX_x86_64_apple_darwin=clang++
+            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
             cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             rustup target add x86_64-pc-windows-gnu
             export CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
+            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
             cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu --prefix=$GITHUB_WORKSPACE/local
           fi
 
