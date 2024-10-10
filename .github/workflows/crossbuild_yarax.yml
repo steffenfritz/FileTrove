@@ -3,8 +3,8 @@ name: Build and Cross-Compile Go & Rust Project
 on:
   workflow_dispatch:  # Enable manual triggering
   push:
-    branches:
-      - main
+    tags:
+      - '*'
   pull_request:
     branches:
       - main
@@ -14,17 +14,18 @@ jobs:
     strategy:
       matrix:
         platform: [macos-latest, ubuntu-latest, windows-latest]
-        arch: [x64, arm64]
+        #arch: [x64, arm64]
+        arch: [x64]
         include:
           # macOS x64
-          - platform: macos-latest
-            arch: x64
+          #- platform: macos-latest
+          #  arch: x64
           # Linux x64
           - platform: ubuntu-latest
             arch: x64
           # Linux ARM64
-          - platform: ubuntu-latest
-            arch: arm64
+          #- platform: ubuntu-latest
+          #  arch: arm64
           # Windows x64
           - platform: windows-latest
             arch: x64
@@ -44,31 +45,31 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Cache Rust build
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+      #- name: Cache Rust build
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: |
+      #      ~/.cargo/registry
+      #      ~/.cargo/git
+      #    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      #    restore-keys: |
+      #      ${{ runner.os }}-cargo-
 
       - name: Install cargo-c for Rust
         run: cargo install cargo-c
 
       # Install dependencies based on platform
-      - name: Install dependencies on macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install go
-          brew install mingw-w64  # Required for Windows cross-compiling if needed in future
+      #- name: Install dependencies on macOS
+      #  if: runner.os == 'macOS'
+      #  run: |
+      #    brew install go
+      #    brew install mingw-w64  # Required for Windows cross-compiling if needed in future
 
       - name: Install dependencies on Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc musl-tools libssl-dev pkg-config gcc-aarch64-linux-gnu
+          sudo apt-get install -y gcc musl-tools libssl-dev pkg-config
 
       - name: Install dependencies on Windows
         if: runner.os == 'Windows'
