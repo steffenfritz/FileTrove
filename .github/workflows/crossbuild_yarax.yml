@@ -14,18 +14,11 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest, windows-latest]
-        #arch: [x64, arm64]
         arch: [x64]
         include:
-          # macOS x64
-          #- platform: macos-latest
-          #  arch: x64
           # Linux x64
           - platform: ubuntu-latest
             arch: x64
-          # Linux ARM64
-          #- platform: ubuntu-latest
-          #  arch: arm64
           # Windows x64
           - platform: windows-latest
             arch: x64
@@ -45,25 +38,18 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      #- name: Cache Rust build
-      #  uses: actions/cache@v3
-      #  with:
-      #    path: |
-      #      ~/.cargo/registry
-      #      ~/.cargo/git
-      #    key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      #    restore-keys: |
-      #      ${{ runner.os }}-cargo-
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install cargo-c for Rust
         run: cargo install cargo-c
-
-      # Install dependencies based on platform
-      #- name: Install dependencies on macOS
-      #  if: runner.os == 'macOS'
-      #  run: |
-      #    brew install go
-      #    brew install mingw-w64  # Required for Windows cross-compiling if needed in future
 
       - name: Install dependencies on Linux
         if: runner.os == 'Linux'
@@ -81,7 +67,7 @@ jobs:
       - name: Clone yara-x repository and build
         run: | 
           git clone https://github.com/VirusTotal/yara-x.git
-          #git clone -b <branch-name> git@github.com:VirusTotal/yara-x.git
+          git checkout tags/v0.8.0
           mkdir -p $GITHUB_WORKSPACE/local/lib
           mkdir -p $GITHUB_WORKSPACE/local/include
           mkdir -p $GITHUB_WORKSPACE/local/lib/pkgconfig
