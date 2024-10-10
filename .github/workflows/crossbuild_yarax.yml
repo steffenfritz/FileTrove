@@ -13,7 +13,7 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [ubuntu-latest, windows-latest]
         #arch: [x64, arm64]
         arch: [x64]
         include:
@@ -92,17 +92,6 @@ jobs:
             export CC_x86_64_unknown_linux_gnu=gcc
             export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
             cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
-          elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
-            rustup target add aarch64-unknown-linux-gnu
-            export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-            cargo cinstall -p yara-x-capi --release --target aarch64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
-            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
-          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            rustup target add x86_64-apple-darwin
-            export CC_x86_64_apple_darwin=clang
-            export CXX_x86_64_apple_darwin=clang++
-            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
-            cargo cinstall -p yara-x-capi --release --target x86_64-apple-darwin --prefix=$GITHUB_WORKSPACE/local
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             rustup target add x86_64-pc-windows-gnu
             export CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
@@ -119,10 +108,6 @@ jobs:
           
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/ftrove
-          elif [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "arm64" ]; then
-            CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build -o build/linux_arm64/ftrove
-          elif [ "${{ matrix.platform }}" == "macos-latest" ]; then
-            CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -o build/mac64/ftrove
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/ftrove.exe
           fi
