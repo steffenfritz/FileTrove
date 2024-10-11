@@ -113,5 +113,5 @@ jobs:
         with:
           name: rust-library-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
-            $GITHUB_WORKSPACE/local/lib
+            $GITHUB_WORKSPACE/local/
 
