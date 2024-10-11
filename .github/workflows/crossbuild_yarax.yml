@@ -60,7 +60,7 @@ jobs:
       - name: Install dependencies on Windows
         if: runner.os == 'Windows'
         run: |
-          choco install golang --version=1.20.3
+          choco install golang --version=1.23.2
           choco install mingw
 
       # Clone the yara-x repository
@@ -98,11 +98,20 @@ jobs:
             CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/ftrove.exe
           fi
 
-      # Upload the build artifacts (binaries and libraries)
-      - name: Upload artifacts
+
+      # Upload Go binary artifact
+      - name: Upload Go binary artifact
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.platform }}-${{ matrix.arch }}
+          name: ftrove-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             build/
+
+      # Upload Rust library artifact
+      - name: Upload Rust library artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rust-library-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            $GITHUB_WORKSPACE/local/lib
 
