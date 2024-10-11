@@ -72,16 +72,19 @@ jobs:
           mkdir -p $GITHUB_WORKSPACE/local/lib/pkgconfig
           cd yara-x
           git checkout tags/v0.8.0
-
+          
+          # Build for Linux
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             rustup target add x86_64-unknown-linux-gnu
             export CC_x86_64_unknown_linux_gnu=gcc
             export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
             cargo cinstall -p yara-x-capi --release --target x86_64-unknown-linux-gnu --prefix=$GITHUB_WORKSPACE/local
+          
+          # Build for Windows
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
             rustup target add x86_64-pc-windows-gnu
-            export CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc
-            export PKG_CONFIG_PATH=$GITHUB_WORKSPACE/local/lib/pkgconfig
+            $env:CC_x86_64_pc_windows_gnu="x86_64-w64-mingw32-gcc"
+            $env:PKG_CONFIG_PATH="$GITHUB_WORKSPACE\local\lib\pkgconfig"
             cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu --prefix=$GITHUB_WORKSPACE/local
           fi
 
@@ -95,6 +98,9 @@ jobs:
           if [ "${{ matrix.platform }}" == "ubuntu-latest" ] && [ "${{ matrix.arch }}" == "x64" ]; then
             CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o build/linux64/ftrove
           elif [ "${{ matrix.platform }}" == "windows-latest" ]; then
+            $env:LIBRARY_PATH="$GITHUB_WORKSPACE\local\lib"
+            $env:C_INCLUDE_PATH="$GITHUB_WORKSPACE\local\include"
+            $env:PKG_CONFIG_PATH="$GITHUB_WORKSPACE\local\lib\pkgconfig"
             CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o build/windows64/ftrove.exe
           fi
 
