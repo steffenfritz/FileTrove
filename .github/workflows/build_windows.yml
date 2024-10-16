@@ -63,10 +63,17 @@ jobs:
           # Build the library
           cargo cinstall -p yara-x-capi --release --target x86_64-pc-windows-gnu --prefix=$GITHUB_WORKSPACE/build/windows64
 
-      # Move the compiled library to the build directory
-      - name: Move Rust library to build directory
+      # Check where the Rust library is and move it
+      - name: Locate and move Rust library
         run: |
-          move $GITHUB_WORKSPACE/build/windows64/lib/yara_x_capi.dll $GITHUB_WORKSPACE/build/windows64
+          # Check if the DLL exists in the target directory
+          if (Test-Path "$GITHUB_WORKSPACE/yara-x/target/x86_64-pc-windows-gnu/release/yara_x_capi.dll") {
+            # Move the DLL to the build directory
+            Move-Item "$GITHUB_WORKSPACE/yara-x/target/x86_64-pc-windows-gnu/release/yara_x_capi.dll" "$GITHUB_WORKSPACE/build/windows64/"
+          } else {
+            Write-Error "Rust library not found!"
+            exit 1
+          }
 
       # Build the Go project
       - name: Build Go project
@@ -89,3 +96,4 @@ jobs:
         with:
           name: ftrove-windows64
           path: build/ftrove-windows64.zip
+
