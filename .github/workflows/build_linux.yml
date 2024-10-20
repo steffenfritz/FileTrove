@@ -17,8 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Set up Rust
       - name: Set up Rust
-        uses: actions/setup-rust@v1
+        uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
@@ -54,7 +55,7 @@ jobs:
       - name: Copy artifacts
         run: |
           cp /usr/local/lib/libyara_x.so ../artifacts/    # Ersetze durch den tatsächlichen Bibliotheksnamen
-          cp ./ftrove ../artifacts/                        # Ersetze 'ftrove' durch den tatsächlichen Binary-Namen
+          cp ./ftrove ../artifacts/                       # Ersetze 'ftrove' durch den tatsächlichen Binary-Namen
 
       - name: Create archive of artifacts
         run: |
@@ -62,7 +63,7 @@ jobs:
           tar -czvf artifacts.tar.gz *
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
           path: FileTrove/cmd/artifacts/artifacts.tar.gz
