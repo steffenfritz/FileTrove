@@ -45,9 +45,7 @@ jobs:
         run: |
           cd yara-x
           git checkout tags/v0.9.0
-
-      - name: Build YARA-X C API
-        run: cargo cinstall -p yara-x-capi --release
+          cargo cinstall -p yara-x-capi --release
 
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
