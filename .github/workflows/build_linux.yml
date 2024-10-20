@@ -17,6 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install taskdev
+        run: sudo snap install task --classic
+
       # Set up Rust
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
@@ -28,18 +31,23 @@ jobs:
       - name: Install cargo-c
         run: cargo install cargo-c
 
+
+        # Set up Go (for building the Go program)
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'  # Use the desired Go version
+
       - name: Clone YARA-X repository
         run: git clone https://github.com/VirusTotal/yara-x.git
 
       - name: Checkout YARA-X version
         run: |
           cd yara-x
-          git checkout tags/v.0.9.0
+          git checkout tags/v0.9.0
 
       - name: Build YARA-X C API
-        run: |
-          cd yara-x
-          cargo cinstall -p yara-x-capi --release
+        run: cargo cinstall -p yara-x-capi --release
 
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
