@@ -28,6 +28,17 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
+       # Cache Rust build
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Install cargo-c
         run: cargo install cargo-c
 
@@ -47,18 +58,14 @@ jobs:
           git checkout tags/v0.9.0
           cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
 
-      # Set environment variables so Go can find the library and headers
-      - name: Set environment variables for Go
-        run: |
-          export PKG_CONFIG_PATH=$HOME/yara_install/lib/pkgconfig
-          export CGO_CFLAGS="-I$HOME/yara_install/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install/lib"
-
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
 
       - name: Build Go Binary
         run: |
+          export PKG_CONFIG_PATH=$HOME/yara_install/lib/pkgconfig
+          export CGO_CFLAGS="-I$HOME/yara_install/include"
+          export CGO_LDFLAGS="-L$HOME/yara_install/lib"
           cd FileTrove/cmd/ftrove
           task build
 
