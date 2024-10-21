@@ -45,7 +45,13 @@ jobs:
         run: |
           cd yara-x
           git checkout tags/v0.9.0
-          cargo cinstall -p yara-x-capi --release
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+
+      # Set environment variables so Go can find the library and headers
+      - name: Set environment variables for Go
+        run: |
+          export CGO_CFLAGS="-I$HOME/yara_install/include"
+          export CGO_LDFLAGS="-L$HOME/yara_install/lib"
 
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
@@ -60,8 +66,10 @@ jobs:
 
       - name: Copy artifacts
         run: |
-          cp /usr/local/lib/libyara_x.so ../artifacts/    # Ersetze durch den tatsächlichen Bibliotheksnamen
-          cp ./ftrove ../artifacts/                       # Ersetze 'ftrove' durch den tatsächlichen Binary-Namen
+
+          cp $HOME/yara_install/lib/libyara_x_capi* ../artifacts/
+          cp ./ftrove ../artifacts/
+
 
       - name: Create archive of artifacts
         run: |
