@@ -50,6 +50,7 @@ jobs:
       # Set environment variables so Go can find the library and headers
       - name: Set environment variables for Go
         run: |
+          export PKG_CONFIG_PATH=$HOME/yara_install/lib/pkgconfig
           export CGO_CFLAGS="-I$HOME/yara_install/include"
           export CGO_LDFLAGS="-L$HOME/yara_install/lib"
 
