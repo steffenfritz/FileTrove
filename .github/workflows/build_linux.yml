@@ -73,16 +73,16 @@ jobs:
       - name: Set environment variables for pkg-config and Go
         run: |
           export PKG_CONFIG_PATH=$PC_DIR
-          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib"
+          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include/x86_64-linux-gnu"
+          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig"
           # Verify pkg-config can find the yara_x_capi package
           pkg-config --cflags --libs yara_x_capi
 
       - name: Build Go Binary
         run: |
           export PKG_CONFIG_PATH=$PC_DIR
-          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install//usr/local/lib"
+          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include/x86_64-linux-gnu"
+          export CGO_LDFLAGS="-L$HOME/yara_install//usr/local/lib/x86_64-linux-gnu/pkgconfig"
           cd FileTrove/cmd/ftrove
           task build
 
