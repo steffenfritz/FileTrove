@@ -66,8 +66,6 @@ jobs:
           export PKG_CONFIG_PATH=$PC_DIR
           # Debug output to verify files are correctly installed
           ls -l $PC_DIR
-          ls -l $HOME/yara_install/lib
-          ls -l $HOME/yara_install/include
 
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
