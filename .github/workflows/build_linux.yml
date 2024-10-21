@@ -51,17 +51,21 @@ jobs:
       - name: Clone YARA-X repository
         run: git clone https://github.com/VirusTotal/yara-x.git
 
-      - name: Build YARA-X C API and verify .pc file
+      - name: Build YARA-X C API and locate .pc file
         run: |
           cd yara-x
           cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
-          # Verify if the .pc file exists
-          if [ ! -f $HOME/yara_install/lib/pkgconfig/yara_x_capi.pc ]; then
-            echo "Error: yara_x_capi.pc not found in $HOME/yara_install/lib/pkgconfig"
+          # Find the .pc file location
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc)
+          if [ -z "$PC_FILE" ]; then
+            echo "Error: yara_x_capi.pc not found"
             exit 1
           fi
+          PC_DIR=$(dirname $PC_FILE)
+          echo "Found yara_x_capi.pc in $PC_DIR"
+          export PKG_CONFIG_PATH=$PC_DIR
           # Debug output to verify files are correctly installed
-          ls -l $HOME/yara_install/lib/pkgconfig
+          ls -l $PC_DIR
           ls -l $HOME/yara_install/lib
           ls -l $HOME/yara_install/include
 
@@ -70,7 +74,7 @@ jobs:
 
       - name: Set environment variables for pkg-config and Go
         run: |
-          export PKG_CONFIG_PATH=$HOME/yara_install/lib/pkgconfig
+          export PKG_CONFIG_PATH=$PC_DIR
           export CGO_CFLAGS="-I$HOME/yara_install/include"
           export CGO_LDFLAGS="-L$HOME/yara_install/lib"
           # Verify pkg-config can find the yara_x_capi package
@@ -78,7 +82,7 @@ jobs:
 
       - name: Build Go Binary
         run: |
-          export PKG_CONFIG_PATH=$HOME/yara_install/lib/pkgconfig
+          export PKG_CONFIG_PATH=$PC_DIR
           export CGO_CFLAGS="-I$HOME/yara_install/include"
           export CGO_LDFLAGS="-L$HOME/yara_install/lib"
           cd FileTrove/cmd/ftrove
