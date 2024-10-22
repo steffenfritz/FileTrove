@@ -42,7 +42,6 @@ jobs:
       - name: Install cargo-c
         run: cargo install cargo-c
 
-      # Set up Go (for building the Go program)
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -82,7 +81,7 @@ jobs:
         run: |
           export PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
           export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install//usr/local/lib/x86_64-linux-gnu"
+          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu"
           cd FileTrove/cmd/ftrove
           task build
 
@@ -91,7 +90,7 @@ jobs:
 
       - name: Copy artifacts
         run: |
-          cp $HOME/yara_install//usr/local/lib/libyara_x_capi* ../artifacts/
+          cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* ../artifacts/
           cp ./ftrove ../artifacts/
 
       - name: Create archive of artifacts
