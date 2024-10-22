@@ -85,13 +85,19 @@ jobs:
           cd FileTrove/cmd/ftrove
           task build
 
+      - name: Test ftrove execution
+        run: |
+          find $HOME/yara_install -name yara_x_capi.pc 
+          pwd
+          ./ftrove -h
+
       - name: Create artifacts directory
         run: mkdir -p ../artifacts
 
       - name: Copy artifacts
         run: |
           cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* ../artifacts/
-          cp ./ftrove ../artifacts/
+          cp $HOME/yara_install/FileTrove/cmd/ftrove/ftrove ../artifacts/
 
       - name: Create archive of artifacts
         run: |
