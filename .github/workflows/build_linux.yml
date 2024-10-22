@@ -87,9 +87,9 @@ jobs:
 
       - name: Test ftrove execution
         run: |
-          find $HOME/yara_install -name yara_x_capi.pc 
+          find $HOME/yara_install -name ftrove 
           pwd
-          ./ftrove -h
+          ls
 
       - name: Create artifacts directory
         run: mkdir -p ../artifacts
