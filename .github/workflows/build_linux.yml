@@ -1,13 +1,10 @@
-name: Build YARA-X C API and Go Binary
+name: Debian - x86_64 Build YARA-X C API and Go Binary
 
 on:
   workflow_dispatch:  # Enable manual triggering
   push:
     tags:
       - '*'
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
@@ -96,11 +93,11 @@ jobs:
       - name: Create archive of artifacts
         run: |
           cd ../artifacts
-          tar -czvf artifacts.tar.gz *
+          tar -czvf ubuntu_x86_64_artifacts.tar.gz *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: /home/runner/work/FileTrove/artifacts/artifacts.tar.gz
+          path: /home/runner/work/FileTrove/artifacts/ubuntu_x86_64_artifacts.tar.gz
 
