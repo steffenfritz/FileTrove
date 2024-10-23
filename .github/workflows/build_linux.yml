@@ -97,10 +97,11 @@ jobs:
         run: |
           cd ../artifacts
           tar -czvf artifacts.tar.gz *
+          find . -type f artifacts.tar.gz
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/artifacts/artifacts.tar.gz
+          path: artifacts.tar.gz
 
