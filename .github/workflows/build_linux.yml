@@ -89,6 +89,9 @@ jobs:
         run: |
           pwd
           ls
+          ls cmd
+          ls cmd/ftrove
+          ls /home/runner/work/FileTrove/FileTrove/cmd/ftrove/ftrove
 
       - name: Create artifacts directory
         run: mkdir -p ../artifacts
