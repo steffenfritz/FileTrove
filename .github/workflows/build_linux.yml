@@ -97,6 +97,10 @@ jobs:
         run: |
           cd ../artifacts
           tar -czvf artifacts.tar.gz *
+          echo "debug work"
+          pwd
+          echo "debug file listing"
+          ls
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
