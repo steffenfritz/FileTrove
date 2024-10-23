@@ -91,7 +91,9 @@ jobs:
           ls
           ls cmd
           ls cmd/ftrove
-          ls /home/runner/work/FileTrove/FileTrove/cmd/ftrove/ftrove
+          echo "find ftrove binary"
+          cd
+          find . -type f -name ftrove
 
       - name: Create artifacts directory
         run: mkdir -p ../artifacts
