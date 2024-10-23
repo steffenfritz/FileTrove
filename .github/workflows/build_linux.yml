@@ -1,0 +1,106 @@
+name: Build YARA-X C API and Go Binary
+
+on:
+  workflow_dispatch:  # Enable manual triggering
+  push:
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install taskdev
+        run: sudo snap install task --classic
+
+      # Set up Rust
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+
+      # Cache Rust build
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install cargo-c
+        run: cargo install cargo-c
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'  # Use the desired Go version
+
+      - name: Clone YARA-X repository
+        run: git clone https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API and locate .pc file
+        run: |
+          cd yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+          # Find the .pc file location
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc)
+          if [ -z "$PC_FILE" ]; then
+            echo "Error: yara_x_capi.pc not found"
+            exit 1
+          fi
+          PC_DIR=$(dirname $PC_FILE)
+          echo "Found yara_x_capi.pc in $PC_DIR"
+          export PKG_CONFIG_PATH=$PC_DIR
+          # Debug output to verify files are correctly installed
+          ls -l $PC_DIR
+
+      - name: Clone FileTrove repository
+        run: git clone https://github.com/steffenfritz/FileTrove.git
+
+      - name: Set environment variables for pkg-config and Go
+        run: |
+          export PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
+          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
+          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu"
+          # Verify pkg-config can find the yara_x_capi package
+          pkg-config --cflags --libs yara_x_capi
+
+      - name: Build Go Binary
+        run: |
+          export PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
+          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
+          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu"
+          cd FileTrove/cmd/ftrove
+          task build
+
+      - name: Create artifacts directory
+        run: mkdir -p ../artifacts
+
+      - name: Copy artifacts
+        run: |
+          cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* ../artifacts/
+          cp /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/ftrove/ftrove ../artifacts/
+
+      - name: Create archive of artifacts
+        run: |
+          cd ../artifacts
+          tar -czvf artifacts.tar.gz *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: /home/runner/work/FileTrove/artifacts/artifacts.tar.gz
+
