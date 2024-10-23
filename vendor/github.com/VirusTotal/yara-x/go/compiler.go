@@ -51,6 +51,21 @@ func IgnoreModule(module string) CompileOption {
 	}
 }
 
+// BanModule is an option for [NewCompiler] and [Compile] that allows
+// banning the use of a given module.
+//
+// Import statements for the banned module will cause an error. The error
+// message can be customized by using the given error title and message.
+//
+// If this function is called multiple times with the same module name,
+// the error title and message will be updated.
+func BanModule(module string, errTitle string, errMessage string) CompileOption {
+	return func(c *Compiler) error {
+		c.bannedModules[module] = bannedModule{errTitle, errMessage}
+		return nil
+	}
+}
+
 // RelaxedReSyntax is an option for [NewCompiler] and [Compile] that
 // determines whether the compiler should adopt a more relaxed approach
 // while parsing regular expressions.
@@ -81,6 +96,15 @@ func ErrorOnSlowPattern(yes bool) CompileOption {
 	}
 }
 
+// ErrorOnSlowLoop is an option for [NewCompiler] and [Compile] that
+// tells the compiler to treat slow loops as errors instead of warnings.
+func ErrorOnSlowLoop(yes bool) CompileOption {
+	return func(c *Compiler) error {
+		c.errorOnSlowLoop = yes
+		return nil
+	}
+}
+
 // A structure that contains the options passed to [Compiler.AddSource].
 type sourceOptions struct {
 	origin string
@@ -95,7 +119,7 @@ type SourceOption func(opt *sourceOptions) error
 // The origin is usually the path of the file containing the source code,
 // but it can be any arbitrary string that conveys information of the
 // source's origin. This origin appears in error reports, for instance, if
-// if origin is "some_file.yar", error reports will look like:
+// origin is "some_file.yar", error reports will look like:
 //
 //	error: syntax error
 //	 --> some_file.yar:4:17
@@ -119,20 +143,32 @@ type CompileError struct {
 	Code string `json:"code"`
 	// Error title (e.g: "unknown identifier `foo`").
 	Title string `json:"title"`
+	// Error line number. This is the line number of the first error label.
+	Line int `json:"line"`
+	// Error column number. This is the column number of the first error label.
+	Column int `json:"column"`
 	// Each of the labels in the error report.
-	Labels []Label `json:"labels"`
+	Labels []Label `json:"labels,omitempty"`
+	// Each of the footers in the error report.
+	Footers []Footer `json:"footers,omitempty"`
 	// The error's full report, as shown by the command-line tool.
 	Text string `json:"text"`
 }
 
 // Warning represents each of the warnings returned by [Compiler.Warnings].
 type Warning struct {
-	// Error code (e.g: "slow_pattern").
+	// Warning code (e.g: "slow_pattern").
 	Code string `json:"code"`
-	// Error title (e.g: "slow pattern").
+	// Warning title (e.g: "slow pattern").
 	Title string `json:"title"`
-	// Each of the labels in the error report.
-	Labels []Label `json:"labels"`
+	// Warning line number. This is the line number of the first warning label.
+	Line int `json:"line"`
+	// Warning column number. This is the column number of the first warning label.
+	Column int `json:"column"`
+	// Each of the labels in the warning report.
+	Labels []Label `json:"labels,omitempty"`
+	// Each of the footers in the warning report.
+	Footers []Footer `json:"footers,omitempty"`
 	// The error's full report, as shown by the command-line tool.
 	Text string `json:"text"`
 }
@@ -143,9 +179,21 @@ type Label struct {
 	Level string `json:"level"`
 	// Origin of the code where the error occurred.
 	CodeOrigin string `json:"code_origin"`
+	// Line number
+	Line int64 `json:"line"`
+	// Column number
+	Column int64 `json:"column"`
 	// The code span highlighted by this label.
 	Span Span `json:"span"`
 	// Text associated to the label.
+	Text string `json:"text"`
+}
+
+// Footer represents a footer in a [CompileError].
+type Footer struct {
+	// Footer's level (e.g: "error", "warning", "info", "note", "help").
+	Level string `json:"level"`
+	// Footer's text.
 	Text string `json:"text"`
 }
 
@@ -161,12 +209,19 @@ func (c CompileError) Error() string {
 	return c.Text
 }
 
+type bannedModule struct {
+	errTitle string
+	errMsg   string
+}
+
 // Compiler represent a YARA compiler.
 type Compiler struct {
 	cCompiler          *C.YRX_COMPILER
 	relaxedReSyntax    bool
 	errorOnSlowPattern bool
+	errorOnSlowLoop    bool
 	ignoredModules     map[string]bool
+	bannedModules      map[string]bannedModule
 	vars               map[string]interface{}
 }
 
@@ -174,6 +229,7 @@ type Compiler struct {
 func NewCompiler(opts ...CompileOption) (*Compiler, error) {
 	c := &Compiler{
 		ignoredModules: make(map[string]bool),
+		bannedModules:  make(map[string]bannedModule),
 		vars:           make(map[string]interface{}),
 	}
 
@@ -192,6 +248,10 @@ func NewCompiler(opts ...CompileOption) (*Compiler, error) {
 		flags |= C.YRX_ERROR_ON_SLOW_PATTERN
 	}
 
+	if c.errorOnSlowLoop {
+		flags |= C.YRX_ERROR_ON_SLOW_LOOP
+	}
+
 	C.yrx_compiler_create(flags, &c.cCompiler)
 
 	if err := c.initialize(); err != nil {
@@ -205,6 +265,9 @@ func NewCompiler(opts ...CompileOption) (*Compiler, error) {
 func (c *Compiler) initialize() error {
 	for name, _ := range c.ignoredModules {
 		c.ignoreModule(name)
+	}
+	for name, v := range c.bannedModules {
+		c.banModule(name, v.errTitle, v.errMsg)
 	}
 	for ident, value := range c.vars {
 		if err := c.DefineGlobal(ident, value); err != nil {
@@ -281,6 +344,23 @@ func (c *Compiler) ignoreModule(module string) {
 	cModule := C.CString(module)
 	defer C.free(unsafe.Pointer(cModule))
 	result := C.yrx_compiler_ignore_module(c.cCompiler, cModule)
+	if result != C.SUCCESS {
+		panic("yrx_compiler_add_unsupported_module failed")
+	}
+	runtime.KeepAlive(c)
+}
+
+func (c *Compiler) banModule(module, error_title, error_message string) {
+	cModule := C.CString(module)
+	defer C.free(unsafe.Pointer(cModule))
+
+	cErrTitle := C.CString(error_title)
+	defer C.free(unsafe.Pointer(cErrTitle))
+
+	cErrMsg := C.CString(error_message)
+	defer C.free(unsafe.Pointer(cErrMsg))
+
+	result := C.yrx_compiler_ban_module(c.cCompiler, cModule, cErrTitle, cErrMsg)
 	if result != C.SUCCESS {
 		panic("yrx_compiler_add_unsupported_module failed")
 	}
