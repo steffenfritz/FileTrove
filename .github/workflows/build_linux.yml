@@ -102,5 +102,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/artifacts.tar.gz
+          path: /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/artifacts/artifacts.tar.gz
 
