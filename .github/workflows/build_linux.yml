@@ -97,14 +97,10 @@ jobs:
         run: |
           cd ../artifacts
           tar -czvf artifacts.tar.gz *
-          echo "debug work"
-          pwd
-          echo "debug file listing"
-          ls
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: ./artifacts.tar.gz
+          path: /home/runner/work/FileTrove/artifacts/artifacts.tar.gz
 
