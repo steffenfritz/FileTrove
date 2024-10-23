@@ -1,0 +1,109 @@
+name: Windows - x86_64 Build YARA-X C API and Go Binary
+
+on:
+  workflow_dispatch:  # Enable manual triggering
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Installiere Rust auf Windows
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+
+      # Cache Rust build
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # Installiere cargo-c (wird benötigt, um die Rust C-API zu bauen)
+      - name: Install cargo-c
+        run: cargo install cargo-c
+
+      # Set up Go auf Windows
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'
+
+      # Klone YARA-X Repository und baue die C-API
+      - name: Clone YARA-X repository
+        run: git clone https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API and locate .pc file
+        run: |
+          cd yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$env:USERPROFILE\\yara_install
+          # Suche die .pc Datei
+          $PC_FILE = Get-ChildItem -Path $env:USERPROFILE\\yara_install -Recurse -Filter yara_x_capi.pc
+          if (-not $PC_FILE) {
+            Write-Error "Error: yara_x_capi.pc not found"
+            exit 1
+          }
+          $PC_DIR = Split-Path $PC_FILE.FullName
+          Write-Host "Found yara_x_capi.pc in $PC_DIR"
+          $env:PKG_CONFIG_PATH = $PC_DIR
+          # Debug Ausgabe
+          Get-ChildItem $PC_DIR
+
+      # Klone FileTrove Repository
+      - name: Clone FileTrove repository
+        run: git clone https://github.com/steffenfritz/FileTrove.git
+
+      # Setze die Umgebungsvariablen für pkg-config und Go
+      - name: Set environment variables for pkg-config and Go
+        run: |
+          $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\usr\\local\\lib\\pkgconfig"
+          $env:CGO_CFLAGS = "-I$env:USERPROFILE\\yara_install\\usr\\local\\include"
+          $env:CGO_LDFLAGS = "-L$env:USERPROFILE\\yara_install\\usr\\local\\lib"
+          pkg-config --cflags --libs yara_x_capi
+
+      # Baue das Go-Binary mit der Rust-Bibliothek
+      - name: Build Go Binary
+        run: |
+          $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\usr\\local\\lib\\pkgconfig"
+          $env:CGO_CFLAGS = "-I$env:USERPROFILE\\yara_install\\usr\\local\\include"
+          $env:CGO_LDFLAGS = "-L$env:USERPROFILE\\yara_install\\usr\\local\\lib"
+          cd FileTrove\\cmd\\ftrove
+          go build -v
+
+      # Artefakte-Verzeichnis erstellen
+      - name: Create artifacts directory
+        run: New-Item -ItemType Directory -Force -Path ../artifacts
+
+      # Kopiere Artefakte
+      - name: Copy artifacts
+        run: |
+          Copy-Item "$env:USERPROFILE\\yara_install\\usr\\local\\lib\\libyara_x_capi*.dll" -Destination ../artifacts
+          Copy-Item FileTrove\\cmd\\ftrove\\ftrove.exe -Destination ../artifacts
+
+      # Erstelle ein ZIP-Archiv der Artefakte
+      - name: Create archive of artifacts
+        run: |
+          cd ../artifacts
+          Compress-Archive -Path * -DestinationPath windows_x86_64_artifacts.zip
+
+      # Lade die Artefakte hoch
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: ../artifacts/windows_x86_64_artifacts.zip
+
