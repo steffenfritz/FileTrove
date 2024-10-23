@@ -97,7 +97,7 @@ jobs:
         run: |
           cd ../artifacts
           tar -czvf artifacts.tar.gz *
-          find . -type f artifacts.tar.gz
+          find . -type f -name artifacts.tar.gz
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
