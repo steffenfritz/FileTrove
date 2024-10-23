@@ -85,16 +85,6 @@ jobs:
           cd FileTrove/cmd/ftrove
           task build
 
-      - name: Test ftrove execution
-        run: |
-          pwd
-          ls
-          ls cmd
-          ls cmd/ftrove
-          echo "find ftrove binary"
-          cd
-          find . -type f -name ftrove
-
       - name: Create artifacts directory
         run: mkdir -p ../artifacts
 
@@ -112,5 +102,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: build-artifacts
-          path: FileTrove/cmd/artifacts/artifacts.tar.gz
+          path: /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/artifacts.tar.gz
 
