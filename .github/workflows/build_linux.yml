@@ -101,7 +101,7 @@ jobs:
       - name: Copy artifacts
         run: |
           cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* ../artifacts/
-          cp /home/runner/work/FileTrove/FileTrove/cmd/ftrove/ftrove ../artifacts/
+          cp /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/ftrove/ftrove ../artifacts/
 
       - name: Create archive of artifacts
         run: |
