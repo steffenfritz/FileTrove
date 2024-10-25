@@ -6,13 +6,18 @@ on:
     tags:
       - '*'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
       # Installiere Rust auf Windows
       - name: Set up Rust
@@ -24,7 +29,7 @@ jobs:
 
       # Cache Rust build
       - name: Cache Rust build
-        uses: actions/cache@v4
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
           path: |
             ~/.cargo/registry
@@ -39,7 +44,7 @@ jobs:
 
       # Set up Go auf Windows
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.23.1'
 
