@@ -60,6 +60,7 @@ jobs:
       - name: Build YARA-X C API and locate .pc file
         run: |
           cd yara-x
+          git checkout tags/v0.10.0
           cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-msvc --destdir=$env:USERPROFILE\\yara_install
           # Suche die .pc Datei und setze den Pfad
           $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\\yara_install
