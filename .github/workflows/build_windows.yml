@@ -24,12 +24,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
-      # Installiere Rust auf Windows
+      # Installiere Rust auf Windows und MinGW-Toolchain
       - name: Set up Rust
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1.0.7
         with:
           profile: minimal
           toolchain: stable
+          target: x86_64-pc-windows-gnu  # MinGW-Toolchain hinzufügen
           components: rustfmt, clippy
 
       # Cache Rust build
@@ -53,7 +54,7 @@ jobs:
         with:
           go-version: '1.23.1'
 
-      # Klone YARA-X Repository und baue die C-API
+      # Klone YARA-X Repository und baue die C-API mit MinGW
       - name: Clone YARA-X repository
         run: git clone https://github.com/VirusTotal/yara-x.git
 
@@ -61,7 +62,8 @@ jobs:
         run: |
           cd yara-x
           git checkout tags/v0.10.0
-          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-msvc --destdir=$env:USERPROFILE\\yara_install
+          rustup target add x86_64-pc-windows-gnu  # MinGW-Target hinzufügen
+          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-gnu --destdir=$env:USERPROFILE\\yara_install
           # Suche die .pc Datei und setze den Pfad
           $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\\yara_install
           if (-not $PC_FILE) {
