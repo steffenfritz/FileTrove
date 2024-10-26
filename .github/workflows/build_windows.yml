@@ -61,7 +61,8 @@ jobs:
         run: |
           cd yara-x
           git checkout tags/v0.10.0
-          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-msvc --destdir=$env:USERPROFILE\\yara_install
+          rustup target add x86_64-pc-windows-gnu  # MinGW-Target hinzufügen
+          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-gnu --destdir=$env:USERPROFILE\\yara_install
           # Suche die .pc Datei und setze den Pfad
           $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\\yara_install
           if (-not $PC_FILE) {
