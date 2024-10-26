@@ -123,5 +123,6 @@ jobs:
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: build-artifacts
-          path: $env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip
+          path: ${{ github.workspace }}\\windows_x86_64_artifacts.zip
+
 
