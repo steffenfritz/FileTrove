@@ -104,6 +104,12 @@ jobs:
       - name: Create artifacts directory
         run: New-Item -ItemType Directory -Force -Path $env:GITHUB_WORKSPACE\\artifacts
 
+      # Debugging dll search
+      - name: Find dll
+        run: |
+          Get-ChildItem -Path "$env:USERPROFILE" -Recurse -Filter "yara_x_capi*"
+
+
       # Kopiere Artefakte in das Verzeichnis
       - name: Copy artifacts
 
