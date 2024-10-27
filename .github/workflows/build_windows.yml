@@ -108,7 +108,8 @@ jobs:
       - name: Copy artifacts
 
         run: |
-          $dllFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install" -Recurse -Filter "libyara_x_capi*.dll" | Select-Object -First 1
+          # $dllFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install" -Recurse -Filter "libyara_x_capi*.dll" | Select-Object -First 1
+          $dllFile = Get-ChildItem -Path "C:\" -Recurse -Filter "yara_x_capi.lib" | Select-Object -First 1
           if (-not $dllFile) {
           Write-Error "DLL file not found in yara_install directory!"
           exit 1
