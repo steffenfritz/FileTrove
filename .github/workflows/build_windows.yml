@@ -106,8 +106,14 @@ jobs:
 
       # Kopiere Artefakte in das Verzeichnis
       - name: Copy artifacts
+
         run: |
-          Copy-Item "$env:USERPROFILE\\yara_install\\lib\\libyara_x_capi*.dll" -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          $dllFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install" -Recurse -Filter "libyara_x_capi*.dll" | Select-Object -First 1
+          if (-not $dllFile) {
+          Write-Error "DLL file not found in yara_install directory!"
+          exit 1
+          }
+          Copy-Item -Path $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
           Copy-Item "$env:GITHUB_WORKSPACE\\FileTrove\\cmd\\ftrove\\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\\artifacts"
 
       # Erstelle ein ZIP-Archiv der Artefakte im GITHUB_WORKSPACE
