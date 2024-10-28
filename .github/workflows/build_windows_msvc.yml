@@ -1,0 +1,109 @@
+name: Windows - MSVC x86_64 Build YARA-X C API and Go Binary
+
+on:
+  workflow_dispatch: 
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2.10.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.6
+
+      # Set up Rust for Windows with MSVC
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          profile: minimal
+          toolchain: stable
+          target: x86_64-pc-windows-msvc  # Switch to MSVC target
+
+      - name: Cache Rust build
+        uses: actions/cache@v4.0.2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install cargo-c
+        run: cargo install cargo-c
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.1.0
+        with:
+          go-version: '1.23.1'
+
+      # Clone YARA-X Repository and build the C API using MSVC
+      - name: Clone YARA-X repository
+        run: git clone https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API and locate .pc file
+        run: |
+          cd yara-x
+          git checkout tags/v0.10.0
+          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-msvc --destdir=$env:USERPROFILE\\yara_install
+          
+          # Locate the .pc file and set PKG_CONFIG_PATH
+          $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\\yara_install
+          if (-not $PC_FILE) { Write-Error "Error: yara_x_capi.pc not found"; exit 1 }
+          $PC_DIR = Split-Path $PC_FILE.FullName
+          $env:PKG_CONFIG_PATH = $PC_DIR
+          Write-Host "PKG_CONFIG_PATH set to $PC_DIR"
+
+      # Clone FileTrove Repository
+      - name: Clone FileTrove repository
+        run: git clone https://github.com/steffenfritz/FileTrove.git
+
+      - name: Set environment variables for pkg-config and Go
+        run: |
+          $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\lib\\pkgconfig"
+          $env:CGO_CFLAGS = "-I$env:USERPROFILE\\yara_install\\include"
+          $env:CGO_LDFLAGS = "-L$env:USERPROFILE\\yara_install\\lib"
+          pkg-config --cflags --libs yara_x_capi
+
+      - name: Build Go Binary
+        run: |
+          cd FileTrove\\cmd\\ftrove
+          go build -v
+
+      - name: Create artifacts directory
+        run: New-Item -ItemType Directory -Force -Path $env:GITHUB_WORKSPACE\\artifacts
+
+      - name: Copy DLL and Binary Artifacts
+        run: |
+          $dllFile = Get-ChildItem "$env:USERPROFILE\\yara_install\\bin" -Filter "yara_x_capi.dll" | Select-Object -First 1
+          if (-not $dllFile) { Write-Error "DLL file not found in yara_install\\bin"; exit 1 }
+          $libFile = Get-ChildItem "$env:USERPROFILE\\yara_install\\lib" -Filter "yara_x_capi.lib" | Select-Object -First 1
+          if (-not $libFile) { Write-Error "Static lib file not found in yara_install\\lib"; exit 1 }
+          Copy-Item $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          Copy-Item $libFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          Copy-Item "$env:GITHUB_WORKSPACE\\FileTrove\\cmd\\ftrove\\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+
+      - name: Create archive of artifacts
+        run: |
+          Compress-Archive -Path "$env:GITHUB_WORKSPACE\\artifacts\\*" -DestinationPath "$env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip"
+          if (!(Test-Path "$env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip")) { Write-Error "ZIP archive not found!" }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3.2.1
+        with:
+          name: build-artifacts
+          path: ${{ github.workspace }}\\windows_x86_64_artifacts.zip
+
