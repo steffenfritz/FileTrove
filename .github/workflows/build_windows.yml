@@ -119,7 +119,15 @@ jobs:
           Write-Error "DLL file not found in yara_install directory!"
           exit 1
           }
+          $dllAFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install\\lib" -Recurse -Filter "yara_x_capi.dll.a" | Select-Object -First 1
+          if (-not $dllFile) {
+          Write-Error "DLL object file not found in yara_install directory!"
+          exit 1
+          }
+
+
           Copy-Item -Path $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          Copy-Item -Path $dllAFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
           Copy-Item "$env:GITHUB_WORKSPACE\\FileTrove\\cmd\\ftrove\\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\\artifacts"
 
       # Erstelle ein ZIP-Archiv der Artefakte im GITHUB_WORKSPACE
