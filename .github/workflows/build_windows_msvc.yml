@@ -1,7 +1,7 @@
 name: Windows - MSVC x86_64 Build YARA-X C API and Go Binary
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:  # Enable manual triggering
   push:
     tags:
       - '*'
@@ -17,23 +17,24 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2.10.1
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
-      # Set up Rust for Windows with MSVC
+      # Installiere Rust auf Windows
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1.0.7
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1.0.7
         with:
           profile: minimal
           toolchain: stable
-          target: x86_64-pc-windows-msvc  # Switch to MSVC target
+          components: rustfmt, clippy
 
+      # Cache Rust build
       - name: Cache Rust build
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
           path: |
             ~/.cargo/registry
@@ -42,15 +43,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
+      # Installiere cargo-c (wird benötigt, um die Rust C-API zu bauen)
       - name: Install cargo-c
         run: cargo install cargo-c
 
+      # Set up Go auf Windows
       - name: Set up Go
-        uses: actions/setup-go@v5.1.0
+        uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
         with:
           go-version: '1.23.1'
 
-      # Clone YARA-X Repository and build the C API using MSVC
+      # Klone YARA-X Repository und baue die C-API
       - name: Clone YARA-X repository
         run: git clone https://github.com/VirusTotal/yara-x.git
 
@@ -58,51 +61,84 @@ jobs:
         run: |
           cd yara-x
           git checkout tags/v0.10.0
-          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-msvc --destdir=$env:USERPROFILE\\yara_install
-          
-          # Locate the .pc file and set PKG_CONFIG_PATH
+          rustup target add x86_64-pc-windows-gnu  # MinGW-Target hinzufügen
+          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-gnu --destdir=$env:USERPROFILE\\yara_install
+          # Suche die .pc Datei und setze den Pfad
           $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\\yara_install
-          if (-not $PC_FILE) { Write-Error "Error: yara_x_capi.pc not found"; exit 1 }
+          if (-not $PC_FILE) {
+            Write-Error "Error: yara_x_capi.pc not found"
+            exit 1
+          }
           $PC_DIR = Split-Path $PC_FILE.FullName
+          Write-Host "Found yara_x_capi.pc in $PC_DIR"
           $env:PKG_CONFIG_PATH = $PC_DIR
-          Write-Host "PKG_CONFIG_PATH set to $PC_DIR"
+          Write-Host "Setting PKG_CONFIG_PATH to $PC_DIR"
+          # Debug Ausgabe
+          Get-ChildItem $PC_DIR
 
-      # Clone FileTrove Repository
+      # Klone FileTrove Repository
       - name: Clone FileTrove repository
         run: git clone https://github.com/steffenfritz/FileTrove.git
 
+      # Setze die Umgebungsvariablen für pkg-config und Go
       - name: Set environment variables for pkg-config and Go
         run: |
+          # Set PKG_CONFIG_PATH explizit für die richtige Position der .pc Datei
           $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\lib\\pkgconfig"
+          # Setze zusätzliche Flags für das Verzeichnis der header und lib Dateien
           $env:CGO_CFLAGS = "-I$env:USERPROFILE\\yara_install\\include"
           $env:CGO_LDFLAGS = "-L$env:USERPROFILE\\yara_install\\lib"
+          # Debug: Ausgabe für die Konfiguration
+          Write-Host "PKG_CONFIG_PATH set to $env:PKG_CONFIG_PATH"
           pkg-config --cflags --libs yara_x_capi
 
+      # Baue das Go-Binary mit der Rust-Bibliothek
       - name: Build Go Binary
         run: |
+          # Setze PKG_CONFIG_PATH sicherheitshalber erneut für den Go-Build-Schritt
+          $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\lib\\pkgconfig"
+          Write-Host "Verifying PKG_CONFIG_PATH for Go build: $env:PKG_CONFIG_PATH"
           cd FileTrove\\cmd\\ftrove
           go build -v
 
+      # Artefakte-Verzeichnis erstellen im GITHUB_WORKSPACE
       - name: Create artifacts directory
         run: New-Item -ItemType Directory -Force -Path $env:GITHUB_WORKSPACE\\artifacts
 
-      - name: Copy DLL and Binary Artifacts
+      # Debugging dll search
+      - name: Find dll
         run: |
-          $dllFile = Get-ChildItem "$env:USERPROFILE\\yara_install\\bin" -Filter "yara_x_capi.dll" | Select-Object -First 1
-          if (-not $dllFile) { Write-Error "DLL file not found in yara_install\\bin"; exit 1 }
-          $libFile = Get-ChildItem "$env:USERPROFILE\\yara_install\\lib" -Filter "yara_x_capi.lib" | Select-Object -First 1
-          if (-not $libFile) { Write-Error "Static lib file not found in yara_install\\lib"; exit 1 }
-          Copy-Item $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
-          Copy-Item $libFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          Get-ChildItem -Path "$env:USERPROFILE" -Recurse -Filter "yara_x_capi*"
+          Get-ChildItem -Path "D:\" -Recurse -Filter "yara_x_capi*"
+
+      # Kopiere Artefakte in das Verzeichnis
+      - name: Copy artifacts
+        run: |
+          $dllFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install\\bin" -Recurse -Filter "yara_x_capi.dll" | Select-Object -First 1
+          if (-not $dllFile) {
+            Write-Error "DLL file not found in yara_install directory!"
+            exit 1
+          }
+          $dllAFile = Get-ChildItem -Path "$env:USERPROFILE\\yara_install\\lib" -Recurse -Filter "yara_x_capi.dll.a" | Select-Object -First 1
+          if (-not $dllAFile) {
+            Write-Error "DLL object file not found in yara_install directory!"
+            exit 1
+          }
+          Copy-Item -Path $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
+          Copy-Item -Path $dllAFile.FullName -Destination "$env:GITHUB_WORKSPACE\\artifacts"
           Copy-Item "$env:GITHUB_WORKSPACE\\FileTrove\\cmd\\ftrove\\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\\artifacts"
 
+      # Erstelle ein ZIP-Archiv der Artefakte im GITHUB_WORKSPACE
       - name: Create archive of artifacts
         run: |
           Compress-Archive -Path "$env:GITHUB_WORKSPACE\\artifacts\\*" -DestinationPath "$env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip"
-          if (!(Test-Path "$env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip")) { Write-Error "ZIP archive not found!" }
+          if (!(Test-Path -Path "$env:GITHUB_WORKSPACE\\windows_x86_64_artifacts.zip")) {
+            Write-Error "ZIP archive not found!"
+          }
 
+      # Lade das ZIP-Archiv der Artefakte hoch
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3.2.1
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3.2.1
         with:
           name: build-artifacts
           path: ${{ github.workspace }}\\windows_x86_64_artifacts.zip
