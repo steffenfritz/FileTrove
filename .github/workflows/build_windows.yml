@@ -108,6 +108,7 @@ jobs:
       - name: Find dll
         run: |
           Get-ChildItem -Path "$env:USERPROFILE" -Recurse -Filter "yara_x_capi*"
+          Get-ChildItem -Path "D:\" -Recurse -Filter "yara_x_capi*"
 
 
       # Kopiere Artefakte in das Verzeichnis
