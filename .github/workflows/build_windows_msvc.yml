@@ -85,11 +85,13 @@ jobs:
         run: |
           # Set PKG_CONFIG_PATH explizit für die richtige Position der .pc Datei
           $env:PKG_CONFIG_PATH = "$env:USERPROFILE\\yara_install\\lib\\pkgconfig"
-          # Setze zusätzliche Flags für das Verzeichnis der header und lib Dateien
+          # Setze zusätzliche Flags für das Verzeichnis der Header- und Lib-Dateien
           $env:CGO_CFLAGS = "-I$env:USERPROFILE\\yara_install\\include"
           $env:CGO_LDFLAGS = "-L$env:USERPROFILE\\yara_install\\lib"
           # Debug: Ausgabe für die Konfiguration
           Write-Host "PKG_CONFIG_PATH set to $env:PKG_CONFIG_PATH"
+          Write-Host "CGO_CFLAGS set to $env:CGO_CFLAGS"
+          Write-Host "CGO_LDFLAGS set to $env:CGO_LDFLAGS"
           pkg-config --cflags --libs yara_x_capi
 
       # Baue das Go-Binary mit der Rust-Bibliothek
