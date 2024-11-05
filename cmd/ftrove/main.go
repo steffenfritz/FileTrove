@@ -54,6 +54,7 @@ func main() {
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
 	timezone := flag.StringP("timezone", "z", "", "Set the time zone to a region in which the timestamps of files are to be translated. If this flag is not set, the local time zone is used. Example: Europe/Berlin")
+	debug := flag.BoolP("debug", "D", false, "Enable debug mode. This creates the diagnostic file debug_ftrove.")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	printversion := flag.BoolP("version", "v", false, "Show version and build.")
@@ -62,6 +63,32 @@ func main() {
 	flag.Parse()
 
 	starttime := time.Now()
+
+	var fddebug os.File
+	var err error
+
+	if *debug {
+		fddebug, err = ft.DebugCreateDebugPackage()
+		if err != nil {
+			logger.Error("Could not create debug package:", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		defer fddebug.Close()
+
+		err = ft.DebugHostinformation(fddebug)
+		if err != nil {
+			logger.Error("Could not create debug hostinformation:", slog.String("error", err.Error()))
+		}
+		err = ft.DebugCheckInstalled(fddebug)
+		if err != nil {
+			logger.Error("Could not check installed version:", slog.String("error", err.Error()))
+		}
+		err = ft.DebugWriteFlags(fddebug, flag.Args())
+		if err != nil {
+			logger.Error("Could not write flags:", slog.String("error", err.Error()))
+		}
+
+	}
 
 	// Init new session with flags
 	var sessionmd ft.SessionMD
@@ -356,6 +383,9 @@ func main() {
 
 	// Create file list
 	filelist, dirlist, err := ft.CreateFileList(*inDir)
+	if *debug {
+		ft.DebugWriteFileList(fddebug, filelist, dirlist)
+	}
 	if err != nil {
 		logger.Error("An error occurred during the creation of the file list.", slog.String("error", err.Error()))
 		err = ftdb.Close()
@@ -676,4 +706,5 @@ func main() {
 	if err != nil {
 		_ = fmt.Errorf("ERROR: Could not close error log file: " + err.Error())
 	}
+
 }

@@ -7,6 +7,7 @@ toolchain go1.23.1
 require (
 	github.com/VirusTotal/yara-x/go v0.9.0
 	github.com/djherbis/times v1.6.0
+	github.com/elastic/go-sysinfo v1.15.0
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.23
 	github.com/richardlehane/siegfried v1.11.1
@@ -18,7 +19,10 @@ require (
 )
 
 require (
+	github.com/elastic/go-windows v1.0.0 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/richardlehane/characterize v1.0.0 // indirect
 	github.com/richardlehane/match v1.0.5 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
@@ -32,4 +36,5 @@ require (
 	golang.org/x/term v0.24.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
+	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 )
