@@ -264,5 +264,23 @@ func main() {
 			return
 		}
 
+		// Update version 1.0.0-BETA-1 --> 1.0.0-BETA-2
+		if instversion == "1.0.0-BETA-1" {
+			_, err = ftdb.Exec("UPDATE filetrove SET version = '1.0.0-BETA-2' where version = '1.0.0-BETA-1'")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+			updatetime := time.Now().Format(time.RFC3339)
+			_, err = ftdb.Exec("UPDATE filetrove SET lastupdate = ?", updatetime)
+			if err != nil {
+				logger.Error("Could not update last update time.", slog.String("error", err.Error()))
+				return
+			}
+			logger.Info("FileTrove database updated to version 1.0.0-BETA-2.")
+			return
+
+		}
+
 	}
 }
