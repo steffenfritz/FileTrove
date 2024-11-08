@@ -2,9 +2,6 @@ name: Windows - MSVC x86_64 Build YARA-X C API and Go Binary
 
 on:
   workflow_dispatch:  # Enable manual triggering
-  push:
-    tags:
-      - '*'
 
 permissions:
   contents: read
