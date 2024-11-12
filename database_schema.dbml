@@ -46,7 +46,6 @@ TABLE files {fileuuid TEXT
   sessionuuid TEXT
   filename TEXT
   filepath TEXT
-  filepath TEXT
   filenameextension TEXT
   filesize INTEGER
   filemd5 TEXT
