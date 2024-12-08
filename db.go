@@ -269,6 +269,27 @@ func PrepInsertYara(db *sql.DB) (*sql.Stmt, error) {
 	return prepin, err
 }
 
+// PrepInsertFileowner prepares a statement for the addition of a matching YARA rule
+func PrepInsertFileowner(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO fileowner VALUES(?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertDirowner prepares a statement for the addition of a matching YARA rule
+func PrepInsertDirowner(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO dirowner VALUES(?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertFilesystem prepares a statement for the addition of a matching YARA rule
+func PrepInsertFilesystem(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO dirowner VALUES(?,?,?,?,?,?)")
+
+	return prepin, err
+}
+
 // ListSessions lists all sessions from the FileTrove database
 func ListSessions(db *sql.DB) error {
 	rows, err := db.Query("SELECT rowid, uuid, starttime, COALESCE(endtime, '') AS endtime, " +

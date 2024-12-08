@@ -54,6 +54,7 @@ func main() {
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
 	resumeuuid := flag.StringP("resume", "r", "", "Resume an aborted session. Provide the session uuid.")
 	timezone := flag.StringP("timezone", "z", "", "Set the time zone to a region in which the timestamps of files are to be translated. If this flag is not set, the local time zone is used. Example: Europe/Berlin")
+	ownerinfo := flag.BoolP("owner-info", "o", false, "Get user and group information for each file and directory. See documentation for additional information.")
 	debug := flag.BoolP("debug", "D", false, "Enable debug mode. This creates the diagnostic file debug_ftrove.")
 
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
@@ -368,6 +369,7 @@ func main() {
 		nsrlcount = ri.NSRLFiles
 
 		// ToDo: Get Yara information for resuming sessions
+		// ToDo: Get all boolean flags for resuming sessions
 	}
 
 	// Prepare statement to add file scan results to database
@@ -447,6 +449,13 @@ func main() {
 	bar := progressbar.Default(int64(len(filelist)))
 	for _, file := range filelist {
 		var filemd ft.FileMD
+
+		// Create a UUID for every file that is written to the database. This UUID is not stable over several runs!
+		fileuuid, err := ft.CreateUUID()
+		if err != nil {
+			logger.Error("Could not create UUID for file "+file, slog.String("error", err.Error()))
+			os.Exit(1)
+		}
 
 		//filemd.Filename = file
 
@@ -531,14 +540,23 @@ func main() {
 			filemd.Filemtime = filetime.Mtime.String()
 		}
 
-		// Get representation of file owner and group
-		// This might and will hold values that might reflect not the original owner but the mounting user
-		fileowner, err := ft.GetFileOwner(file)
-		if err != nil {
-			logger.Error("Error while getting file owner.", slog.String("error", err.Error()))
+		if *ownerinfo {
+			// Get representation of file owner and group
+			// This might and will hold values that might reflect not the original owner but the mounting user
+			fileowner, err := ft.GetFileOwner(file)
+			if err != nil {
+				logger.Error("Error while getting file owner.", slog.String("error", err.Error()))
+			}
+			foprep, err := ft.PrepInsertFileowner(ftdb)
+			if err != nil {
+				logger.Error("Could not prepare file owner for database.", slog.String("error", err.Error()))
+			}
+			fouuid, _ := ft.CreateUUID()
+			_, err = foprep.Exec(fouuid, fileowner.Owner, sessionmd.UUID, fileuuid)
+			if err != nil {
+				logger.Error("Could not insert file owner into database.", slog.String("error", err.Error()))
+			}
 		}
-		// debug
-		println(fileowner.Owner)
 
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()
@@ -558,13 +576,6 @@ func main() {
 		filemd.Fileentropy, err = ft.Entropy(file)
 		if err != nil {
 			logger.Warn("Could not calculate entropy for file "+file, slog.String("warning", err.Error()))
-		}
-
-		// Create a UUID for every file that is written to the database. This UUID is not stable over several runs!
-		fileuuid, err := ft.CreateUUID()
-		if err != nil {
-			logger.Error("Could not create UUID for file "+file, slog.String("error", err.Error()))
-			os.Exit(1)
 		}
 
 		filehierarchy := strings.Count(file, string(os.PathSeparator))
