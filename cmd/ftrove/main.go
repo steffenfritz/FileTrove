@@ -24,7 +24,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-BETA-1"
+var Version string = "v1.0.0-BETA-x"
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string
@@ -530,6 +530,15 @@ func main() {
 			filemd.Filectime = filetime.Ctime.String()
 			filemd.Filemtime = filetime.Mtime.String()
 		}
+
+		// Get representation of file owner and group
+		// This might and will hold values that might reflect not the original owner but the mounting user
+		fileowner, err := ft.GetFileOwner(file)
+		if err != nil {
+			logger.Error("Error while getting file owner.", slog.String("error", err.Error()))
+		}
+		// debug
+		println(fileowner.Owner)
 
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()

@@ -186,12 +186,25 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
                          xpcomment TEXT,
                          xpauthor TEXT,
                          xpkeywords TEXT,
-                         xpsubject TEXT
-                         );
+                         xpsubject TEXT);
 						CREATE TABLE yara(yaraentryuuid TEXT,
 						  sessionuuid TEXT,
 						  fileuuid TEXT,
-						  rulename TEXT);`
+						  rulename TEXT);
+						CREATE TABLE fileowner(fileowneruuid TEXT,
+						  fileowner TEXT,
+						  sessionuuid TEXT,
+						  fileuuid TEXT);
+						CREATE TABLE dirowner(dirowneruuid TEXT,
+						  dirowner TEXT,
+						  sessionuuid TEXT,
+						  diruuid TEXT);
+						CREATE TABLE filesystem(filesystemuuid TEXT,
+  						  sessionuuid TEXT,
+  						  filesystemflag TEXT,
+  						  filesystemname TEXT,
+  						  filesystemversion TEXT,
+                          filesystemreadonly TEXT);`
 
 	_, err = db.Exec(initstatements)
 	if err != nil {

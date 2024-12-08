@@ -101,6 +101,38 @@ TABLE yara{
   rulename TEXT
 }
 
+TABLE fileowner{
+  fileowneruuid TEXT
+  fileowner TEXT
+  sessionuuid TEXT
+  fileuuid TEXT
+}
+
+TABLE dirowner{
+  dirowneruuid TEXT
+  dirowner TEXT
+  sessionuuid TEXT
+  diruuid TEXT
+}
+
+TABLE filesystem{
+  filesystemuuid TEXT
+  sessionuuid TEXT
+  filesystemflag TEXT
+  filesystemname TEXT
+  filesystemversion TEXT
+  filesystemreadonly TEXT
+}
+
+TABLE filesystemntfs{
+}
+
+TABLE filesystemext{
+}
+
+TABLE filesystemzfs{
+}
+
 Ref: files.sessionuuid > sessionsmd.uuid
 Ref: exif.sessionuuid > sessionsmd.uuid
 Ref: exif.fileuuid > files.fileuuid
@@ -108,3 +140,8 @@ Ref: directories.sessionuuid > sessionsmd.uuid
 Ref: dublincore.sessionuuid > sessionsmd.uuid
 Ref: yara.sessionuuid > sessionsmd.uuid
 Ref: yara.fileuuid > files.fileuuid
+Ref: fileowner.sessionuuid > sessions.uuid
+Ref: fileowner.fileuuid > files.fileuuid
+Ref: dirowner.sessionuuid > sessions.uuid
+Ref: dirowner.diruuid > directories.diruuid
+Ref: filesystem.sessionuuid > sessions.uuid
