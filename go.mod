@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.23.1
 
 require (
-	github.com/VirusTotal/yara-x/go v0.11.1
+	github.com/VirusTotal/yara-x/go v0.12.0
 	github.com/djherbis/times v1.6.0
 	github.com/elastic/go-sysinfo v1.15.0
 	github.com/google/uuid v1.6.0
