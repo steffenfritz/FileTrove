@@ -10,6 +10,7 @@ require (
 	github.com/elastic/go-sysinfo v1.15.0
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.23
+	github.com/pkg/xattr v0.4.10
 	github.com/richardlehane/siegfried v1.11.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/schollz/progressbar/v3 v3.14.6
