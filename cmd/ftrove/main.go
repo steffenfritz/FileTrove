@@ -59,6 +59,7 @@ func main() {
 	// updateFT := flag.BoolP("update-all", "u", false, "Update FileTrove, siegfried and NSRL.")
 	printversion := flag.BoolP("version", "v", false, "Show version and build.")
 	verbose := flag.BoolP("verbose", "V", false, "Print messages also to the terminal (stdout).")
+	xattrcheck := flag.BoolP("xattr", "x", false, "Read extended attributes (xattr) from files if available")
 
 	flag.Parse()
 
@@ -112,6 +113,10 @@ func main() {
 	if len(*grepYARA) > 0 {
 		sessionmd.Yaraflag = "True"
 		sessionmd.Yarasource = *grepYARA
+	}
+
+	if *xattrcheck {
+		sessionmd.XattrFlag = "True"
 	}
 
 	// Print banner or version on startup
@@ -247,6 +252,10 @@ func main() {
 		dcFlagSet := sessionValues[8]
 		// DOC: Value 9 MUST be the flag result of YARA. We translate for clarity.
 		yaraFlagSet := sessionValues[9]
+		// DOC: Value 11 MUST be the flag result of XATTR.
+		xattrFlagSet := sessionValues[11]
+		// DOC: Value 12 MUST be the flag result of NTFS ADS.
+		// ntfsadsFlagSet := sessionValues[12]
 
 		err = ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
@@ -282,7 +291,14 @@ func main() {
 				logger.Error("Error while exporting YARA identified files from session to TSV file.", slog.String("error", err.Error()))
 				os.Exit(1)
 			}
+		}
 
+		if xattrFlagSet == "True" {
+			err = ft.ExportXATTRTSV(*exportSessionToTSV)
+			if err != nil {
+				logger.Error("Error while exporting extended attributes from session to TSV file.", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
 		}
 
 		logger.Info("Export successful.")
@@ -368,6 +384,7 @@ func main() {
 		nsrlcount = ri.NSRLFiles
 
 		// ToDo: Get Yara information for resuming sessions
+		// ToDo: Read all flags from session table and overwrite flags
 	}
 
 	// Prepare statement to add file scan results to database
@@ -593,6 +610,18 @@ func main() {
 				}
 			}
 
+		}
+
+		// Check for XATTR
+		if *xattrcheck {
+			filexattrmap, err := ft.GetXattr(file)
+			if err != nil {
+				logger.Warn("Could not read Extended Attributes (xattr)", slog.String("warn", err.Error()))
+			}
+
+			for k, v := range filexattrmap {
+				// TODO next
+			}
 		}
 
 		filecount += 1

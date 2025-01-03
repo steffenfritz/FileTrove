@@ -16,7 +16,8 @@ func TestGetFileTimes(t *testing.T) {
 		want    FileTime
 		wantErr bool
 	}{
-		{"File Time white.jpg", args{"testdata/white.jpg"}, FileTime{Btime: time.Date(2024, time.January, 29, 18, 21, 29, 146356207, time.Local)}, false},
+		{"File Time white.jpg", args{"testdata/white.jpg"}, FileTime{Btime: time.Date(2024, time.November, 20, 23, 58, 55, 722771840, time.Local)}, false},
+
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
