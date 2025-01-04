@@ -114,7 +114,6 @@ func main() {
 		sessionmd.Yaraflag = "True"
 		sessionmd.Yarasource = *grepYARA
 	}
-
 	if *xattrcheck {
 		sessionmd.XattrFlag = "True"
 	}
@@ -459,6 +458,12 @@ func main() {
 		}
 	}
 
+	// Prepare Xattr insert statement, used later
+	prepXattrInsert, err := ft.PrepInsertXattr(ftdb)
+	if err != nil {
+		logger.Error("Could not prepare an insert statement for XATTR.", slog.String("error", err.Error()))
+	}
+
 	// Inspect every file in filelist
 	// Set up the progress bar
 	bar := progressbar.Default(int64(len(filelist)))
@@ -620,7 +625,14 @@ func main() {
 			}
 
 			for k, v := range filexattrmap {
-				// TODO next
+				xattruuid, err := ft.CreateUUID()
+				if err != nil {
+					logger.Warn("Could not create UUID for Extended Attributes", slog.String("error", err.Error()))
+				}
+				_, err = prepXattrInsert.Exec(xattruuid, sessionmd.UUID, fileuuid, k, v)
+				if err != nil {
+					logger.Error("Could not add Extended Attributes to database", slog.String("error", err.Error()))
+				}
 			}
 		}
 

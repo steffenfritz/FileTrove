@@ -170,27 +170,27 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						hierarchy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
-					    	sessionuuid TEXT,
-					    	dirname TEXT,
+					    sessionuuid TEXT,
+					    dirname TEXT,
 						dirpath TEXT,
 						dircttime TEXT,
 						dirmtime TEXT,
 						diratime TEXT,
 						hierarchy INTEGER);
-                       			   CREATE TABLE exif(exifuuid TEXT,
-                         			sessionuuid TEXT,
-                         			fileuuid TEXT,
-                         			exifversion TEXT,
-                         			datetime TEXT,
-                         			datetimeorig TEXT,
-                         			artist TEXT,
-                         			copyright TEXT,
-                         			make TEXT,
-                         			xptitle TEXT,
-                         			xpcomment TEXT,
-                         			xpauthor TEXT,
-                         			xpkeywords TEXT,
-                         			xpsubject TEXT);
+                       CREATE TABLE exif(exifuuid TEXT,
+                        sessionuuid TEXT,
+                        fileuuid TEXT,
+                        exifversion TEXT,
+                        datetime TEXT,
+                        datetimeorig TEXT,
+                        artist TEXT,
+                        copyright TEXT,
+                        make TEXT,
+                        xptitle TEXT,
+                        xpcomment TEXT,
+                        xpauthor TEXT,
+                        xpkeywords TEXT,
+                        xpsubject TEXT);
 					   CREATE TABLE yara(yaraentryuuid TEXT,
 						sessionuuid TEXT,
 						fileuuid TEXT,
@@ -270,8 +270,8 @@ func PrepInsertYara(db *sql.DB) (*sql.Stmt, error) {
 }
 
 // PrepInsertXattr prepares a statement for the addition of xattr keys and values
-func PrepInsertXaatr(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO xaatr VALUES(?,?,?,?,?)")
+func PrepInsertXattr(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO xattr VALUES(?,?,?,?,?)")
 
 	return prepin, err
 }
