@@ -11,9 +11,9 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8952/badge)](https://www.bestpractices.dev/projects/8952)
 
 
-VERSION: v1.0.0-BETA.3
+VERSION: v1.0.0-BETA.4
 
-NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions.
+NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions. An installation package for Debian/Ubuntu is provided with every release.
 
 
 ## About
@@ -37,6 +37,7 @@ os.Stat() is giving you the
 
 * and the same for directories
 
+FileTrove also reads and indexes extended attributes (xattr) from ext3/ext4, btrfs, APFS, ...
 
 Furthermore it creates and calculates
 
