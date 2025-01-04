@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -10,7 +11,7 @@ import (
 )
 
 // Version holds the version of FileTrove and is set by the build system
-var Version string = "v1.0.0-DEV-16"
+var Version string = "v1.0.0-RANDOM"
 
 // Build is not used anymore since DEV-11
 // Build holds the sha1 fingerprint of the build and is set by the build system
@@ -26,8 +27,13 @@ func main() {
 	createNSRL := flag.String("creatensrl", "", "Create or update a BoltDB file from a text file. A source file MUST be provided.")
 	nsrlversion := flag.String("nsrlversion", "", "NSRL version flag. This string will be used for ftrove's session information.")
 	updateDB := flag.String("updatedb", "", "Update a filetrove sqlite database to the next version. Expects the directory of the database file.")
+	version := flag.Bool("version", false, "Show version")
 
 	flag.Parse()
+
+	if *version {
+		fmt.Println("admftrove supports FileTrove version: " + Version)
+	}
 
 	if len(*createNSRL) != 0 {
 		err := ft.CreateNSRLBoltDB(*createNSRL, *nsrlversion, "nsrl.db")
@@ -296,6 +302,60 @@ func main() {
 				return
 			}
 			logger.Info("FileTrove database updated to version 1.0.0-BETA-3.")
+			return
+
+		}
+
+		// Update version 1.0.0-BETA-3 --> 1.0.0-BETA-4
+		if instversion == "1.0.0-BETA-3" {
+			_, err = ftdb.Exec("UPDATE filetrove SET version = '1.0.0-BETA-4' where version = '1.0.0-BETA-3'")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+			_, err = ftdb.Exec("CREATE TABLE xattr(xattruuid TEXT, sessionuuid TEXT, fileuuid TEXT, xattrname TEXT,xattrvalue TEXT)")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("CREATE TABLE ntfsads(ntfsadsuuid TEXT, sessionuuid TEXT, fileuuid TEXT, adsname TEXT, adsvalue TEXT)")
+			if err != nil {
+				logger.Error("Could not update database", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("CREATE TABLE sessionsmd_beta4(uuid TEXT, starttime TEXT, endtime TEXT, project TEXT, archivistname TEXT, mountpoint TEXT, pathseparator TEXT, exifflag TEXT, dublincoreflag TEXT, yaraflag TEXT, yarasource TEXT, xattrflag TEXT, ntfsadsflag TEXT, filetroveversion TEXT, filetrovedbversion TEXT, nsrlversion TEXT, siegfriedversion TEXT, goversion TEXT)")
+			if err != nil {
+				logger.Error("Could not create new session table", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("INSERT INTO sessionsmd_beta4 (uuid, starttime, endtime, project, archivistname, mountpoint, pathseparator, exifflag, dublincoreflag, yaraflag, yarasource, filetroveversion, filetrovedbversion, nsrlversion, siegfriedversion, goversion) SELECT uuid, starttime, endtime, project, archivistname, mountpoint, pathseparator, exifflag, dublincoreflag, yaraflag, yarasource, filetroveversion, filetrovedbversion, nsrlversion, siegfriedversion, goversion  from sessionsmd")
+			if err != nil {
+				logger.Error("Could not copy old sessions table to transition table", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("ALTER TABLE sessionsmd RENAME TO sessionsmd_beta3")
+			if err != nil {
+				logger.Error("Could not rename old sessions table", slog.String("error", err.Error()))
+				return
+			}
+
+			_, err = ftdb.Exec("ALTER TABLE sessionsmd_beta4 RENAME TO sessionsmd")
+			if err != nil {
+				logger.Error("Could not rename new sessions table", slog.String("error", err.Error()))
+				return
+			}
+
+			updatetime := time.Now().Format(time.RFC3339)
+			_, err = ftdb.Exec("UPDATE filetrove SET lastupdate = ?", updatetime)
+			if err != nil {
+				logger.Error("Could not update last update time.", slog.String("error", err.Error()))
+				return
+			}
+			logger.Info("FileTrove database updated to version 1.0.0-BETA-4.")
 			return
 
 		}
