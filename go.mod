@@ -5,17 +5,18 @@ go 1.22
 toolchain go1.23.1
 
 require (
-	github.com/VirusTotal/yara-x/go v0.9.0
+	github.com/VirusTotal/yara-x/go v0.12.0
 	github.com/djherbis/times v1.6.0
 	github.com/elastic/go-sysinfo v1.15.0
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.23
+	github.com/pkg/xattr v0.4.10
 	github.com/richardlehane/siegfried v1.11.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/spf13/pflag v1.0.5
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.27.0
+	golang.org/x/crypto v0.31.0
 )
 
 require (
@@ -32,9 +33,9 @@ require (
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v0.2.0 // indirect
 	golang.org/x/image v0.20.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 )

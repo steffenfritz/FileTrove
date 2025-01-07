@@ -28,6 +28,8 @@ type SessionMD struct {
 	Dublincoreflag     string
 	Yaraflag           string
 	Yarasource         string
+	XattrFlag          string
+	NtfsadsFlag        string
 	Filetroveversion   string
 	Nsrlversion        string
 	Sfversion          string
@@ -117,6 +119,8 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	dublincoreflag TEXT,
 						yaraflag TEXT,
 						yarasource TEXT,
+						xattrflag TEXT,
+						ntfsadsflag TEXT,
 						filetroveversion TEXT,
 						filetrovedbversion TEXT,
 						nsrlversion TEXT,
@@ -174,24 +178,33 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 						diratime TEXT,
 						hierarchy INTEGER);
                        CREATE TABLE exif(exifuuid TEXT,
-                         sessionuuid TEXT,
-                         fileuuid TEXT,
-                         exifversion TEXT,
-                         datetime TEXT,
-                         datetimeorig TEXT,
-                         artist TEXT,
-                         copyright TEXT,
-                         make TEXT,
-                         xptitle TEXT,
-                         xpcomment TEXT,
-                         xpauthor TEXT,
-                         xpkeywords TEXT,
-                         xpsubject TEXT
-                         );
-						CREATE TABLE yara(yaraentryuuid TEXT,
-						  sessionuuid TEXT,
-						  fileuuid TEXT,
-						  rulename TEXT);`
+                        sessionuuid TEXT,
+                        fileuuid TEXT,
+                        exifversion TEXT,
+                        datetime TEXT,
+                        datetimeorig TEXT,
+                        artist TEXT,
+                        copyright TEXT,
+                        make TEXT,
+                        xptitle TEXT,
+                        xpcomment TEXT,
+                        xpauthor TEXT,
+                        xpkeywords TEXT,
+                        xpsubject TEXT);
+					   CREATE TABLE yara(yaraentryuuid TEXT,
+						sessionuuid TEXT,
+						fileuuid TEXT,
+						rulename TEXT);
+					   CREATE TABLE xattr(xattruuid TEXT,
+  						sessionuuid TEXT,
+  						fileuuid TEXT,
+  						xattrname TEXT,
+  						xattrvalue TEXT);
+					   CREATE TABLE ntfsads(ntfsadsuuid TEXT
+  						sessionuuid TEXT
+  						fileuuid TEXT
+  						adsname TEXT
+  						adsvalue TEXT);`
 
 	_, err = db.Exec(initstatements)
 	if err != nil {
@@ -219,9 +232,9 @@ func ConnectFileTroveDB(dbpath string) (*sql.DB, error) {
 
 // InsertSession adds session metadata to the database
 func InsertSession(db *sql.DB, s SessionMD) error {
-	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
-		s.Archivistname, s.Mountpoint, s.Pathseparator, s.ExifFlag, s.Dublincoreflag, s.Yaraflag, s.Yarasource, s.Filetroveversion, s.Filetrovedbversion,
-		s.Nsrlversion, s.Sfversion, s.Goversion)
+	_, err := db.Exec("INSERT INTO sessionsmd VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s.UUID, s.Starttime, nil, s.Project,
+		s.Archivistname, s.Mountpoint, s.Pathseparator, s.ExifFlag, s.Dublincoreflag, s.Yaraflag, s.Yarasource, s.XattrFlag, s.NtfsadsFlag,
+		s.Filetroveversion, s.Filetrovedbversion, s.Nsrlversion, s.Sfversion, s.Goversion)
 
 	return err
 }
@@ -252,6 +265,20 @@ func PrepInsertDir(db *sql.DB) (*sql.Stmt, error) {
 // PrepInsertYara prepares a statement for the addition of a matching YARA rule
 func PrepInsertYara(db *sql.DB) (*sql.Stmt, error) {
 	prepin, err := db.Prepare("INSERT INTO yara VALUES(?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertXattr prepares a statement for the addition of xattr keys and values
+func PrepInsertXattr(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO xattr VALUES(?,?,?,?,?)")
+
+	return prepin, err
+}
+
+// PrepInsertNTFSADS prepares a statement for the addition of ADS found in NTFS keys and values
+func PrepInsertNTFSADS(db *sql.DB) (*sql.Stmt, error) {
+	prepin, err := db.Prepare("INSERT INTO ntfsads VALUES(?,?,?,?,?)")
 
 	return prepin, err
 }
@@ -763,6 +790,81 @@ func ExportYaraTSV(sessionuuid string) error {
 				valueStrings = append(valueStrings, "")
 			} else {
 				//valueStrings = append(valueStrings, value.(string))
+				switch v := value.(type) {
+				case int64:
+					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))
+				case string:
+					valueStrings = append(valueStrings, string(v))
+				case float64:
+					valueStrings = append(valueStrings, strconv.FormatFloat(v, 'E', -1, 32))
+				default:
+					log.Printf("Unexpected Type: %s", reflect.TypeOf(value))
+					valueStrings = append(valueStrings, "")
+				}
+			}
+		}
+		if err := tsvWriter.Write(valueStrings); err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ExportXATTRTSV exports all files that have xattributes to a TSV file. Filtering is done by session UUID.
+func ExportXATTRTSV(sessionuuid string) error {
+	db, err := sql.Open("sqlite3", filepath.Join("db", "filetrove.db"))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	outputFile, err := os.Create(sessionuuid + "_xattr.tsv")
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	tsvWriter := csv.NewWriter(outputFile)
+	tsvWriter.Comma = '\t'
+	defer tsvWriter.Flush()
+
+	query := "SELECT * FROM xattr WHERE sessionuuid=\"" + sessionuuid + "\""
+	rows, err := db.Query(query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return err
+	}
+
+	if err := tsvWriter.Write(columns); err != nil {
+		return err
+	}
+
+	// Loop to create TSV headings from row names
+	values := make([]interface{}, len(columns))
+	scanArgs := make([]interface{}, len(columns))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return err
+		}
+		var valueStrings []string
+		for _, value := range values {
+			if value == nil {
+				valueStrings = append(valueStrings, "")
+			} else {
 				switch v := value.(type) {
 				case int64:
 					valueStrings = append(valueStrings, strconv.FormatInt(v, 10))

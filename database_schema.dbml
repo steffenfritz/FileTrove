@@ -42,7 +42,8 @@ TABLE dublincore{
   coverage TEXT
 }
 
-TABLE files {fileuuid TEXT
+TABLE files {
+  fileuuid TEXT
   sessionuuid TEXT
   filename TEXT
   filepath TEXT
@@ -101,6 +102,22 @@ TABLE yara{
   rulename TEXT
 }
 
+TABLE xattr{
+  xattruuid TEXT
+  sessionuuid TEXT
+  fileuuid TEXT
+  xattrname TEXT
+  xattrvalue TEXT
+}
+
+TABLE ntfsads{
+  ntfsadsuuid TEXT
+  sessionuuid TEXT
+  fileuuid TEXT
+  adsname TEXT
+  adsvalue TEXT
+}
+
 Ref: files.sessionuuid > sessionsmd.uuid
 Ref: exif.sessionuuid > sessionsmd.uuid
 Ref: exif.fileuuid > files.fileuuid
@@ -108,3 +125,7 @@ Ref: directories.sessionuuid > sessionsmd.uuid
 Ref: dublincore.sessionuuid > sessionsmd.uuid
 Ref: yara.sessionuuid > sessionsmd.uuid
 Ref: yara.fileuuid > files.fileuuid
+Ref: xattr.sessionuuid > sessionsmd.uuid
+Ref: xattr.fileuuid > files.fileuuid
+Ref: ntfsads.sessionuuid > sessionsmd.uuid
+Ref: ntfsads.fileuuid > files.fileuuid
