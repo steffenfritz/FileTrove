@@ -13,7 +13,7 @@
 
 VERSION: v1.0.0-BETA.3
 
-NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions.
+NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions. A deb installation package for Debian/Ubuntu is available for the latest version on the release page!
 
 
 ## About
