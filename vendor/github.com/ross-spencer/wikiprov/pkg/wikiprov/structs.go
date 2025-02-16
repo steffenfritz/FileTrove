@@ -46,7 +46,8 @@ import (
 		}
 	}
 */
-//
+
+const wdEntity = "http://wikidata.org/entity/"
 
 type revision struct {
 	RevisionID int    `json:"revid"`
@@ -83,14 +84,48 @@ type wdRevisions struct {
 // normalize simplifies the wdInfo structure so it can be easily used by
 // the caller.
 //
-// {
-//  	"Title": "Q27229608",
-//  	"Revision": 784082439,
-//  	"Modified": "2018-11-07T16:26:11Z",
-//  	"Permalink": "https://www.wikidata.org/w/index.php?format=json&oldid=0&title="
-//      "History": [ ... ]
-// }
+//	{
+//	 	"Title": "Q27229608",
+//		"Entity": "http://wikidata.org/entity/Q27229608",
+//	 	"Revision": 784082439,
+//	 	"Modified": "2018-11-07T16:26:11Z",
+//	 	"Permalink": "https://www.wikidata.org/w/index.php?format=json&oldid=0&title="
+//		"History": [ ... ]
+//	}
 //
+// Example revision history from Wikidata:
+//
+//	{
+//		"continue": {
+//			"rvcontinue": "20221025023213|1757532489",
+//			"continue": "||"
+//		},
+//		"query": {
+//			"normalized": [
+//				{
+//					"from": "item:Q1036298",
+//					"to": "Q1036298"
+//				}
+//			],
+//			"pages": {
+//				"985553": {
+//					"pageid": 985553,
+//					"ns": 0,
+//					"title": "Q1036298",
+//					"revisions": [
+//						{
+//							"revid": 1866781983,
+//							"parentid": 1757532489,
+//							"user": "Renamerr",
+//							"timestamp": "2023-04-02T14:06:46Z",
+//							"sha1": "64e7b06055e10e3e7116737a5a77d404617cc61f",
+//							"comment": "/* wbsetdescription-add:1|uk */ \u0444\u043e\u0440\u043c\u0430\u0442 \u0444\u0430\u0439\u043b\u0443, [[:toollabs:quickstatements/#/batch/151018|batch #151018]]"
+//						}
+//					]
+//				}
+//			}
+//		}
+//	}
 func (revisions *wdRevisions) normalize() Provenance {
 
 	var prov Provenance
@@ -111,6 +146,11 @@ func (revisions *wdRevisions) normalize() Provenance {
 	firstRecord := revs.Revisions[0]
 
 	prov.Title = revs.Title
+
+	if prov.Title != "" {
+		prov.Entity = fmt.Sprintf("%s%s", wdEntity, prov.Title)
+	}
+
 	prov.Revision = firstRecord.RevisionID
 	prov.Modified = firstRecord.Timestamp
 	prov.Permalink = prov.buildPermalink()
@@ -125,12 +165,13 @@ func (revisions *wdRevisions) normalize() Provenance {
 // Provenance provides simplified provenance information about a
 // Wikidata record.
 type Provenance struct {
-	Title     string
-	Revision  int
-	Modified  string
-	Permalink string
-	History   []string
-	Error     error `json:"-"`
+	Title     string   `json:"Title,omitempty"`
+	Entity    string   `json:"Entity,omitempty"`
+	Revision  int      `json:"Revision,omitempty"`
+	Modified  string   `json:"Modified,omitempty"`
+	Permalink string   `json:"Permalink,omitempty"`
+	History   []string `json:"History,omitempty"`
+	Error     error    `json:"-"`
 }
 
 // buildPermalink creates a permalink based on the title and revision

@@ -8,15 +8,14 @@
 //
 // An example API query we need to construct:
 //
-//  https://www.wikidata.org/w/api.php?action=query&format=json&prop=revisions&titles=Q5381415&rvlimit=200&rvprop=ids|user|comment|timestamp|sha1
+//	https://www.wikidata.org/w/api.php?action=query&format=json&prop=revisions&titles=Q5381415&rvlimit=200&rvprop=ids|user|comment|timestamp|sha1
 //
 // We'll also use some of these values to build a permalink for that
 // provenance struct which looks as follows:
 //
-//  https://www.wikidata.org/w/index.php?title=Q178051&oldid=1301912874&format=json
+//	https://www.wikidata.org/w/index.php?title=Q178051&oldid=1301912874&format=json
 //
-//  https://www.wikidata.org/w/index.php?title=<QID>&oldid=<REVISION>&format=json
-//
+//	https://www.wikidata.org/w/index.php?title=<QID>&oldid=<REVISION>&format=json
 package wikiprov
 
 import (
@@ -24,7 +23,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func getRevisionProperties() string {
@@ -46,7 +47,6 @@ func getRevisionProperties() string {
 //		   &rvlimit=1
 //		   &rvprop=ids|user|comment|timestamp|sha1
 //		   &titles=item:Q12345
-//
 func buildRequest(id string, history int) (*http.Request, error) {
 	const paramFormat = "format"
 	const paramAction = "action"
@@ -79,35 +79,55 @@ func buildRequest(id string, history int) (*http.Request, error) {
 // GetWikidataProvenance requests the entity data we need from the
 // Wikibase API and returns a structure containing the information that
 // we're interested in, augmented with a permalink to the record.
-func GetWikidataProvenance(id string, history int) (Provenance, error) {
+func GetWikidataProvenance(id string, lenHistory int) (Provenance, error) {
 
-	request, err := buildRequest(id, history)
+	if lenHistory < 1 {
+		// No history requested. Nothing to do.
+		return Provenance{}, nil
+	}
+
+	request, err := buildRequest(id, lenHistory)
 	if err != nil {
 		return Provenance{}, err
 	}
 
 	var client http.Client
-
 	resp, err := client.Do(request)
 	if err != nil {
-		return Provenance{}, err
+		return Provenance{}, fmt.Errorf(
+			"retreivng provenance from Wikibase endpoint for: %s: %v (history len: '%d')",
+			id,
+			err,
+			lenHistory,
+		)
+	}
+
+	const retryHeader = "Retry-After"
+	if len(resp.Header[retryHeader]) > 0 {
+		retry, _ := strconv.Atoi(resp.Header[retryHeader][0])
+		if retry > 0 {
+			time.Sleep(time.Duration(retry))
+			return GetWikidataProvenance(id, lenHistory)
+		}
 	}
 
 	const expectedCode int = 200
 	if resp.StatusCode != expectedCode {
-		responseError := ResponseError{}
-		return Provenance{}, responseError.makeError(200, resp.StatusCode)
+		return Provenance{}, fmt.Errorf(
+			"incorrect status retrieving history from Wikibase endpoint: '%d': expected '%d' (history len: '%d')",
+			resp.StatusCode,
+			expectedCode,
+			lenHistory,
+		)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-
 	if err != nil {
 		return Provenance{}, err
 	}
 
 	var wdRevisions wdRevisions
-
 	err = json.Unmarshal(data, &wdRevisions)
 	if err != nil {
 		return Provenance{}, err
@@ -122,7 +142,7 @@ func Version() string {
 }
 
 // SetWikibaseURLs sets the URL for this package to connect to. E.g.
-// newURL would point to Wikidata or a custome Wikibase instance.
+// newURL would point to Wikidata or a custom Wikibase instance.
 func SetWikibaseURLs(newURL string) {
 	wikibaseAPI = constructWikibaseAPIURL(newURL)
 	wikibasePermalinkBase = constructWikibaseIndexURL(newURL)
