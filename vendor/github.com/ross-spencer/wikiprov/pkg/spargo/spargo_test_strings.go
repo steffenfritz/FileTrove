@@ -5,7 +5,6 @@ package spargo
 //
 // Threading provides the greatest opportunity for error in this code?
 // we try out different permutations here.
-//
 type errorTest struct {
 	qids    []string
 	threads int
