@@ -16,7 +16,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/spf13/pflag v1.0.6
 	go.etcd.io/bbolt v1.4.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 )
 
 require (
