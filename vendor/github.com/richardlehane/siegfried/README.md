@@ -9,7 +9,7 @@
 
 ### Version
 
-1.11.1
+1.11.2
 
 [![GoDoc](https://godoc.org/github.com/richardlehane/siegfried?status.svg)](https://godoc.org/github.com/richardlehane/siegfried) [![Go Report Card](https://goreportcard.com/badge/github.com/richardlehane/siegfried)](https://goreportcard.com/report/github.com/richardlehane/siegfried)
 
@@ -97,9 +97,25 @@ Or, for the most recent updates, you can install from this fork:
     makepkg -si
 
 ## Changes
+### v1.11.2 (2025-03-01)
+### Added
+- Filter introduced to improve Wikidata queries and `-harvestWikidataSigLen` flag sets minimum length of Wikidata signatures. Implemented by [Ross Spencer and Andy Jackson](https://github.com/richardlehane/siegfried/pull/253) 
+- `-noprov` flag introduced for Wikidata signatures. Implemented by [Ross Spencer](https://github.com/richardlehane/siegfried/pull/270)
+- `version` command for `roy`. Implemented by [Ross Spencer](https://github.com/richardlehane/siegfried/pull/265)
+
+### Changed
+- Logged error messages have more context. Implemented by [Ross Spencer](https://github.com/richardlehane/siegfried/pull/256)
+- update PRONOM to v120
+- Wikidata definitions updated to 4.0.0. By [Ross Spencer](https://github.com/richardlehane/siegfried/pull/264)
+- update LOC to 2025-02-26
+- update TIKA to v3.1.0
+
+### Fixed
+- Explicitly declared variable offsets are parsed e.g. fmt/1840. Implemented by [Rijnder Wever](https://github.com/richardlehane/siegfried/pull/267)
+
 ### v1.11.1 (2024-06-28)
 ### Added
-- WASM build. See pkg/wasm/README.md for more details. Feature sponsored by Archives New Zealand. Inspired by [Andy Jackson](https://siegfried-js.glitch.me/)
+- WASM build. See wasm/README.md for more details. Feature sponsored by Archives New Zealand. Inspired by [Andy Jackson](https://siegfried-js.glitch.me/)
 - `-sym` flag enables following symbolic links to files during scanning. Requested by [Max Moser](https://github.com/richardlehane/siegfried/issues/245) 
 
 ### Changed
@@ -112,7 +128,7 @@ Or, for the most recent updates, you can install from this fork:
 - zips piped into STDIN are decompressed with `-z` flag. Reported by [Max Moser](https://github.com/richardlehane/siegfried/issues/244)
 - panics from OS calls in init functions. Reported by [Jürgen Enge](https://github.com/richardlehane/siegfried/issues/247)
 
-### v1.11.1 (2023-12-17)
+### v1.11.0 (2023-12-17)
 ### Added
 - glob-matching for container signatures; see [digital-preservation/pronom#10](https://github.com/digital-preservation/pronom/issues/10)
 - `sf -update` works for older versions of siegfried; see [#231](https://github.com/richardlehane/siegfried/issues/231)
