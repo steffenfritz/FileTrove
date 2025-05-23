@@ -1,6 +1,6 @@
 // Package spargo is a Wrapper for the generic spargo package:
 //
-//    * github.com/ross-spencer/spargo/pkg/spargo
+//   - github.com/ross-spencer/spargo/pkg/spargo
 //
 // The package exists to enable to inclusion of Wikibase provenance in
 // those results. Where spargo is a generic package this version is
@@ -76,7 +76,13 @@ func fixKey(key string) string {
 // Wikidata IRI from which the QID will be returned. The QID is then
 // used to grab the provenance information for the record. If key is
 // empty then provenance functions will not be called.
-func SPARQLWithProv(endpoint string, queryString string, key string, lenHistory int, threads int) (WikiProv, error) {
+func SPARQLWithProv(
+	endpoint string,
+	queryString string,
+	param string,
+	lenHistory int,
+	threads int,
+) (WikiProv, error) {
 	sparqlMe := SPARQLClient{}
 	sparqlMe.ClientInit(endpoint, queryString)
 	res, err := sparqlMe.SPARQLGo()
@@ -86,14 +92,14 @@ func SPARQLWithProv(endpoint string, queryString string, key string, lenHistory 
 	provResults := WikiProv{}
 	provResults.Head = res.Head
 	provResults.Binding = res.Results
-	if key == "" {
+	if param == "" || lenHistory < 1 {
 		return provResults, nil
 	}
-	key = fixKey(key)
+	param = fixKey(param)
 	if threads > maxChannels {
 		threads = maxChannels
 	}
-	err = provResults.attachProvenance(key, lenHistory, threads)
+	err = provResults.attachProvenance(param, lenHistory, threads)
 	if err != nil {
 		return WikiProv{}, err
 	}
@@ -110,11 +116,17 @@ func SPARQLWithProv(endpoint string, queryString string, key string, lenHistory 
 // starts to get complicated when you consider downstream has to work
 // with a query service (SPARQL endpoint) and a Wikibase base URL that
 // might both need to be configured.
-//
-//
 func validateIRI(iri string) bool {
 	const statement string = "statement"
 	if strings.Contains(iri, statement) {
+		return false
+	}
+	return true
+}
+
+// testHTTP is a rudimentary test for a URI that we can query.
+func testHTTP(iri string) bool {
+	if !strings.HasPrefix(iri, "http") {
 		return false
 	}
 	return true
@@ -126,6 +138,9 @@ func validateIRI(iri string) bool {
 func getQID(iri string) (string, error) {
 	const prop string = "prop"
 	const property string = "Property"
+	if !testHTTP(iri) {
+		return "", nil
+	}
 	parsedIRI, err := url.Parse(iri)
 	if err != nil {
 		return "", err
@@ -144,11 +159,15 @@ var ErrProvAttach error = fmt.Errorf("warning: there were errors retrieving prov
 
 // AttachProvenance will attach WikiBase provenance to SPARQL results
 // from Wikidata.
-func (sparql *WikiProv) attachProvenance(key string, lenHistory int, threads int) error {
+func (sparql *WikiProv) attachProvenance(
+	sparqlParam string,
+	lenHistory int,
+	threads int,
+) error {
 	var qids map[string]bool
 	qids = make(map[string]bool)
 	for _, value := range sparql.Bindings {
-		wikidataIRI := value[key].Value
+		wikidataIRI := value[sparqlParam].Value
 		if !validateIRI(wikidataIRI) {
 			continue
 		}
@@ -159,13 +178,31 @@ func (sparql *WikiProv) attachProvenance(key string, lenHistory int, threads int
 		qids[qid] = false
 	}
 	if len(qids) < 1 {
-		return fmt.Errorf("No results returned from given key: %s", key)
+		return fmt.Errorf("No results returned from given sparqlParam: %s", sparqlParam)
 	}
+
 	var uniqueQIDs []string
-	for key := range qids {
-		uniqueQIDs = append(uniqueQIDs, key)
+	for sparqlParam := range qids {
+		uniqueQIDs = append(uniqueQIDs, sparqlParam)
 	}
-	provCache := getProvThreaded(uniqueQIDs, lenHistory, threads)
+
+	preProvCache := getProvThreaded(uniqueQIDs, lenHistory, threads)
+	provCache := []wikiprov.Provenance{}
+
+	for _, value := range preProvCache {
+		if value.Error != nil {
+			continue
+		}
+		if value.Title == "" && value.Revision == 0 && value.Permalink == "" {
+			continue
+		}
+		provCache = append(provCache, value)
+	}
+	if len(provCache) == 0 && lenHistory > 0 {
+		return fmt.Errorf(
+			"history configured but unable to retrieve history from Wikibase",
+		)
+	}
 
 	sparql.Provenance = provCache
 

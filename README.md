@@ -13,14 +13,15 @@
 
 VERSION: v1.0.0-BETA.4
 
-NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions. An installation package for Debian/Ubuntu is provided with every release.
+
+NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions. A deb installation package for Debian/Ubuntu is available for the latest version on the release page!
 
 
 ## About
 
 FileTrove indexes files and creates metadata from them.
 
-The single binary application walks a directory tree and identifies all regular files by type with [siegfried](https://github.com/richardlehane/siegfried), giving you the 
+The application walks a directory tree and identifies all regular files by type with [siegfried](https://github.com/richardlehane/siegfried), giving you the 
 
 * MIME type
 * [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier
@@ -48,11 +49,9 @@ Furthermore it creates and calculates
 * and it extracts some EXIF metadata and 
 * you can add your own [DublinCore Elements](https://www.dublincore.org/specifications/dublin-core/usageguide/elements/) metadata to scans.
 
+* A very powerful feature is FileTrove's ability to consume [YARA-X](https://virustotal.github.io/yara-x/) rule files.
 
-* A very powerful feature is FileTrove's ability to consume *YARA-X* rule files.
-
-
-* FileTrove also checks if the file is in the NSRL (https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
+* FileTrove also checks if the file is in the [NSRL](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
 
 For this check a 4.0GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
 

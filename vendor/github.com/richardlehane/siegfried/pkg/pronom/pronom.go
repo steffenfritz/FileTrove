@@ -20,6 +20,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -75,7 +76,7 @@ func raw() (identifier.Parseable, error) {
 	// apply no container rule
 	if !config.NoContainer() {
 		if err := p.setContainers(); err != nil {
-			return nil, fmt.Errorf("pronom: error loading containers; got %s\nUnless you have set `-nocontainer` you need to download a container signature file", err)
+			return nil, fmt.Errorf("pronom: error loading containers; got %s\nUnless you have set `-nocontainer` you need to download a container signature file", err.Error())
 		}
 	}
 	if err := p.setParseables(); err != nil {
@@ -97,7 +98,7 @@ func NewPronom() (identifier.Parseable, error) {
 func (p *pronom) setParseables() error {
 	d, err := newDroid(config.Droid())
 	if err != nil {
-		return fmt.Errorf("Pronom: error loading Droid file; got %s\nYou must have a Droid file to build a signature", err)
+		return fmt.Errorf("pronom: error loading Droid file; got %s\nYou must have a Droid file to build a signature", config.Home())
 	}
 
 	// if noreports set
@@ -113,7 +114,7 @@ func (p *pronom) setParseables() error {
 		}
 		r, err := newReports(puids, d.idsPuids())
 		if err != nil {
-			return fmt.Errorf("Pronom: error loading reports; got %s\nYou must download PRONOM reports to build a signature (unless you use the -noreports flag). You can use `roy harvest` to download reports", err)
+			return fmt.Errorf("pronom: error loading reports; got %s\nYou must download PRONOM reports to build a signature (unless you use the -noreports flag). You can use `roy harvest` to download reports", err.Error())
 		}
 		p.Parseable = r
 	}
@@ -121,7 +122,7 @@ func (p *pronom) setParseables() error {
 	for _, v := range config.Extend() {
 		e, err := newDroid(v)
 		if err != nil {
-			return fmt.Errorf("Pronom: error loading extension file; got %s", err)
+			return fmt.Errorf("pronom: error loading extension file; got %s", err.Error())
 		}
 		p.Parseable = identifier.Join(p.Parseable, e)
 	}
@@ -138,7 +139,7 @@ func (p *pronom) setParseables() error {
 func newDroid(path string) (*droid, error) {
 	d := &mappings.Droid{}
 	if err := openXML(path, d); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %s", err.Error(), path)
 	}
 	return &droid{d, identifier.Blank{}}, nil
 }
@@ -195,7 +196,12 @@ func (p *pronom) setContainers() error {
 // UTILS
 // Harvest fetches PRONOM reports listed in the DROID file
 func Harvest() []error {
-	d, err := newDroid(config.Droid())
+	droidXML := config.Droid()
+	if droidXML == "" {
+		return []error{fmt.Errorf("a DROID signature file needs to be downloaded to %s", config.Home())}
+	}
+	log.Println("roy: harvesting PRONOM reports for records listed in DROID XML:", droidXML)
+	d, err := newDroid(droidXML)
 	if err != nil {
 		return []error{err}
 	}
@@ -231,7 +237,7 @@ func GetReleases(path string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, byts, os.ModePerm)
+	return os.WriteFile(path, byts, os.ModePerm)
 }
 
 func LoadReleases(path string) (*mappings.Releases, error) {

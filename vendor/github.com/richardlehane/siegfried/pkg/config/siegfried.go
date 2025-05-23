@@ -47,7 +47,7 @@ var siegfried = struct {
 	checkpoint int64
 	userAgent  string
 }{
-	version:         [3]int{1, 11, 1},
+	version:         [3]int{1, 11, 2},
 	signature:       "default.sig",
 	conf:            "sf.conf",
 	magic:           []byte{'s', 'f', 0x00, 0xFF},
@@ -82,7 +82,7 @@ func Home() string {
 // Home makes a path local to Home() if it is relative
 func Local(base string) string {
 	if filepath.Dir(base) == "." {
-		return filepath.Join(siegfried.home, base)
+		return filepath.Join(Home(), base)
 	}
 	return base
 }

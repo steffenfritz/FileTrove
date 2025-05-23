@@ -39,7 +39,6 @@ import (
 	"compress/flate"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -213,7 +212,7 @@ func LoadReader(r io.Reader) (*Siegfried, error) {
 	errReading := "error reading signature file, got %v; try running `sf -update`"
 	errNotSig := "not a siegfried signature file; try running `sf -update`"
 	errUpdateSig := "signature file is incompatible with this version of sf; try running `sf -update`"
-	fbuf, err := ioutil.ReadAll(r)
+	fbuf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +227,7 @@ func LoadReader(r io.Reader) (*Siegfried, error) {
 	}
 	rb := bytes.NewBuffer(fbuf[len(config.Magic())+2:])
 	rc := flate.NewReader(rb)
-	buf, err := ioutil.ReadAll(rc)
+	buf, err := io.ReadAll(rc)
 	rc.Close()
 	if err != nil {
 		return nil, fmt.Errorf(errReading, err)

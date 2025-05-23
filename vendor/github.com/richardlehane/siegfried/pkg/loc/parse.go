@@ -29,6 +29,7 @@ func magics(m []string) ([]frames.Signature, error) {
 		return nil, err
 	}
 	if len(hx) > 0 {
+		hx, hxx = expandChoices(hx, hxx)
 		sigs := make([]frames.Signature, len(hx))
 		for i, v := range hx {
 			byts, offs, masks, err := dehex(v, hxx[i])
@@ -60,6 +61,29 @@ func magics(m []string) ([]frames.Signature, error) {
 		return sigs, nil
 	}
 	return nil, nil
+}
+
+// look for (x|y|z) patterns and expand to x, y, z
+func expandChoices(hx []string, hxx []int) ([]string, []int) {
+	choices := make([]string, 0, len(hx))
+	offsets := make([]int, 0, len(hxx))
+	var offidx int
+	for _, v := range hx {
+		if strings.Contains(v, "(") && strings.Contains(v, ")") {
+			prefix := v[:strings.Index(v, "(")]
+			suffix := v[strings.Index(v, ")")+1:]
+			choice := v[strings.Index(v, "(")+1 : strings.Index(v, ")")]
+			for _, c := range strings.Split(choice, "|") {
+				choices = append(choices, prefix+c+suffix)
+				offsets = append(offsets, hxx[offidx])
+			}
+		} else {
+			choices = append(choices, v)
+			offsets = append(offsets, hxx[offidx])
+		}
+		offidx++
+	}
+	return choices, offsets
 }
 
 // return raw hex and ascii signatures (ascii to be used only if no hex)
@@ -109,7 +133,7 @@ func characterise(m []string) ([]string, []string, []int, []int, error) {
 }
 
 func dehex(h string, off int) ([][]byte, []int, []bool, error) { // return bytes, offsets, and masks
-	repl := strings.NewReplacer("0x", "", " ", "", "\n", "", "\t", "", "\r", "", "{8}", "xxxxxxxxxxxxxxxx", "{20 bytes of Hex 20}", "2020202020202020202020202020202020202020") // special case fdd000245 {8}, fdd000342 (nl tab within the hex)
+	repl := strings.NewReplacer("0x", "", " ", "", "\n", "", "\t", "", "\r", "", "{3}", "xxxxxx", "{8}", "xxxxxxxxxxxxxxxx", "{20 bytes of Hex 20}", "2020202020202020202020202020202020202020") // special case fdd000245 {8}, fdd000342 (nl tab within the hex)
 	h = repl.Replace(h)
 	if len(h)%2 != 0 {
 		return nil, nil, nil, fmt.Errorf("loc: can't dehex %s", h)

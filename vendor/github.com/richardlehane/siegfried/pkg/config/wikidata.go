@@ -106,7 +106,7 @@ var wikidata = struct {
 	gzip:                   "Q27824060",
 	tar:                    "Q283579",
 	warc:                   "Q10287816",
-	definitions:            "wikidata-definitions-3.0.0",
+	definitions:            "wikidata-definitions-4.0.0",
 	endpoint:               "https://query.wikidata.org/sparql",
 	filemode:               0644,
 	propPronom:             "http://www.wikidata.org/entity/Q35432091",
@@ -221,6 +221,18 @@ func WikidataSPARQL() string {
 	return wikidatasparql.WikidataSPARQL()
 }
 
+// WikidataSiglen returns the minimum signature length we want the Wikidata
+// SPARQL query to return.
+func WikidataSigLen() int {
+	return wikidatasparql.WikidataSigLen()
+}
+
+// SetWikidataLang sets the minimum signature length we want the Wikidata
+// SPARQL query to return.
+func SetWikidataSigLen(len int) {
+	wikidatasparql.SetWikidataSigLen(len)
+}
+
 // WikidataLang returns the language we want to return results in from
 // Wikidata.
 func WikidataLang() string {
@@ -262,7 +274,6 @@ func GetWikidataNoPRONOM() bool {
 // returned from Wikibase, e.g. for Wikidata this URL needs to be:
 //
 // e.g. https://www.wikidata.org/w/index.php
-//
 func SetWikibaseURL(baseURL string) (func() private, error) {
 	_, err := url.ParseRequestURI(baseURL)
 	if err != nil {
@@ -294,6 +305,12 @@ func WikidataSPARQLRevisionParam() string {
 // GetWikidataRevisionHistoryLen will return the length of the Wikibase
 // history to retrieve to the caller.
 func GetWikidataRevisionHistoryLen() int {
+	return wikidata.revisionHistoryLen
+}
+
+// GetWikidataRevisionHistoryLen will return the length of the Wikibase
+// history to retrieve to the caller.
+func SetWikidataRevisionHistoryLen(len int) int {
 	return wikidata.revisionHistoryLen
 }
 
@@ -384,12 +401,11 @@ func SetCustomWikibaseQuery() error {
 //
 // Example:
 //
-//		{
-//		   "PronomProp": "http://wikibase.example.com/entity/Q2",
-//		   "BofProp": "http://wikibase.example.com/entity/Q3",
-//		   "EofProp": "http://wikibase.example.com/entity/Q4"
-//		}
-//
+//	{
+//	   "PronomProp": "http://wikibase.example.com/entity/Q2",
+//	   "BofProp": "http://wikibase.example.com/entity/Q3",
+//	   "EofProp": "http://wikibase.example.com/entity/Q4"
+//	}
 func WikibasePropsPath() string {
 	return filepath.Join(WikidataHome(), wikidata.wikibasePropsFile)
 }

@@ -5,7 +5,6 @@ package wikiprov
 // not using yet but might be interesting to look at in time.
 //
 // From: https://www.wikidata.org/wiki/Q12345 (Count von Count)
-//
 const testJSON string = `{
     "continue": {
         "continue": "||",
