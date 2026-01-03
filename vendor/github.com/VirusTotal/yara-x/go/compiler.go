@@ -40,10 +40,12 @@ func Globals(vars map[string]interface{}) CompileOption {
 // IgnoreModule is an option for [NewCompiler] and [Compile] that allows
 // ignoring a given module.
 //
-// This option can be passed multiple times with different module names.
-// Alternatively, you can use [Compiler.IgnoreModule], but modules ignored this
-// way are not retained after [Compiler.Build] is called, unlike modules ignored
-// with the IgnoreModule option.
+// Import statements for ignored modules will be ignored without errors,
+// but a warning will be issued. Any rule that makes use of an ignored
+// module will be also ignored, while the rest of the rules that don't
+// rely on that module will be correctly compiled.
+//
+// This option can be used multiple times for ignoring different modules.
 func IgnoreModule(module string) CompileOption {
 	return func(c *Compiler) error {
 		c.ignoredModules[module] = true
@@ -122,6 +124,37 @@ func ErrorOnSlowPattern(yes bool) CompileOption {
 func ErrorOnSlowLoop(yes bool) CompileOption {
 	return func(c *Compiler) error {
 		c.errorOnSlowLoop = yes
+		return nil
+	}
+}
+
+// EnableIncludes allows the compiler to process include directives in YARA
+// rules. When this option is set to false, any include directive found in
+// the source code will be treated as an error. By default, includes are enabled.
+//
+// Example:
+//
+//	compiler, _ := yara_x.NewCompiler(yara_x.EnableIncludes(false))
+func EnableIncludes(yes bool) CompileOption {
+	return func(c *Compiler) error {
+		c.includesEnabled = yes
+		return nil
+	}
+}
+
+// IncludeDir is an option for [NewCompiler] and [Compile] that tells the
+// compiler where to look for included files. This option can be used multiple
+// times for specifying more than one include directories.
+//
+// When an `include` statement is found, the compiler looks for the included
+// file in the directories specified by this option, in the order they were
+// specified.
+//
+// If this option is not used, the compiler will only look for included files
+// in the current directory.
+func IncludeDir(path string) CompileOption {
+	return func(c *Compiler) error {
+		c.includeDirs = append(c.includeDirs, path)
 		return nil
 	}
 }
@@ -242,19 +275,23 @@ type Compiler struct {
 	conditionOptimization bool
 	errorOnSlowPattern    bool
 	errorOnSlowLoop       bool
+	includesEnabled       bool
 	ignoredModules        map[string]bool
 	bannedModules         map[string]bannedModule
 	vars                  map[string]interface{}
 	features              []string
+	includeDirs           []string
 }
 
 // NewCompiler creates a new compiler.
 func NewCompiler(opts ...CompileOption) (*Compiler, error) {
 	c := &Compiler{
-		ignoredModules: make(map[string]bool),
-		bannedModules:  make(map[string]bannedModule),
-		vars:           make(map[string]interface{}),
-		features:       make([]string, 0),
+		includesEnabled: true,
+		ignoredModules:  make(map[string]bool),
+		bannedModules:   make(map[string]bannedModule),
+		vars:            make(map[string]interface{}),
+		features:        make([]string, 0),
+		includeDirs:     make([]string, 0),
 	}
 
 	for _, opt := range opts {
@@ -278,6 +315,10 @@ func NewCompiler(opts ...CompileOption) (*Compiler, error) {
 
 	if c.errorOnSlowLoop {
 		flags |= C.YRX_ERROR_ON_SLOW_LOOP
+	}
+
+	if !c.includesEnabled {
+		flags |= C.YRX_DISABLE_INCLUDES
 	}
 
 	C.yrx_compiler_create(flags, &c.cCompiler)
@@ -305,10 +346,13 @@ func (c *Compiler) initialize() error {
 			return err
 		}
 	}
+    for _, dir := range c.includeDirs {
+        c.addIncludeDir(dir)
+    }
 	return nil
 }
 
-// AddSource adds some YARA source code to be compiled.
+// AddSource adds YARA source code to be compiled.
 //
 // This method may be invoked multiple times to add several sets of
 // YARA rules. If the rules provided in src contain errors that prevent
@@ -355,7 +399,7 @@ func (c *Compiler) AddSource(src string, opts ...SourceOption) error {
 	// different thread in-between the two calls to the C API.
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	if C.yrx_compiler_add_source_with_origin(c.cCompiler, cSrc, cOrigin) == C.SYNTAX_ERROR {
+	if C.yrx_compiler_add_source_with_origin(c.cCompiler, cSrc, cOrigin) == C.YRX_SYNTAX_ERROR {
 		return errors.New(C.GoString(C.yrx_last_error()))
 	}
 	// After the call to yrx_compiler_add_source, c is not live anymore and
@@ -366,13 +410,24 @@ func (c *Compiler) AddSource(src string, opts ...SourceOption) error {
 	return nil
 }
 
+// addIncludeDir adds an include directory to the compiler.
+func (c *Compiler) addIncludeDir(dir string) {
+	cDir := C.CString(dir)
+	defer C.free(unsafe.Pointer(cDir))
+	result := C.yrx_compiler_add_include_dir(c.cCompiler, cDir)
+	if result != C.YRX_SUCCESS {
+		panic("yrx_compiler_add_include_dir failed")
+	}
+	runtime.KeepAlive(c)
+}
+
 // enableFeature enables a compiler feature.
 // See: [WithFeature].
 func (c *Compiler) enableFeature(feature string) {
 	cFeature := C.CString(feature)
 	defer C.free(unsafe.Pointer(cFeature))
 	result := C.yrx_compiler_enable_feature(c.cCompiler, cFeature)
-	if result != C.SUCCESS {
+	if result != C.YRX_SUCCESS {
 		panic("yrx_compiler_enable_feature failed")
 	}
 	runtime.KeepAlive(c)
@@ -387,7 +442,7 @@ func (c *Compiler) ignoreModule(module string) {
 	cModule := C.CString(module)
 	defer C.free(unsafe.Pointer(cModule))
 	result := C.yrx_compiler_ignore_module(c.cCompiler, cModule)
-	if result != C.SUCCESS {
+	if result != C.YRX_SUCCESS {
 		panic("yrx_compiler_add_unsupported_module failed")
 	}
 	runtime.KeepAlive(c)
@@ -404,7 +459,7 @@ func (c *Compiler) banModule(module, error_title, error_message string) {
 	defer C.free(unsafe.Pointer(cErrMsg))
 
 	result := C.yrx_compiler_ban_module(c.cCompiler, cModule, cErrTitle, cErrMsg)
-	if result != C.SUCCESS {
+	if result != C.YRX_SUCCESS {
 		panic("yrx_compiler_add_unsupported_module failed")
 	}
 	runtime.KeepAlive(c)
@@ -431,7 +486,7 @@ func (c *Compiler) NewNamespace(namespace string) {
 	cNamespace := C.CString(namespace)
 	defer C.free(unsafe.Pointer(cNamespace))
 	result := C.yrx_compiler_new_namespace(c.cCompiler, cNamespace)
-	if result != C.SUCCESS {
+	if result != C.YRX_SUCCESS {
 		panic("yrx_compiler_new_namespace failed")
 	}
 	runtime.KeepAlive(c)
@@ -445,7 +500,17 @@ func (c *Compiler) NewNamespace(namespace string) {
 // scanning data, however each scanner can change the variable's initial
 // value by calling [Scanner.SetGlobal].
 //
-// Valid value types are: int, int32, int64, bool, string, float32 and float64.
+// The following primitive types are supported: int, int32, int64, bool,
+// string, float32 and float64.
+//
+// Composite types are also supported:
+//
+// - map[string]interface{} represents a YARA structure, where keys are
+// field names and values may be any supported primitive type or nested maps
+// for sub-structures.
+//
+// - []interface{} represents a YARA array. All elements in the array
+// must be of the same type.
 func (c *Compiler) DefineGlobal(ident string, value interface{}) error {
 	cIdent := C.CString(ident)
 	defer C.free(unsafe.Pointer(cIdent))
@@ -471,13 +536,21 @@ func (c *Compiler) DefineGlobal(ident string, value interface{}) error {
 		ret = C.int(C.yrx_compiler_define_global_float(c.cCompiler, cIdent, C.double(v)))
 	case float64:
 		ret = C.int(C.yrx_compiler_define_global_float(c.cCompiler, cIdent, C.double(v)))
+	case map[string]interface{}, []interface{}:
+		jsonStr, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("failed to marshal '%s' to json: '%v'", ident, err)
+		}
+		cValue := C.CString(string(jsonStr))
+		defer C.free(unsafe.Pointer(cValue))
+		ret = C.int(C.yrx_compiler_define_global_json(c.cCompiler, cIdent, cValue))
 	default:
 		return fmt.Errorf("variable `%s` has unsupported type: %T", ident, v)
 	}
 
 	runtime.KeepAlive(c)
 
-	if ret == C.VARIABLE_ERROR {
+	if ret == C.YRX_VARIABLE_ERROR {
 		return errors.New(C.GoString(C.yrx_last_error()))
 	}
 
@@ -488,7 +561,7 @@ func (c *Compiler) DefineGlobal(ident string, value interface{}) error {
 // [Compiler.AddSource].
 func (c *Compiler) Errors() []CompileError {
 	var buf *C.YRX_BUFFER
-	if C.yrx_compiler_errors_json(c.cCompiler, &buf) != C.SUCCESS {
+	if C.yrx_compiler_errors_json(c.cCompiler, &buf) != C.YRX_SUCCESS {
 		panic("yrx_compiler_errors_json failed")
 	}
 
@@ -510,7 +583,7 @@ func (c *Compiler) Errors() []CompileError {
 // [Compiler.AddSource].
 func (c *Compiler) Warnings() []Warning {
 	var buf *C.YRX_BUFFER
-	if C.yrx_compiler_warnings_json(c.cCompiler, &buf) != C.SUCCESS {
+	if C.yrx_compiler_warnings_json(c.cCompiler, &buf) != C.YRX_SUCCESS {
 		panic("yrx_compiler_warnings_json failed")
 	}
 
