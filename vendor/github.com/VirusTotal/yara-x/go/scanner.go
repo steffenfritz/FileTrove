@@ -23,6 +23,7 @@ package yara_x
 import "C"
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -88,7 +89,7 @@ func onMatchingRule(rule *C.YRX_RULE, handle C.uintptr_t) {
 // same set of rules.
 func NewScanner(r *Rules) *Scanner {
 	s := &Scanner{rules: r}
-	if C.yrx_scanner_create(r.cRules, &s.cScanner) != C.SUCCESS {
+	if C.yrx_scanner_create(r.cRules, &s.cScanner) != C.YRX_SUCCESS {
 		panic("yrx_scanner_create failed")
 	}
 
@@ -148,13 +149,21 @@ func (s *Scanner) SetGlobal(ident string, value interface{}) error {
 		ret = C.int(C.yrx_scanner_set_global_str(s.cScanner, cIdent, cValue))
 	case float64:
 		ret = C.int(C.yrx_scanner_set_global_float(s.cScanner, cIdent, C.double(v)))
+	case map[string]interface{}, []interface{}:
+		jsonStr, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("failed to marshal '%s' to json: '%v'", ident, err)
+		}
+		cValue := C.CString(string(jsonStr))
+		defer C.free(unsafe.Pointer(cValue))
+		ret = C.int(C.yrx_scanner_set_global_json(s.cScanner, cIdent, cValue))
 	default:
 		return fmt.Errorf("variable `%s` has unsupported type: %T", ident, v)
 	}
 
 	runtime.KeepAlive(s)
 
-	if ret == C.VARIABLE_ERROR {
+	if ret == C.YRX_VARIABLE_ERROR {
 		return errors.New(C.GoString(C.yrx_last_error()))
 	}
 
@@ -210,7 +219,7 @@ func (s *Scanner) SetModuleOutput(data proto.Message) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	if r := C.yrx_scanner_set_module_output(s.cScanner, name, ptr, C.size_t(len(buf))); r != C.SUCCESS {
+	if r := C.yrx_scanner_set_module_output(s.cScanner, name, ptr, C.size_t(len(buf))); r != C.YRX_SUCCESS {
 		err = errors.New(C.GoString(C.yrx_last_error()))
 	}
 
@@ -233,9 +242,33 @@ func (s *Scanner) Scan(buf []byte) (*ScanResults, error) {
 
 	var err error
 	switch r := C.yrx_scanner_scan(s.cScanner, ptr, C.size_t(len(buf))); r {
-	case C.SUCCESS:
+	case C.YRX_SUCCESS:
 		err = nil
-	case C.SCAN_TIMEOUT:
+	case C.YRX_SCAN_TIMEOUT:
+		err = ErrTimeout
+	default:
+		err = errors.New(C.GoString(C.yrx_last_error()))
+	}
+
+	scanResults := &ScanResults{s.matchingRules}
+	s.matchingRules = nil
+
+	return scanResults, err
+}
+
+// ScanFile scans a file with the Rules associated to the Scanner.
+func (s *Scanner) ScanFile(path string) (*ScanResults, error) {
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	var err error
+	switch r := C.yrx_scanner_scan_file(s.cScanner, cPath); r {
+	case C.YRX_SUCCESS:
+		err = nil
+	case C.YRX_SCAN_TIMEOUT:
 		err = ErrTimeout
 	default:
 		err = errors.New(C.GoString(C.yrx_last_error()))
@@ -300,11 +333,11 @@ func (s *Scanner) SlowestRules(n int) []ProfilingInfo {
 		C.YRX_SLOWEST_RULES_CALLBACK(C.slowestRulesCallback),
 		C.uintptr_t(slowestRules))
 
-	if result == C.NOT_SUPPORTED {
+	if result == C.YRX_NOT_SUPPORTED {
 		panic("SlowestRules requires that the YARA-X C library is built with the `rules-profiling` feature")
 	}
 
-	if result != C.SUCCESS {
+	if result != C.YRX_SUCCESS {
 		panic("yrx_scanner_slowest_rules failed")
 	}
 
@@ -319,7 +352,7 @@ func (s *Scanner) SlowestRules(n int) []ProfilingInfo {
 // support for rules profiling by enabling the `rules-profiling` feature.
 // Otherwise, calling this function will cause a panic.
 func (s *Scanner) ClearProfilingData() {
-  if C.yrx_scanner_clear_profiling_data(s.cScanner) == C.NOT_SUPPORTED {
+  if C.yrx_scanner_clear_profiling_data(s.cScanner) == C.YRX_NOT_SUPPORTED {
      panic("ClearProfilingData requires that the YARA-X C library is built with the `rules-profiling` feature")
   }
 }
