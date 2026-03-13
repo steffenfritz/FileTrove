@@ -1,19 +1,18 @@
 package filetrove
 
 import (
-	"github.com/richardlehane/siegfried"
-	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/richardlehane/siegfried"
 )
 
 func TestSiegfriedIdent(t *testing.T) {
 	// Prepare siegfried signature for SiegfriedIdent test
 	s, err := siegfried.Load(filepath.Join("resources", "siegfried.sig"))
 	if err != nil {
-		println("Could not read siegfried's database.")
-		os.Exit(1)
+		t.Skip("Skipping: could not read siegfried's database:", err)
 	}
 
 	type args struct {

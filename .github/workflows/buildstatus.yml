@@ -22,15 +22,15 @@ jobs:
       contents: write
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
         with:
           egress-policy: audit
 
       -
         name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - 
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
             ~/.cache/go-build
@@ -40,7 +40,7 @@ jobs:
             ${{ runner.os }}-go-
       -
         name: Build
-        uses: crazy-max/ghaction-xgo@682253ce1d3dd7a78c5120c703c9f3811dbf8cb2 # v3.0.0
+        uses: crazy-max/ghaction-xgo@de82f877ff4552f03b66c146f608233849e9c3dc # v4.0.0
         with:
           xgo_version: latest
           go_version: 1.21

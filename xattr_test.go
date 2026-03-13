@@ -4,9 +4,16 @@ import (
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/pkg/xattr"
 )
 
 func TestGetXattr(t *testing.T) {
+	testFile := path.Join("testdata", "textfile.txt")
+	if err := xattr.Set(testFile, "user.testkey", []byte("testvalue")); err != nil {
+		t.Skipf("Skipping: filesystem does not support xattr: %v", err)
+	}
+
 	type args struct {
 		filePath string
 	}
@@ -16,7 +23,7 @@ func TestGetXattr(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"Test set Xattr", args{path.Join("testdata", "textfile.txt")}, "testvalue", false},
+		{"Test set Xattr", args{testFile}, "testvalue", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,8 +32,7 @@ func TestGetXattr(t *testing.T) {
 				t.Errorf("GetXattr() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			//if !reflect.DeepEqual(got, tt.want) {
-			if !reflect.DeepEqual(got["testkey"], tt.want) {
+			if !reflect.DeepEqual(got["user.testkey"], tt.want) {
 				t.Errorf("GetXattr() got = %v, want %v", got, tt.want)
 			}
 		})

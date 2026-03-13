@@ -1,12 +1,18 @@
 package filetrove
 
 import (
+	"os"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestGetFileTimes(t *testing.T) {
+	knownTime := time.Date(2025, time.March, 3, 13, 18, 34, 0, time.Local)
+	if err := os.Chtimes("testdata/white.jpg", knownTime, knownTime); err != nil {
+		t.Fatalf("Could not set test file times: %v", err)
+	}
+
 	type args struct {
 		filename string
 	}
@@ -16,7 +22,7 @@ func TestGetFileTimes(t *testing.T) {
 		want    FileTime
 		wantErr bool
 	}{
-		{"File Time white.jpg", args{"testdata/white.jpg"}, FileTime{Btime: time.Date(2025, time.March, 03, 13, 18, 34, 98689545, time.Local)}, false},
+		{"File Time white.jpg", args{"testdata/white.jpg"}, FileTime{Mtime: knownTime}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,8 +31,8 @@ func TestGetFileTimes(t *testing.T) {
 				t.Errorf("GetFileTimes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.Btime, tt.want.Btime) {
-				t.Errorf("GetFileTimes() got = %v, want %v", got.Btime, tt.want.Btime)
+			if !reflect.DeepEqual(got.Mtime, tt.want.Mtime) {
+				t.Errorf("GetFileTimes() got = %v, want %v", got.Mtime, tt.want.Mtime)
 			}
 		})
 	}

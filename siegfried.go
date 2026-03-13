@@ -65,10 +65,13 @@ func SiegfriedIdent(s *siegfried.Siegfried, inFile string) (SiegfriedType, error
 	}
 	defer f.Close()
 
-	fi, _ := f.Stat()
+	fi, err := f.Stat()
+	if err != nil {
+		return MetaOneFile, err
+	}
 	MetaOneFile.SizeInByte = fi.Size()
 	if fi.Size() == 0 {
-		return MetaOneFile, err
+		return MetaOneFile, nil
 	}
 
 	ids, err := s.Identify(f, "", "")
