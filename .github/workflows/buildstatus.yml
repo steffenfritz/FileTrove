@@ -2,6 +2,14 @@ name: buildstatus
 
 on:
   push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - 'database_schema.dbml'
+      - 'workflows'
+      - 'SECURITY.md'
   pull_request:
     paths-ignore:
       - 'README.md'
@@ -26,10 +34,10 @@ jobs:
         with:
           egress-policy: audit
 
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - 
+
+      - name: Cache Go modules
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
@@ -38,12 +46,12 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      -
-        name: Build
+
+      - name: Build
         uses: crazy-max/ghaction-xgo@de82f877ff4552f03b66c146f608233849e9c3dc # v4.0.0
         with:
           xgo_version: latest
-          go_version: 1.21
+          go_version: 1.26.1
           dest: build
           prefix: ftrove
           targets: windows/amd64,linux/amd64
