@@ -63,9 +63,39 @@ func Hashit(inFile string, hashalg string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	io.Copy(hasher, fd)
 
 	checksum := hasher.Sum(nil)
 
 	return checksum, nil
+}
+
+// HashAllFiles computes all supported hashes in a single file read using io.MultiWriter.
+func HashAllFiles(inFile string) (HashSumsFile, error) {
+	fd, err := os.Open(inFile)
+	if err != nil {
+		return HashSumsFile{}, err
+	}
+	defer fd.Close()
+
+	md5h := md5.New()
+	sha1h := sha1.New()
+	sha256h := sha256.New()
+	sha512h := sha512.New()
+	blake2bh, err := blake2b.New512(nil)
+	if err != nil {
+		return HashSumsFile{}, err
+	}
+
+	mw := io.MultiWriter(md5h, sha1h, sha256h, sha512h, blake2bh)
+	if _, err = io.Copy(mw, fd); err != nil {
+		return HashSumsFile{}, err
+	}
+
+	return HashSumsFile{
+		MD5:        md5h.Sum(nil),
+		SHA1:       sha1h.Sum(nil),
+		SHA256:     sha256h.Sum(nil),
+		SHA512:     sha512h.Sum(nil),
+		BLAKE2B512: blake2bh.Sum(nil),
+	}, nil
 }

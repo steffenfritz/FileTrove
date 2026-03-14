@@ -27,6 +27,7 @@ func ExifDecode(fileName string) (ExifParsed, error) {
 	if err != nil {
 		return ep, err
 	}
+	defer fd.Close()
 
 	imgdecoded, err := exif.Decode(fd)
 	if err != nil {

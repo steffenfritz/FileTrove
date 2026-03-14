@@ -166,7 +166,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filemtime TEXT,
 					   	fileatime TEXT,
 					   	filensrl TEXT,
-					   	fileentropy INTEGER,
+					   	fileentropy REAL,
 						hierarchy INTEGER
 					   ); 
 					   CREATE TABLE directories(diruuid TEXT,
@@ -200,10 +200,10 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
   						fileuuid TEXT,
   						xattrname TEXT,
   						xattrvalue TEXT);
-					   CREATE TABLE ntfsads(ntfsadsuuid TEXT
-  						sessionuuid TEXT
-  						fileuuid TEXT
-  						adsname TEXT
+					   CREATE TABLE ntfsads(ntfsadsuuid TEXT,
+  						sessionuuid TEXT,
+  						fileuuid TEXT,
+  						adsname TEXT,
   						adsvalue TEXT);`
 
 	_, err = db.Exec(initstatements)
@@ -374,8 +374,8 @@ func ExportSessionSessionTSV(sessionuuid string) ([]string, error) {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM sessionsmd WHERE uuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM sessionsmd WHERE uuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return nil, err
 	}
@@ -452,8 +452,8 @@ func ExportSessionFilesTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM files WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM files WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -529,8 +529,8 @@ func ExportSessionDirectoriesTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM directories WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM directories WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -605,8 +605,8 @@ func ExportSessionEXIFTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM exif WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM exif WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -681,8 +681,8 @@ func ExportSessionDCTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM dublincore WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM dublincore WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -757,8 +757,8 @@ func ExportYaraTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM yara WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM yara WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -833,8 +833,8 @@ func ExportXATTRTSV(sessionuuid string) error {
 	tsvWriter.Comma = '\t'
 	defer tsvWriter.Flush()
 
-	query := "SELECT * FROM xattr WHERE sessionuuid=\"" + sessionuuid + "\""
-	rows, err := db.Query(query)
+	query := "SELECT * FROM xattr WHERE sessionuuid=?"
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return err
 	}
@@ -895,10 +895,9 @@ func GetImageFiles(db *sql.DB, sessionuuid string) (map[string]string, error) {
 	var filepath string
 	var fileuuid string
 
-	query := "SELECT filepath, fileuuid FROM files where sessionuuid=\"" + sessionuuid +
-		"\" AND filesfmime=\"image/jpeg\" OR filesfmime=\"image/tiff\""
+	query := "SELECT filepath, fileuuid FROM files WHERE sessionuuid=? AND (filesfmime='image/jpeg' OR filesfmime='image/tiff')"
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, sessionuuid)
 	if err != nil {
 		return nil, err
 	}

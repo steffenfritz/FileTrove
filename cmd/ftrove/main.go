@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	yara_x "github.com/VirusTotal/yara-x/go"
@@ -139,7 +138,7 @@ func main() {
 			os.Exit(1)
 		}
 		if logserr != nil {
-			logger.Error("Could not create logs directory.", slog.String("error", direrr.Error()))
+			logger.Error("Could not create logs directory.", slog.String("error", logserr.Error()))
 			os.Exit(1)
 		}
 		if trovedberr != nil {
@@ -179,7 +178,8 @@ func main() {
 
 	// list all started sessions and quit
 	if *listSessions {
-		fmt.Println("SESSION OVERVIEW\n")
+		fmt.Println("SESSION OVERVIEW")
+		fmt.Println()
 		err := ft.ListSessions(ftdb)
 		if err != nil {
 			logger.Error("Could not query last sessions.", slog.String("error", err.Error()))
@@ -189,7 +189,8 @@ func main() {
 
 	// Print info about a single session
 	if len(*listSession) > 0 {
-		fmt.Println("SESSION INFORMATION\n")
+		fmt.Println("SESSION INFORMATION")
+		fmt.Println()
 		smd, err := ft.ListSession(ftdb, *listSession)
 		if err != nil {
 			logger.Error("Could not query single session.", slog.String("error", err.Error()))
@@ -415,7 +416,7 @@ func main() {
 	if len(*resumeuuid) > 0 {
 		fileIndex := slices.Index(filelist, ri.LastFile)
 		if fileIndex == -1 {
-			logger.Error("Could not find the last indexed file in the new file list.", slog.String("error", err.Error()))
+			logger.Error("Could not find the last indexed file in the new file list.", slog.String("lastfile", ri.LastFile))
 			os.Exit(1)
 		}
 
@@ -464,6 +465,16 @@ func main() {
 		logger.Error("Could not prepare an insert statement for XATTR.", slog.String("error", err.Error()))
 	}
 
+	// Parse timezone once before the loop
+	var timeIn *time.Location
+	if len(*timezone) != 0 {
+		timeIn, err = time.LoadLocation(*timezone)
+		if err != nil {
+			logger.Error("Timezone string is not valid. Example: Europe/Berlin", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+	}
+
 	// Inspect every file in filelist
 	// Set up the progress bar
 	bar := progressbar.Default(int64(len(filelist)))
@@ -472,37 +483,6 @@ func main() {
 
 		//filemd.Filename = file
 
-		// Create hash sums for every file
-		hashsumsfile := make(map[string][]byte)
-
-		// Calculate all supported hash sums for each file
-		supportedHashes := ft.ReturnSupportedHashes()
-
-		// Mutex lock on write hashes to map and
-		// create waitgroup to prevent outside of the
-		// clojure access, i.e. the NSRL check
-		var mutex = &sync.Mutex{}
-		var wg sync.WaitGroup
-
-		for _, hash := range supportedHashes {
-			wg.Add(1)
-
-			go func(hash string) {
-				defer wg.Done()
-
-				hashsum, err := ft.Hashit(file, hash)
-				if err != nil {
-					logger.Error("Could not hash file.", slog.String("error", err.Error()))
-				}
-
-				mutex.Lock()
-				hashsumsfile[hash] = hashsum
-				mutex.Unlock()
-			}(hash)
-		}
-
-		wg.Wait()
-
 		filemd.Filename = filepath.Base(file)
 		filemd.Filepath = file
 		// This is a workaround of the not-so-perfect handling of golang's filepath.Ext() function
@@ -510,12 +490,17 @@ func main() {
 		if filepath.Ext(file) != filepath.Base(file) {
 			filemd.Filenameextension = filepath.Ext(file)
 		}
-		// Add all hash sums to the filemd struct for writing into the file database
-		filemd.Filemd5 = hex.EncodeToString(hashsumsfile["md5"])
-		filemd.Filesha1 = hex.EncodeToString(hashsumsfile["sha1"])
-		filemd.Filesha256 = hex.EncodeToString(hashsumsfile["sha256"])
-		filemd.Filesha512 = hex.EncodeToString(hashsumsfile["sha512"])
-		filemd.Fileblake2b = hex.EncodeToString(hashsumsfile["blake2b-512"])
+
+		// Compute all hash sums in a single file read
+		hashsums, err := ft.HashAllFiles(file)
+		if err != nil {
+			logger.Error("Could not hash file.", slog.String("error", err.Error()))
+		}
+		filemd.Filemd5 = hex.EncodeToString(hashsums.MD5)
+		filemd.Filesha1 = hex.EncodeToString(hashsums.SHA1)
+		filemd.Filesha256 = hex.EncodeToString(hashsums.SHA256)
+		filemd.Filesha512 = hex.EncodeToString(hashsums.SHA512)
+		filemd.Fileblake2b = hex.EncodeToString(hashsums.BLAKE2B512)
 
 		// Get siegfried information for each file. These are those in the type SiegfriedType
 		oneFile, err := ft.SiegfriedIdent(s, file)
@@ -538,12 +523,7 @@ func main() {
 		}
 
 		// Use specific timezone for the translation of timestamps
-		if len(*timezone) != 0 {
-			// Check if timezone string is valid
-			timeIn, err := time.LoadLocation(*timezone)
-			if err != nil {
-				logger.Error("Timezone string is not valid. Example: Europe/Berlin", slog.String("error", err.Error()))
-			}
+		if timeIn != nil {
 			filemd.Fileatime = filetime.Atime.In(timeIn).String()
 			filemd.Filectime = filetime.Ctime.In(timeIn).String()
 			filemd.Filemtime = filetime.Mtime.In(timeIn).String()
@@ -555,7 +535,7 @@ func main() {
 
 		// Check if the hash sum of the file is in the NSRL.
 		// We use the db connection created by ft.ConnectNSRL()
-		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(hex.EncodeToString(hashsumsfile["sha1"])))
+		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(filemd.Filesha1))
 		if err != nil {
 			logger.Warn("Could not get value from NSRL database.", slog.String("warn", err.Error()))
 		}
@@ -659,12 +639,7 @@ func main() {
 		}
 
 		// Use specific timezone for the translation of timestamps
-		if len(*timezone) != 0 {
-			// Check if timezone string is valid
-			timeIn, err := time.LoadLocation(*timezone)
-			if err != nil {
-				logger.Error("Timezone string is not valid. Example: Europe/Berlin", slog.String("error", err.Error()))
-			}
+		if timeIn != nil {
 			dirmd.Diratime = dirtime.Atime.In(timeIn).String()
 			dirmd.Dirctime = dirtime.Ctime.In(timeIn).String()
 			dirmd.Dirmtime = dirtime.Mtime.In(timeIn).String()
@@ -680,9 +655,9 @@ func main() {
 		dirhierarchy := strings.Count(direntry, string(os.PathSeparator))
 
 		_, err = prepInsertDir.Exec(diruuid, sessionmd.UUID, dirname, direntry,
-			dirtime.Ctime.String(),
-			dirtime.Mtime.String(),
-			dirtime.Atime.String(),
+			dirmd.Dirctime,
+			dirmd.Dirmtime,
+			dirmd.Diratime,
 			dirhierarchy)
 
 		if err != nil {
@@ -697,9 +672,6 @@ func main() {
 			logger.Error("Could not get image list from database.", slog.String("error", err.Error()))
 		}
 		for fileuuid, imagepath := range imagelist {
-			// debug
-			println(imagepath)
-
 			exifparsed, err := ft.ExifDecode(imagepath)
 			if err != nil {
 				logger.Error("Could not parse image for exif data. File: "+imagepath, slog.String("error", err.Error()))
@@ -734,7 +706,7 @@ func main() {
 	// End short report
 
 	sessionmd.Endtime = endtime.Format(time.RFC3339)
-	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=\"" + sessionmd.Endtime + "\" WHERE uuid=\"" + sessionmd.UUID + "\"RETURNING *;")
+	_, err = ftdb.Exec("UPDATE sessionsmd SET endtime=? WHERE uuid=?", sessionmd.Endtime, sessionmd.UUID)
 	if err != nil {
 		logger.Error("Could not write endtime to database.", slog.String("error", err.Error()))
 	}
@@ -745,7 +717,7 @@ func main() {
 	}
 	err = logfd.Close()
 	if err != nil {
-		_ = fmt.Errorf("ERROR: Could not close error log file: " + err.Error())
+		_ = fmt.Errorf("ERROR: Could not close error log file: %s", err.Error())
 	}
 
 }
