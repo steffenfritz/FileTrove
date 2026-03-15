@@ -24,14 +24,12 @@ jobs:
       - name: Install taskdev
         run: sudo snap install task --classic
 
-      # Set up Rust
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
         with:
           toolchain: stable
           components: rustfmt, clippy
 
-      # Cache Rust build
       - name: Cache Rust build
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
@@ -48,7 +46,17 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version: '1.26.1'  # Use the desired Go version
+          go-version: '1.26.1'
+
+      - name: Cache Go modules
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Clone YARA-X repository
         run: git clone https://github.com/VirusTotal/yara-x.git
@@ -56,7 +64,7 @@ jobs:
       - name: Build YARA-X C API and locate .pc file
         run: |
           cd yara-x
-          git checkout tags/v0.12.0
+          git checkout tags/v1.14.0
           cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
           # Find the .pc file location
           PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc)
@@ -66,45 +74,37 @@ jobs:
           fi
           PC_DIR=$(dirname $PC_FILE)
           echo "Found yara_x_capi.pc in $PC_DIR"
-          export PKG_CONFIG_PATH=$PC_DIR
-          # Debug output to verify files are correctly installed
           ls -l $PC_DIR
-
-      - name: Clone FileTrove repository
-        run: git clone https://github.com/steffenfritz/FileTrove.git
 
       - name: Set environment variables for pkg-config and Go
         run: |
-          export PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
-          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu"
-          # Verify pkg-config can find the yara_x_capi package
+          PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install/usr/local/include" >> $GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+          export PKG_CONFIG_PATH
           pkg-config --cflags --libs yara_x_capi
 
       - name: Build Go Binary
         run: |
-          export PKG_CONFIG_PATH=/home/runner/yara_install/usr/local/lib/x86_64-linux-gnu/pkgconfig
-          export CGO_CFLAGS="-I$HOME/yara_install/usr/local/include"
-          export CGO_LDFLAGS="-L$HOME/yara_install/usr/local/lib/x86_64-linux-gnu"
-          cd FileTrove/cmd/ftrove
+          cd $GITHUB_WORKSPACE/cmd/ftrove
           task build
 
       - name: Create artifacts directory
-        run: mkdir -p ../artifacts
+        run: mkdir -p $GITHUB_WORKSPACE/artifacts
 
       - name: Copy artifacts
         run: |
-          cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* ../artifacts/
-          cp /home/runner/work/FileTrove/FileTrove/FileTrove/cmd/ftrove/ftrove ../artifacts/
+          cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove $GITHUB_WORKSPACE/artifacts/
 
       - name: Create archive of artifacts
         run: |
-          cd ../artifacts
+          cd $GITHUB_WORKSPACE/artifacts
           tar -czvf ubuntu_x86_64_artifacts.tar.gz *
 
       - name: Upload artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: build-artifacts
-          path: /home/runner/work/FileTrove/artifacts/ubuntu_x86_64_artifacts.tar.gz
-
+          path: ${{ github.workspace }}/artifacts/ubuntu_x86_64_artifacts.tar.gz

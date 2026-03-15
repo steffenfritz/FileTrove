@@ -2,55 +2,99 @@ name: buildstatus
 
 on:
   push:
-  pull_request:
+    branches:
+      - main
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
       - 'database_schema.dbml'
       - 'workflows'
       - 'SECURITY.md'
+  pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - 'database_schema.dbml'
+      - 'workflows'
+      - 'SECURITY.md'
 
 permissions:
   contents: read
 
 jobs:
-  xgo:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     permissions:
-      contents: write
+      contents: read
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
         with:
           egress-policy: audit
 
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - 
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+
+      - name: Cache Rust
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-go-
-      -
-        name: Build
-        uses: crazy-max/ghaction-xgo@de82f877ff4552f03b66c146f608233849e9c3dc # v4.0.0
+            ${{ runner.os }}-cargo-
+
+      - name: Install cargo-c
+        run: cargo install cargo-c
+
+      - name: Set up Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          xgo_version: latest
-          go_version: 1.21
-          dest: build
-          prefix: ftrove
-          targets: windows/amd64,linux/amd64
-          v: true
-          x: false
-          race: false
-          ldflags: -s -w
-          buildmode: default
-          trimpath: true
-          pkg: ./cmd/ftrove
+          go-version: '1.26.1'
+          cache: true
+
+      - name: Clone YARA-X
+        run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cd yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc)
+          PC_DIR=$(dirname "$PC_FILE")
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.a" -exec dirname {} \; | head -1)
+          echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install/usr/local/include" >> $GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
+          echo "CGO_ENABLED=1" >> $GITHUB_ENV
+
+      - name: Build YARA-X C API (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd yara-x
+          rustup target add x86_64-pc-windows-gnu
+          cargo cinstall -p yara-x-capi --release --target=x86_64-pc-windows-gnu --destdir=$env:USERPROFILE\yara_install
+          $PC_FILE = Get-ChildItem -Recurse -Filter "yara_x_capi.pc" $env:USERPROFILE\yara_install | Select-Object -First 1
+          $PC_DIR = Split-Path $PC_FILE.FullName
+          echo "PKG_CONFIG_PATH=$PC_DIR" >> $env:GITHUB_ENV
+          echo "CGO_CFLAGS=-I$env:USERPROFILE\yara_install\include" >> $env:GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$env:USERPROFILE\yara_install\lib" >> $env:GITHUB_ENV
+          echo "CGO_ENABLED=1" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: go build ./cmd/ftrove
