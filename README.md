@@ -60,8 +60,9 @@ All results are written into a SQLite database and can be exported to TSV files.
 
 ## How to install
 1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source (using `task build` in the repository root).
-2. Copy the file where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
-3. Run `./ftrove --install .`  (Mind the period)
+   - This will generate both a standard dynamic binary (`ftrove`) and a standalone static binary (e.g., `ftrove_amd64_linux_static`).
+2. Copy the binary you wish to use where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
+3. Run `./ftrove --install .` (Mind the period)
    
 	a) If you don't have already a NSRL database, you have to download it. Please be patient.
     

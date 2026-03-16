@@ -11,20 +11,21 @@ tasks:
       - pkg-config --exists yara_x_capi
     preconditions:
       - sh: cargo --version
-        msg: "Rust/Cargo is required to build YARA-X C API. Please install it first."
+        msg: |
+          Rust/Cargo is required to build YARA-X C API.
+          If you see a 'rustup' error, please run: rustup default stable
       - sh: git --version
         msg: "Git is required to clone the YARA-X repository."
       - sh: pkg-config --version
         msg: "pkg-config is required to check for existing YARA-X C API installation."
     cmds:
       - cargo install cargo-c
-      - rm -rf {{.YARA_BUILD_DIR}}
+      - sudo rm -rf {{.YARA_BUILD_DIR}}
       - git clone {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
-      # Use sudo for installation as it usually goes to /usr/local
-      - sudo cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
-      # ldconfig is Linux-specific; macOS uses dyld and standard paths usually suffice
+      # Use sudo -E to preserve the user's PATH so cargo (from rustup) can be found
+      - sudo -E cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
       - |
         if [ "{{OS}}" = "linux" ]; then
           sudo ldconfig
         fi
-      - rm -rf {{.YARA_BUILD_DIR}}
+      - sudo rm -rf {{.YARA_BUILD_DIR}}

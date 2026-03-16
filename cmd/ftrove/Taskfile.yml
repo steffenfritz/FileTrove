@@ -11,18 +11,30 @@ includes:
 
 tasks:
   build:
-    desc: Build the ftrove binary
+    desc: Build ftrove binaries (both dynamic and static)
     deps: [yara:setup-capi]
     cmds:
-      - go build -gcflags="-m" -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
-    vars:
-      GIT_COMMIT:
-        sh: git log -n 1 --format=%h
-    sources:
-      - '**/*.go'
-      - '../../**/*.go'
+      # 1. Build standard dynamic binary
+      # -gcflags="-m" is used to print optimization decisions (inlining/escape analysis)
+      - go build -gcflags="-m" -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove
+      # 2. Build static binary
+      - task: build-static
     generates:
       - ftrove
+
+  build-static:
+    desc: Build a statically linked ftrove binary
+    deps: [yara:setup-capi]
+    cmds:
+      # -tags static_link is required for yara-x go bindings to use --static pkg-config
+      - |
+        if [ "{{OS}}" = "linux" ]; then
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o ftrove_{{ARCH}}_{{OS}}_static
+        else
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove_{{ARCH}}_{{OS}}_static
+        fi
+    generates:
+      - ftrove_{{ARCH}}_{{OS}}_static
 
   changetest:
     desc: Full integration test - build, install, scan testdata, inspect DB, clean

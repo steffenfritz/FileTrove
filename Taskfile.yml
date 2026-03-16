@@ -21,7 +21,7 @@ tasks:
       - task: build
 
   build:
-    desc: Build all binaries and check that the library package compiles
+    desc: Build all binaries (both dynamic and static)
     deps: [setup-yara-capi]
     cmds:
       - go build ./...
@@ -29,6 +29,16 @@ tasks:
       - task: admftrove:build
     sources:
       - '**/*.go'
+
+  ftrove:
+    desc: Build ftrove binaries
+    cmds:
+      - task: ftrove:build
+
+  admftrove:
+    desc: Build admftrove binaries
+    cmds:
+      - task: admftrove:build
 
   setup-yara-capi:
     desc: Build and install the YARA-X C library system-wide
@@ -47,6 +57,8 @@ tasks:
     desc: Run fuzz tests for 10 seconds
     deps: [setup-yara-capi]
     cmds:
+      # workaround with ld_cla needed on MacOS due to a bug in Apples new linker: https://github.com/golang/go/issues/65169
+      # update 2024-05-15: With the latest MacOS update 14.5 the legacy linker is not available anymore
       - go test -fuzz=Fuzz -test.fuzztime 10s
 
   clean:
