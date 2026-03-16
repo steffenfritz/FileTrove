@@ -1,17 +1,31 @@
 version: '3'
-env:
+
+vars:
   VERSION: 1.0.0-BETA-4
+
+env:
   CGO_ENABLED: "1"
+
+includes:
+  yara: ../../Taskfile.yara.yml
 
 tasks:
   build:
+    desc: Build the ftrove binary
+    deps: [yara:setup-capi]
     cmds:
-      - go build -gcflags="-m" -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+      - go build -gcflags="-m" -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
     vars:
       GIT_COMMIT:
         sh: git log -n 1 --format=%h
+    sources:
+      - '**/*.go'
+      - '../../**/*.go'
+    generates:
+      - ftrove
 
   changetest:
+    desc: Full integration test - build, install, scan testdata, inspect DB, clean
     cmds:
       - go test -v ../../
       - task: build
@@ -22,33 +36,35 @@ tasks:
       - sqlite3 db/filetrove.db "select * from directories;" ".exit"
       - task: clean
 
-  build_linux_amd:
+  build-linux-amd:
+    desc: Cross-compile for Linux amd64 using zig
+    deps: [yara:setup-capi]
     cmds:
-      - go build -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
     env:
       GOOS: "linux"
       GOARCH: "amd64"
       CC: "zig cc -target x86_64-linux-musl"
-      CXX: "zig cc -target x85_64-linux-musl"
+      CXX: "zig cc -target x86_64-linux-musl"
 
-
-  build_windows_amd:
+  build-windows-amd:
+    desc: Cross-compile for Windows amd64 using zig
+    deps: [yara:setup-capi]
     cmds:
-      - go build -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
     env:
       GOOS: "windows"
       GOARCH: "amd64"
       CC: "zig cc -target x86_64-windows-musl"
-      CXX: "zig cc -target x85_64-windows-musl"
-
+      CXX: "zig cc -target x86_64-windows-musl"
 
   clean:
-    desc: delete builds and testfiles
+    desc: Delete builds and test files
     cmds:
       - rm -rf ftrove
       - rm -rf ftrove_*
       - rm -rf logs
       - rm -rf dist
       - rm -rf *.tsv
-      - mv db/nsrl.db .
+      - mv db/nsrl.db . 2>/dev/null || true
       - rm -rf db

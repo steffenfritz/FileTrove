@@ -1,0 +1,52 @@
+version: '3'
+
+vars:
+  VERSION: 1.0.0-BETA-4
+
+env:
+  CGO_ENABLED: "1"
+
+includes:
+  yara: ../../Taskfile.yara.yml
+
+tasks:
+  build:
+    desc: Build the admftrove binary
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove
+    sources:
+      - '**/*.go'
+      - '../../**/*.go'
+    generates:
+      - admftrove
+
+  build-linux-amd:
+    desc: Cross-compile for Linux amd64 using zig
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove-linux
+    env:
+      GOOS: "linux"
+      GOARCH: "amd64"
+      CC: "zig cc -target x86_64-linux-musl"
+      CXX: "zig cc -target x86_64-linux-musl"
+
+  build-windows-amd:
+    desc: Cross-compile for Windows amd64 using zig
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove.exe
+    env:
+      GOOS: "windows"
+      GOARCH: "amd64"
+      CC: "zig cc -target x86_64-windows-musl"
+      CXX: "zig cc -target x86_64-windows-musl"
+
+  clean:
+    desc: Delete builds
+    cmds:
+      - rm -f admftrove
+      - rm -f admftrove-linux
+      - rm -f admftrove.exe
+      - rm -f admftrove_*

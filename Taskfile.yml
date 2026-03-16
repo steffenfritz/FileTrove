@@ -1,23 +1,57 @@
 version: '3'
+
+vars:
+  VERSION: 1.0.0-BETA-4
+
 env:
-  VERSION: 1.0.0-BETA.4
   CGO_ENABLED: "1"
 
+includes:
+  yara: ./Taskfile.yara.yml
+  ftrove:
+    taskfile: ./cmd/ftrove/Taskfile.yml
+    dir: ./cmd/ftrove
+  admftrove:
+    taskfile: ./cmd/admftrove/Taskfile.yml
+    dir: ./cmd/admftrove
+
 tasks:
-  build:
+  default:
     cmds:
-      - go build -gcflags="-m" -buildmode=pie -ldflags "-X main.Version=$VERSION -X main.Build={{.GIT_COMMIT}} -w -s"
-    vars:
-      GIT_COMMIT:
-        sh: git log -n 1 --format=%h
-  
+      - task: build
+
+  build:
+    desc: Build all binaries and check that the library package compiles
+    deps: [setup-yara-capi]
+    cmds:
+      - go build ./...
+      - task: ftrove:build
+      - task: admftrove:build
+    sources:
+      - '**/*.go'
+
+  setup-yara-capi:
+    desc: Build and install the YARA-X C library system-wide
+    cmds:
+      - task: yara:setup-capi
+
   test:
+    desc: Run all library tests
+    deps: [setup-yara-capi]
     cmds:
       - go test -v
-  
+    sources:
+      - '**/*.go'
+
   fuzz:
+    desc: Run fuzz tests for 10 seconds
+    deps: [setup-yara-capi]
     cmds:
-      # workaround with ld_cla needed on MacOS due to a bug in Apples new linker: https://github.com/golang/go/issues/65169
-      # update 2024-05-15: With the latest MacOS update 14.5 the legacy linker is not available anymore
-      #- go test -fuzz=Fuzz -test.fuzztime 10s -ldflags=-extldflags=-Wl,-ld_cla
       - go test -fuzz=Fuzz -test.fuzztime 10s
+
+  clean:
+    desc: Clean everything
+    cmds:
+      - task: ftrove:clean
+      - task: admftrove:clean
+      - go clean

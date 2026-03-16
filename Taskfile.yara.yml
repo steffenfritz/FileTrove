@@ -1,0 +1,30 @@
+version: '3'
+
+vars:
+  YARA_REPO: https://github.com/VirusTotal/yara-x
+  YARA_BUILD_DIR: /tmp/yara-x-build
+
+tasks:
+  setup-capi:
+    desc: Build and install the YARA-X C library system-wide (requires cargo and sudo)
+    status:
+      - pkg-config --exists yara_x_capi
+    preconditions:
+      - sh: cargo --version
+        msg: "Rust/Cargo is required to build YARA-X C API. Please install it first."
+      - sh: git --version
+        msg: "Git is required to clone the YARA-X repository."
+      - sh: pkg-config --version
+        msg: "pkg-config is required to check for existing YARA-X C API installation."
+    cmds:
+      - cargo install cargo-c
+      - rm -rf {{.YARA_BUILD_DIR}}
+      - git clone {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
+      # Use sudo for installation as it usually goes to /usr/local
+      - sudo cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
+      # ldconfig is Linux-specific; macOS uses dyld and standard paths usually suffice
+      - |
+        if [ "{{OS}}" = "linux" ]; then
+          sudo ldconfig
+        fi
+      - rm -rf {{.YARA_BUILD_DIR}}
