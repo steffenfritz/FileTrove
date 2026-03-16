@@ -115,7 +115,6 @@ jobs:
           Copy-Item -Path $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\artifacts"
           Copy-Item -Path $dllAFile.FullName -Destination "$env:GITHUB_WORKSPACE\artifacts"
           Copy-Item "$env:GITHUB_WORKSPACE\cmd\ftrove\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\artifacts"
-          Copy-Item "$env:GITHUB_WORKSPACE\cmd\ftrove\ftrove_amd64_windows_static.exe" -Destination "$env:GITHUB_WORKSPACE\artifacts"
 
       - name: Create archive of artifacts
         run: |
