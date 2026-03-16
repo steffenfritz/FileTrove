@@ -16,7 +16,7 @@ tasks:
     cmds:
       # 1. Build standard dynamic binary
       # -gcflags="-m" is used to print optimization decisions (inlining/escape analysis)
-      - go build -gcflags="-m" -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove
+      - go build -gcflags="-m" -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove
       # 2. Build static binary
       - task: build-static
     generates:
@@ -27,6 +27,8 @@ tasks:
     deps: [yara:setup-capi]
     cmds:
       # -tags static_link is required for yara-x go bindings to use --static pkg-config
+      # -tags static_link is required for yara-x go bindings to use --static pkg-config
+      # The extra -extldflags libs are required by CGO (go-sqlite3, yara-x-capi) when linking statically on Linux
       - |
         if [ "{{OS}}" = "linux" ]; then
           go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o ftrove_{{ARCH}}_{{OS}}_static
@@ -52,7 +54,8 @@ tasks:
     desc: Cross-compile for Linux amd64 using zig
     deps: [yara:setup-capi]
     cmds:
-      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
+      # zig cc is used as the C cross-compiler because it bundles its own sysroot and supports CGO cross-compilation without a separate toolchain
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove_linux
     env:
       GOOS: "linux"
       GOARCH: "amd64"
@@ -63,7 +66,8 @@ tasks:
     desc: Cross-compile for Windows amd64 using zig
     deps: [yara:setup-capi]
     cmds:
-      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s"
+      # zig cc is used as the C cross-compiler because it bundles its own sysroot and supports CGO cross-compilation without a separate toolchain
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o ftrove.exe
     env:
       GOOS: "windows"
       GOARCH: "amd64"
@@ -73,10 +77,9 @@ tasks:
   clean:
     desc: Delete builds and test files
     cmds:
-      - rm -rf ftrove
-      - rm -rf ftrove_*
+      - rm -f ftrove
+      - rm -f ftrove_*
       - rm -rf logs
-      - rm -rf dist
-      - rm -rf *.tsv
+      - rm -f *.tsv
       - mv db/nsrl.db . 2>/dev/null || true
       - rm -rf db

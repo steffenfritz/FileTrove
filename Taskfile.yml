@@ -24,7 +24,6 @@ tasks:
     desc: Build all binaries (both dynamic and static)
     deps: [setup-yara-capi]
     cmds:
-      - go build ./...
       - task: ftrove:build
       - task: admftrove:build
     sources:

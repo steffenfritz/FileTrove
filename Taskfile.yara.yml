@@ -7,6 +7,7 @@ vars:
 tasks:
   setup-capi:
     desc: Build and install the YARA-X C library system-wide (requires cargo and sudo)
+    # status: makes this task idempotent — it is skipped entirely if the library is already installed
     status:
       - pkg-config --exists yara_x_capi
     preconditions:
@@ -19,12 +20,14 @@ tasks:
       - sh: pkg-config --version
         msg: "pkg-config is required to check for existing YARA-X C API installation."
     cmds:
+      # cargo-c provides the `cargo cinstall` subcommand used below
       - cargo install cargo-c
       - sudo rm -rf {{.YARA_BUILD_DIR}}
       - git clone {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
       # Use sudo -E to preserve the user's PATH so cargo (from rustup) can be found
       - sudo -E cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
       - |
+        # Refresh the dynamic linker cache so the newly installed library is found at runtime
         if [ "{{OS}}" = "linux" ]; then
           sudo ldconfig
         fi
