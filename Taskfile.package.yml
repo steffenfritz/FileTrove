@@ -1,0 +1,46 @@
+version: '3'
+
+vars:
+  VERSION:
+    sh: cat $(git rev-parse --show-toplevel)/VERSION
+  GOPATH:
+    sh: go env GOPATH
+
+tasks:
+  stage:
+    desc: Stage binaries and YARA-X shared library into dist/ ready for packaging
+    platforms: [linux]
+    cmds:
+      - mkdir -p dist/libs
+      - cp ./cmd/ftrove/ftrove dist/
+      - cp ./cmd/admftrove/admftrove dist/
+      - |
+        # Locate the YARA-X shared library directory via pkg-config and copy all .so files
+        # -P preserves symlinks so the versioned .so structure is intact in the package
+        LIB_DIR=$(pkg-config --libs-only-L yara_x_capi | sed 's/-L//g' | awk '{print $1}')
+        cp -P "$LIB_DIR"/libyara_x_capi.so* dist/libs/
+
+  install-nfpm:
+    desc: Install nfpm if not already present
+    status:
+      - test -x {{.GOPATH}}/bin/nfpm
+    cmds:
+      - go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+  deb:
+    desc: Build a .deb package from staged artifacts
+    platforms: [linux]
+    deps: [install-nfpm]
+    cmds:
+      - "{{.GOPATH}}/bin/nfpm package --packager deb --config nfpm.yaml --target dist/"
+    env:
+      VERSION: "{{.VERSION}}"
+
+  rpm:
+    desc: Build an .rpm package from staged artifacts
+    platforms: [linux]
+    deps: [install-nfpm]
+    cmds:
+      - "{{.GOPATH}}/bin/nfpm package --packager rpm --config nfpm.yaml --target dist/"
+    env:
+      VERSION: "{{.VERSION}}"

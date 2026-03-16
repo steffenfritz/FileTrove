@@ -33,6 +33,9 @@ cmd/ftrove/db
 nsrl_sha1_uniq_*
 nsrl.db
 
+# Package build output
+dist/
+
 # Misc
 .DS_Store
 

@@ -1,7 +1,8 @@
 version: '3'
 
 vars:
-  VERSION: 1.0.0-BETA-4
+  VERSION:
+    sh: cat VERSION
 
 env:
   CGO_ENABLED: "1"
@@ -14,6 +15,7 @@ includes:
   admftrove:
     taskfile: ./cmd/admftrove/Taskfile.yml
     dir: ./cmd/admftrove
+  pkg: ./Taskfile.package.yml
 
 tasks:
   default:
@@ -60,9 +62,32 @@ tasks:
       # update 2024-05-15: With the latest MacOS update 14.5 the legacy linker is not available anymore
       - go test -fuzz=Fuzz -test.fuzztime 10s
 
+  package:
+    desc: Build .deb and .rpm packages (builds binaries first)
+    deps: [build]
+    cmds:
+      - task: pkg:stage
+      - task: pkg:deb
+      - task: pkg:rpm
+
+  package-deb:
+    desc: Build .deb package (builds binaries first)
+    deps: [build]
+    cmds:
+      - task: pkg:stage
+      - task: pkg:deb
+
+  package-rpm:
+    desc: Build .rpm package (builds binaries first)
+    deps: [build]
+    cmds:
+      - task: pkg:stage
+      - task: pkg:rpm
+
   clean:
     desc: Clean everything
     cmds:
       - task: ftrove:clean
       - task: admftrove:clean
       - go clean
+      - rm -rf dist/

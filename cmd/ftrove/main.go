@@ -23,7 +23,7 @@ import (
 )
 
 // version holds the version of FileTrove. Due to different build systems and GH Actions set manually for now.
-var Version string = "v1.0.0-BETA-4"
+var Version string = "dev"
 
 // tsStartedFormated is the formated timestamp when FileTrove was started
 var tsStartedFormated string

@@ -73,7 +73,9 @@ jobs:
           cache: true
 
       - name: Install Task
-        run: go install github.com/go-task/task/v3/cmd/task@latest
+        uses: go-task/setup-task@0ab1b2a65bc55236a3bc64cde78f80e20e8885c2 # v1
+        with:
+          version: "3.x"
 
       - name: Clone YARA-X
         run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git

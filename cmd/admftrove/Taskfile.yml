@@ -1,7 +1,10 @@
 version: '3'
 
 vars:
-  VERSION: 1.0.0-BETA-4
+  VERSION:
+    sh: cat $(git rev-parse --show-toplevel)/VERSION
+  GIT_COMMIT:
+    sh: git log -n 1 --format=%h
 
 env:
   CGO_ENABLED: "1"
@@ -14,7 +17,7 @@ tasks:
     desc: Build admftrove binaries (both dynamic and static)
     deps: [yara:setup-capi]
     cmds:
-      - go build -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove
+      - go build -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o admftrove
       - task: build-static
     generates:
       - admftrove
@@ -28,9 +31,9 @@ tasks:
       # The extra -extldflags libs are required by CGO (go-sqlite3, yara-x-capi) when linking statically on Linux
       - |
         if [ "{{OS}}" = "linux" ]; then
-          go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o admftrove_{{ARCH}}_{{OS}}_static
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o admftrove_{{ARCH}}_{{OS}}_static
         else
-          go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove_{{ARCH}}_{{OS}}_static
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o admftrove_{{ARCH}}_{{OS}}_static
         fi
     generates:
       - admftrove_{{ARCH}}_{{OS}}_static
@@ -40,7 +43,7 @@ tasks:
     deps: [yara:setup-capi]
     cmds:
       # zig cc is used as the C cross-compiler because it bundles its own sysroot and supports CGO cross-compilation without a separate toolchain
-      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove-linux
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o admftrove-linux
     env:
       GOOS: "linux"
       GOARCH: "amd64"
@@ -52,7 +55,7 @@ tasks:
     deps: [yara:setup-capi]
     cmds:
       # zig cc is used as the C cross-compiler because it bundles its own sysroot and supports CGO cross-compilation without a separate toolchain
-      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove.exe
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o admftrove.exe
     env:
       GOOS: "windows"
       GOARCH: "amd64"

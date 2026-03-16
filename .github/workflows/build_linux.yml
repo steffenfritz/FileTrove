@@ -22,7 +22,9 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install Task
-        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+        uses: go-task/setup-task@0ab1b2a65bc55236a3bc64cde78f80e20e8885c2 # v1
+        with:
+          version: "3.x"
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
@@ -86,10 +88,14 @@ jobs:
           export PKG_CONFIG_PATH
           pkg-config --cflags --libs yara_x_capi
 
-      - name: Build Go Binary
+      - name: Build Go binaries
+        run: task build
+
+      - name: Build packages
         run: |
-          cd $GITHUB_WORKSPACE/cmd/ftrove
-          task build
+          task pkg:stage
+          task pkg:deb
+          task pkg:rpm
 
       - name: Create artifacts directory
         run: mkdir -p $GITHUB_WORKSPACE/artifacts
@@ -99,6 +105,10 @@ jobs:
           cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/dist/*.deb $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/dist/*.rpm $GITHUB_WORKSPACE/artifacts/
 
       - name: Create archive of artifacts
         run: |

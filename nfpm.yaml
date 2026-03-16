@@ -1,0 +1,31 @@
+name: ftrove
+arch: amd64
+platform: linux
+version: ${VERSION}
+maintainer: FileTrove Contributors <https://github.com/steffenfritz/FileTrove>
+description: |
+  Digital preservation and file indexing tool.
+  Walks directory trees, identifies files using siegfried (PRONOM/MIME),
+  computes hash sums (MD5/SHA1/SHA256/SHA512/BLAKE2b-512), calculates entropy,
+  reads EXIF metadata, checks against the NIST NSRL, and scans with YARA-X rules.
+  All results are stored in a SQLite database and can be exported to TSV.
+homepage: https://github.com/steffenfritz/FileTrove
+license: AGPL-3.0
+
+contents:
+  - src: ./cmd/ftrove/ftrove
+    dst: /usr/bin/ftrove
+    file_info:
+      mode: 0755
+
+  - src: ./cmd/admftrove/admftrove
+    dst: /usr/bin/admftrove
+    file_info:
+      mode: 0755
+
+  # YARA-X C API shared library — staged into dist/libs/ by `task pkg:stage`
+  - src: ./dist/libs/libyara_x_capi.so*
+    dst: /usr/local/lib/
+
+scripts:
+  postinstall: ./packaging/postinstall.sh
