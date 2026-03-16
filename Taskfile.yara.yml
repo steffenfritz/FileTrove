@@ -2,6 +2,7 @@ version: '3'
 
 vars:
   YARA_REPO: https://github.com/VirusTotal/yara-x
+  YARA_VERSION: v1.14.0
   YARA_BUILD_DIR: /tmp/yara-x-build
 
 tasks:
@@ -20,10 +21,10 @@ tasks:
       - sh: pkg-config --version
         msg: "pkg-config is required to check for existing YARA-X C API installation."
     cmds:
-      # cargo-c provides the `cargo cinstall` subcommand used below
-      - cargo install cargo-c
+      # cargo-c provides the `cargo cinstall` subcommand used below; skip if already installed
+      - command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
       - sudo rm -rf {{.YARA_BUILD_DIR}}
-      - git clone {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
+      - git clone --depth 1 --branch {{.YARA_VERSION}} {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
       # Use sudo -E to preserve the user's PATH so cargo (from rustup) can be found
       - sudo -E cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
       - |

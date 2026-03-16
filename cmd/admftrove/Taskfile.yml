@@ -28,6 +28,8 @@ tasks:
       - |
         if [ "{{OS}}" = "linux" ]; then
           go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o admftrove_{{ARCH}}_{{OS}}_static
+        elif [ "{{OS}}" = "windows" ]; then
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove_{{ARCH}}_{{OS}}_static.exe
         else
           go build -tags static_link -ldflags "-X main.Version={{.VERSION}} -w -s" -o admftrove_{{ARCH}}_{{OS}}_static
         fi

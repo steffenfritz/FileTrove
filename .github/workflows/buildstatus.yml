@@ -58,14 +58,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install cargo-c
-        run: cargo install cargo-c
+      - name: Install cargo-c (Linux)
+        if: runner.os == 'Linux'
+        run: command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+
+      - name: Install cargo-c (Windows)
+        if: runner.os == 'Windows'
+        run: if (-not (Get-Command cargo-cinstall -ErrorAction SilentlyContinue)) { cargo install cargo-c }
 
       - name: Set up Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: '1.26.1'
           cache: true
+
+      - name: Install Task
+        run: go install github.com/go-task/task/v3/cmd/task@latest
 
       - name: Clone YARA-X
         run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
@@ -97,4 +105,4 @@ jobs:
           echo "CGO_ENABLED=1" >> $env:GITHUB_ENV
 
       - name: Build
-        run: go build ./cmd/ftrove
+        run: task ftrove
