@@ -100,7 +100,8 @@ tasks:
         PC_DIR=$(dirname "$PC_FILE")
         LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
         echo "PKG_CONFIG_PATH=$PC_DIR" > .yara_env
-        echo "CGO_CFLAGS=-I$(dirname "$LIB_DIR")/include" >> .yara_env
+        PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
+        echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> .yara_env
         echo "CGO_LDFLAGS=-L$LIB_DIR" >> .yara_env
         echo "Setup complete. YARA-X env written to cmd/ftrove/.yara_env and will be auto-loaded by task."
 
@@ -135,7 +136,8 @@ tasks:
         PC_DIR=$(dirname "$PC_FILE")
         LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
         echo "PKG_CONFIG_PATH=$PC_DIR" > .yara_env
-        echo "CGO_CFLAGS=-I$(dirname "$LIB_DIR")/include" >> .yara_env
+        PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
+        echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> .yara_env
         echo "CGO_LDFLAGS=-L$LIB_DIR" >> .yara_env
         echo "Setup complete. YARA-X env written to cmd/ftrove/.yara_env and will be auto-loaded by task."
 

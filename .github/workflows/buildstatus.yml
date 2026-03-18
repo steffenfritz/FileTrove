@@ -88,8 +88,9 @@ jobs:
           PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
           PC_DIR=$(dirname "$PC_FILE")
           LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+          PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
           echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
-          echo "CGO_CFLAGS=-I$(dirname "$LIB_DIR")/include" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> $GITHUB_ENV
           echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
 
