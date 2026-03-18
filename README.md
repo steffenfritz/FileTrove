@@ -11,10 +11,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8952/badge)](https://www.bestpractices.dev/projects/8952)
 
 
-VERSION: v1.0.0-BETA.4
-
-
-NOTE: As BETA.1 introduced YARA-X and builds are not yet automated you have to use release v1.0.0-DEV-16 (without YARA support) or build it by yourself, see below for instructions. A deb installation package for Debian/Ubuntu is available for the latest version on the release page!
+VERSION: v1.0.0-BETA-4
 
 
 ## About
@@ -55,16 +52,17 @@ Furthermore it creates and calculates
 
 For this check a 4.0GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
 
-You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool admftrove from this repository. With this tool you can also add your own hashes to an existing database.
+You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool `admftrove` which is built along with `ftrove`. With this tool you can also add your own hashes to an existing database.
 
 
 All results are written into a SQLite database and can be exported to TSV files.
 
 
 ## How to install
-1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source (using _task build_ in cmd/ftrove (https://taskfile.dev)).
-2. Copy the file where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
-3. Run `./ftrove --install .`  (Mind the period)
+1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source (using `task build` in the repository root).
+   - This will generate both a standard dynamic binary (`ftrove`) and a standalone static binary (e.g., `ftrove_amd64_linux_static`).
+2. Copy the binary you wish to use where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
+3. Run `./ftrove --install .` (Mind the period)
    
 	a) If you don't have already a NSRL database, you have to download it. Please be patient.
     
@@ -73,8 +71,8 @@ All results are written into a SQLite database and can be exported to TSV files.
 4. You are ready to go!
 
 ### A word on YARA
-The YARA module needs a C library that is not part of FileTrove and is not yet installed during installation.
-It has to be installed or build for your platform. More information can be found here: https://virustotal.github.io/yara-x/docs/api/c/c-/#building-the-c-library
+The YARA module needs a C library that is not part of FileTrove.
+It is now automatically built and installed during the `task build` process if it's not already present on your system.
 
 A YARA example rule file can be found in the testdata/yara directory in this repository.
 
@@ -83,14 +81,15 @@ If a rule matches on a file the rule name, the session UUID and the file UUID is
 The YARA rule file itself is not stored in FileTrove's database.
 
 
-### To compile FileTrove with YARA-X support 
+### To compile FileTrove with YARA-X support
 
 1. Install Golang: https://go.dev/doc/install
 2. Install Task build tool: https://taskfile.dev
-3. Install the YARA-X C library: https://virustotal.github.io/yara-x/docs/api/c/c-/#building-the-c-library
-4. Checkout this repo into your go workspace (e.g. /home/user/go/src): _git clone https://github.com/steffenfritz/FileTrove.git_
-5. Change into directory: e.g. _cd /home/user/go/src/steffenfritz/FileTrove/cmd/ftrove_
-6. Start build: _task build_
+3. Clone the repository: `git clone https://github.com/steffenfritz/FileTrove.git`
+4. Change into the directory: `cd FileTrove`
+5. Start build: `task build`
+
+Note: `task build` will automatically attempt to install the YARA-X C library if it's not found on your system (requires `cargo` and `sudo`).
 
 
 ## How to run

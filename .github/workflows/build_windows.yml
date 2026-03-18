@@ -31,6 +31,7 @@ jobs:
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
+            ~/.cargo/bin
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -38,12 +39,17 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install cargo-c
-        run: cargo install cargo-c
+        run: if (-not (Get-Command cargo-cinstall -ErrorAction SilentlyContinue)) { cargo install cargo-c }
 
       - name: Set up Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
           go-version: '1.26.1'
+
+      - name: Install Task
+        uses: go-task/setup-task@0ab1b2a65bc55236a3bc64cde78f80e20e8885c2 # v1
+        with:
+          version: "3.x"
 
       - name: Cache Go modules
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
@@ -86,9 +92,8 @@ jobs:
 
       - name: Build Go Binary
         run: |
-          $env:CGO_ENABLED = "1"
           cd $env:GITHUB_WORKSPACE\cmd\ftrove
-          go build -v
+          task build
 
       - name: Create artifacts directory
         run: New-Item -ItemType Directory -Force -Path $env:GITHUB_WORKSPACE\artifacts

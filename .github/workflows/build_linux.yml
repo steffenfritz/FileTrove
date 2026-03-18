@@ -21,8 +21,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Install taskdev
-        run: sudo snap install task --classic
+      - name: Install Task
+        uses: go-task/setup-task@0ab1b2a65bc55236a3bc64cde78f80e20e8885c2 # v1
+        with:
+          version: "3.x"
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
@@ -34,6 +36,7 @@ jobs:
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
         with:
           path: |
+            ~/.cargo/bin
             ~/.cargo/registry
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -41,7 +44,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install cargo-c
-        run: cargo install cargo-c
+        run: command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
 
       - name: Set up Go
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
@@ -85,10 +88,14 @@ jobs:
           export PKG_CONFIG_PATH
           pkg-config --cflags --libs yara_x_capi
 
-      - name: Build Go Binary
+      - name: Build Go binaries
+        run: task build
+
+      - name: Build packages
         run: |
-          cd $GITHUB_WORKSPACE/cmd/ftrove
-          task build
+          task pkg:stage
+          task pkg:deb
+          task pkg:rpm
 
       - name: Create artifacts directory
         run: mkdir -p $GITHUB_WORKSPACE/artifacts
@@ -97,6 +104,11 @@ jobs:
         run: |
           cp $HOME/yara_install/usr/local/lib/x86_64-linux-gnu/libyara_x_capi* $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/dist/*.deb $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/dist/*.rpm $GITHUB_WORKSPACE/artifacts/
 
       - name: Create archive of artifacts
         run: |

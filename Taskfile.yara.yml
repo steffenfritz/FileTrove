@@ -1,0 +1,35 @@
+version: '3'
+
+vars:
+  YARA_REPO: https://github.com/VirusTotal/yara-x
+  YARA_VERSION: v1.14.0
+  YARA_BUILD_DIR: /tmp/yara-x-build
+
+tasks:
+  setup-capi:
+    desc: Build and install the YARA-X C library system-wide (requires cargo and sudo)
+    # status: makes this task idempotent — it is skipped entirely if the library is already installed
+    status:
+      - pkg-config --exists yara_x_capi
+    preconditions:
+      - sh: cargo --version
+        msg: |
+          Rust/Cargo is required to build YARA-X C API.
+          If you see a 'rustup' error, please run: rustup default stable
+      - sh: git --version
+        msg: "Git is required to clone the YARA-X repository."
+      - sh: pkg-config --version
+        msg: "pkg-config is required to check for existing YARA-X C API installation."
+    cmds:
+      # cargo-c provides the `cargo cinstall` subcommand used below; skip if already installed
+      - command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+      - sudo rm -rf {{.YARA_BUILD_DIR}}
+      - git clone --depth 1 --branch {{.YARA_VERSION}} {{.YARA_REPO}} {{.YARA_BUILD_DIR}}
+      # Use sudo -E to preserve the user's PATH so cargo (from rustup) can be found
+      - sudo -E cargo cinstall -p yara-x-capi --release --manifest-path {{.YARA_BUILD_DIR}}/Cargo.toml
+      - |
+        # Refresh the dynamic linker cache so the newly installed library is found at runtime
+        if [ "{{OS}}" = "linux" ]; then
+          sudo ldconfig
+        fi
+      - sudo rm -rf {{.YARA_BUILD_DIR}}

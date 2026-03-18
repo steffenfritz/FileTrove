@@ -2,6 +2,10 @@
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
 # Binaries for programs and plugins
+ftrove
+admftrove
+ftrove_*
+admftrove_*
 *.exe
 *.exe~
 *.dll
@@ -29,7 +33,13 @@ cmd/ftrove/db
 nsrl_sha1_uniq_*
 nsrl.db
 
+# Package build output
+dist/
+
 # Misc
 .DS_Store
+
+# Taskfile state
+.task/
 testdata/noaccess.rtf
 resources
