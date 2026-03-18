@@ -41,5 +41,6 @@ dist/
 
 # Taskfile state
 .task/
+cmd/ftrove/.yara_env
 testdata/noaccess.rtf
 resources

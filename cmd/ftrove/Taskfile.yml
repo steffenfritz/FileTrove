@@ -77,6 +77,70 @@ tasks:
       CC: "zig cc -target x86_64-windows-musl"
       CXX: "zig cc -target x86_64-windows-musl"
 
+  setup_mac:
+    desc: Install all development dependencies on macOS and build the YARA-X C library
+    cmds:
+      - command -v go          >/dev/null 2>&1 || brew install go
+      - command -v cargo       >/dev/null 2>&1 || brew install rust
+      - command -v zig         >/dev/null 2>&1 || brew install zig
+      - command -v sqlite3     >/dev/null 2>&1 || brew install sqlite
+      - command -v pkg-config  >/dev/null 2>&1 || brew install pkg-config
+      - command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+      - |
+        if [ ! -d "$HOME/yara-x" ]; then
+          git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git $HOME/yara-x
+        fi
+      - |
+        if [ ! -d "$HOME/yara_install" ]; then
+          cd $HOME/yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+        fi
+      - |
+        PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
+        PC_DIR=$(dirname "$PC_FILE")
+        LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+        INC_DIR=$(find $HOME/yara_install -name "yara_x_capi.h" -exec dirname {} \; | head -1)
+        echo "PKG_CONFIG_PATH=$PC_DIR" > .yara_env
+        echo "CGO_CFLAGS=-I$INC_DIR" >> .yara_env
+        echo "CGO_LDFLAGS=-L$LIB_DIR" >> .yara_env
+        echo "Setup complete. YARA-X env written to cmd/ftrove/.yara_env and will be auto-loaded by task."
+
+  setup_linux:
+    desc: Install all development dependencies on Debian/Ubuntu and build the YARA-X C library
+    cmds:
+      - |
+        pkgs=""
+        command -v gcc        >/dev/null 2>&1 || pkgs="$pkgs build-essential"
+        command -v git        >/dev/null 2>&1 || pkgs="$pkgs git"
+        command -v curl       >/dev/null 2>&1 || pkgs="$pkgs curl"
+        command -v pkg-config >/dev/null 2>&1 || pkgs="$pkgs pkg-config"
+        command -v sqlite3    >/dev/null 2>&1 || pkgs="$pkgs sqlite3"
+        command -v go         >/dev/null 2>&1 || pkgs="$pkgs golang"
+        if [ -n "$pkgs" ]; then sudo apt update && sudo apt install -y $pkgs; fi
+      - command -v cargo >/dev/null 2>&1 || (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y)
+      - |
+        source "$HOME/.cargo/env"
+        command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+      - |
+        if [ ! -d "$HOME/yara-x" ]; then
+          git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git $HOME/yara-x
+        fi
+      - |
+        if [ ! -d "$HOME/yara_install" ]; then
+          source "$HOME/.cargo/env"
+          cd $HOME/yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+        fi
+      - |
+        PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
+        PC_DIR=$(dirname "$PC_FILE")
+        LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+        INC_DIR=$(find $HOME/yara_install -name "yara_x_capi.h" -exec dirname {} \; | head -1)
+        echo "PKG_CONFIG_PATH=$PC_DIR" > .yara_env
+        echo "CGO_CFLAGS=-I$INC_DIR" >> .yara_env
+        echo "CGO_LDFLAGS=-L$LIB_DIR" >> .yara_env
+        echo "Setup complete. YARA-X env written to cmd/ftrove/.yara_env and will be auto-loaded by task."
+
   clean:
     desc: Delete builds and test files
     cmds:
