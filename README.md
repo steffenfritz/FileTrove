@@ -2,118 +2,82 @@
 <img src="https://github.com/steffenfritz/FileTrove/assets/16431534/b8c1456d-08bb-48bb-afcf-5e99db8466b9" width="300">
 </p>
 
+<p align="center">
+  <img alt="Build Status" src="https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg">
+  <a href="https://www.gnu.org/licenses/agpl-3.0"><img alt="License: AGPL v3" src="https://img.shields.io/badge/License-AGPL_v3-blue.svg"></a>
+  <a href="https://pkg.go.dev/github.com/steffenfritz/FileTrove"><img alt="Go Reference" src="https://pkg.go.dev/badge/github.com/steffenfritz/FileTrove.svg"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/steffenfritz/FileTrove/badge"></a>
+  <a href="https://www.bestpractices.dev/projects/8952"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/8952/badge"></a>
+</p>
 
+**VERSION: v1.0.0-BETA-4**
 
-![Build Status](https://github.com/steffenfritz/FileTrove/actions/workflows/buildstatus.yml/badge.svg)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Go Reference](https://pkg.go.dev/badge/github.com/steffenfritz/FileTrove.svg)](https://pkg.go.dev/github.com/steffenfritz/FileTrove)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/steffenfritz/FileTrove/badge)](https://scorecard.dev/viewer/?uri=github.com/steffenfritz/FileTrove)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8952/badge)](https://www.bestpractices.dev/projects/8952)
+---
 
+FileTrove walks a directory tree, identifies every file, computes metadata, and writes all results into a SQLite database with TSV export support.
 
-VERSION: v1.0.0-BETA-4
+## What it collects
 
+| Category | Details |
+|----------|---------|
+| **File type** | MIME type, [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier, format version, identification proof/note, extension — via [siegfried](https://github.com/richardlehane/siegfried) |
+| **File & directory timestamps** | Creation, modification, and access times |
+| **Hashes** | MD5, SHA1, SHA256, SHA512, BLAKE2B-512 |
+| **Entropy** | Shannon entropy (files up to 1 GB) |
+| **Extended attributes** | xattr from ext3/ext4, btrfs, APFS, and others |
+| **EXIF metadata** | Extracted from image files |
+| **YARA-X** | Match results from your own rule files |
+| **NSRL** | Flags known software files via the [National Software Reference Library](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl) |
+| **Dublin Core** | Optional session-level descriptive metadata |
 
-## About
+Each file and directory gets a UUIDv4 as a unique identifier. All results land in a SQLite database and can be exported to TSV.
 
-FileTrove indexes files and creates metadata from them.
+## Installation
 
-The application walks a directory tree and identifies all regular files by type with [siegfried](https://github.com/richardlehane/siegfried), giving you the 
+1. **Get the binary** — download a release from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or compile from source (see [BUILDING.md](BUILDING.md)). Both a standard dynamic binary (`ftrove`) and a static binary (e.g. `ftrove_amd64_linux_static`) are provided.
 
-* MIME type
-* [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier
-* Format version
-* Identification proof and note
-* filename extension
+2. **Run the installer** from the directory where you want FileTrove to live:
+   ```sh
+   ./ftrove --install .
+   ```
+   This creates a `db/` directory, downloads the siegfried signature database, and optionally downloads the NSRL database (1.4 GB compressed). If you already have an NSRL database, copy it into `db/` afterwards.
 
-os.Stat() is giving you the
+3. **You're ready.**
 
-* File size
-* File creation time
-* File modification time
-* File access time
+### YARA-X
 
-* and the same for directories
+YARA-X scanning requires a C library that is not bundled with FileTrove. It is built automatically during `task build` if not already present. See [BUILDING.md](BUILDING.md) for setup instructions.
 
-FileTrove also reads and indexes extended attributes (xattr) from ext3/ext4, btrfs, APFS, ...
+- Example rule files: `testdata/yara/`
+- When a rule matches, the rule name, session UUID, and file UUID are recorded in the `yara` table. The rule file itself is not stored.
 
-Furthermore it creates and calculates
+### NSRL custom databases
 
-* UUIDv4s as unique identifiers (not stable across sessions)
-* hash sums (md5, sha1, sha256, sha512 and blake2b-512)
-* the entropy of each file (up to 1GB)
+You can build your own NSRL-style database from any newline-delimited list of SHA1 hashes using `admftrove`, which is built alongside `ftrove`.
 
-* and it extracts some EXIF metadata and 
-* you can add your own [DublinCore Elements](https://www.dublincore.org/specifications/dublin-core/usageguide/elements/) metadata to scans.
+## Running a scan
 
-* A very powerful feature is FileTrove's ability to consume [YARA-X](https://virustotal.github.io/yara-x/) rule files.
+```sh
+./ftrove -i $DIRECTORY
+```
 
-* FileTrove also checks if the file is in the [NSRL](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl).
+FileTrove walks `$DIRECTORY` recursively. Run `./ftrove -h` for all available flags.
 
-For this check a 4.0GB BoltDB is needed and can be downloaded with FileTrove during the installation. 
+## Viewing results
 
-You can also create your own database for the NSRL check. You just need a text file with SHA1 hashes, one per line and the tool `admftrove` which is built along with `ftrove`. With this tool you can also add your own hashes to an existing database.
+List all sessions and export one to TSV:
 
+```sh
+./ftrove -l
+./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2
+```
 
-All results are written into a SQLite database and can be exported to TSV files.
+You can also query the SQLite database directly:
 
-
-## How to install
-1. Download a release from https://github.com/steffenfritz/FileTrove/releases or compile from source (using `task build` in the repository root).
-   - This will generate both a standard dynamic binary (`ftrove`) and a standalone static binary (e.g., `ftrove_amd64_linux_static`).
-2. Copy the binary you wish to use where you want to install ftrove (the downloaded file has a suffix, omitted in the following documentation)
-3. Run `./ftrove --install .` (Mind the period)
-   
-	a) If you don't have already a NSRL database, you have to download it. Please be patient.
-    
-	b) If you have a NSRL database copy/move it to the "db" directory that ftrove just created.
-
-4. You are ready to go!
-
-### A word on YARA
-The YARA module needs a C library that is not part of FileTrove.
-It is now automatically built and installed during the `task build` process if it's not already present on your system.
-
-A YARA example rule file can be found in the testdata/yara directory in this repository.
-
-If a rule matches on a file the rule name, the session UUID and the file UUID is written into the table *yara*.
-
-The YARA rule file itself is not stored in FileTrove's database.
-
-
-### To compile FileTrove with YARA-X support
-
-1. Install Golang: https://go.dev/doc/install
-2. Install Task build tool: https://taskfile.dev
-3. Clone the repository: `git clone https://github.com/steffenfritz/FileTrove.git`
-4. Change into the directory: `cd FileTrove`
-5. Start build: `task build`
-
-Note: `task build` will automatically attempt to install the YARA-X C library if it's not found on your system (requires `cargo` and `sudo`).
-
-
-## How to run
-`./ftrove -h` gives you all flags ftrove understands.
-
-A run only with necessary flags looks like this:
-
-`./ftrove -i $DIRECTORY`
-
-where $DIRECTORY is a directory you want to use as a starting point. FileTrove will walk this directory recursively down.
-
-## How to see the results
-You can export the results via `./ftrove -t $UUID` where $UUID is the session id. 
-Every indexing run gets its own session id. You get a list of all sessions using `./ftrove -l`. 
-
-Example:
-
-1. `./ftrove -l`
-2. `./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2`
-
-This will create several TSV files that can be read with Excel, Numbers and your preferred text editor. 
-
-
-You can also work with SQL on the database, using sqlite on the console or a GUI like sqlitebrowser (https://sqlitebrowser.org/). Sqliteviz is also a neat tool to visualize the data (https://sqliteviz.com/app/#/).
+- **CLI:** `sqlite3 db/filetrove.db`
+- **GUI:** [sqlitebrowser](https://sqlitebrowser.org/)
+- **Visualisation:** [Sqliteviz](https://sqliteviz.com/app/#/)
 
 ## Background
-FileTrove is the successor of [filedriller](https://github.com/steffenfritz/filedriller) and based on my iPres 2021 paper [Marrying siegfried and the National Software Reference Library](https://phaidra.univie.ac.at/detail/o:1424904)
+
+FileTrove is the successor of [filedriller](https://github.com/steffenfritz/filedriller), based on the iPres 2021 paper [Marrying siegfried and the National Software Reference Library](https://phaidra.univie.ac.at/detail/o:1424904).

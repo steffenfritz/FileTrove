@@ -27,7 +27,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     permissions:
@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@58077d3c7e43986b6b15fba718e8ea69e387dfcc # v2.15.1
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -48,7 +48,7 @@ jobs:
           toolchain: stable
 
       - name: Cache Rust
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/bin
@@ -58,8 +58,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install cargo-c (Linux)
-        if: runner.os == 'Linux'
+      - name: Install cargo-c (Linux/macOS)
+        if: runner.os != 'Windows'
         run: command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
 
       - name: Install cargo-c (Windows)
@@ -73,23 +73,24 @@ jobs:
           cache: true
 
       - name: Install Task
-        uses: go-task/setup-task@0ab1b2a65bc55236a3bc64cde78f80e20e8885c2 # v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1.1.0
         with:
           version: "3.x"
 
       - name: Clone YARA-X
         run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
 
-      - name: Build YARA-X C API (Linux)
-        if: runner.os == 'Linux'
+      - name: Build YARA-X C API (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           cd yara-x
           cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
-          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc)
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
           PC_DIR=$(dirname "$PC_FILE")
-          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.a" -exec dirname {} \; | head -1)
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+          PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
           echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
-          echo "CGO_CFLAGS=-I$HOME/yara_install/usr/local/include" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> $GITHUB_ENV
           echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
 
