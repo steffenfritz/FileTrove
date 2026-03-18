@@ -1,5 +1,7 @@
 version: '3'
 
+dotenv: ['cmd/ftrove/.yara_env']
+
 vars:
   VERSION:
     sh: cat VERSION
