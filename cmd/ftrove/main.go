@@ -399,7 +399,7 @@ func main() {
 	}
 
 	// Create file list
-	filelist, dirlist, err := ft.CreateFileList(*inDir)
+	filelist, dirlist, skippedlist, err := ft.CreateFileList(*inDir)
 	if *debug {
 		ft.DebugWriteFileList(fddebug, filelist, dirlist)
 	}
@@ -410,6 +410,9 @@ func main() {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
 		}
 		os.Exit(1)
+	}
+	for _, skipped := range skippedlist {
+		logger.Warn("Skipped entry (symlink, special file, or inaccessible path).", slog.String("path", skipped))
 	}
 
 	// If we resumeuuid, we update the file list to start with the file after the last entry
