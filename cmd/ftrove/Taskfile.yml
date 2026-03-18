@@ -6,6 +6,8 @@ vars:
   GIT_COMMIT:
     sh: git log -n 1 --format=%h
 
+dotenv: ['.yara_env']
+
 env:
   CGO_ENABLED: "1"
 
