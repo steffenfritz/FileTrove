@@ -30,7 +30,7 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	siegfriederr := GetSiegfriedDB(installPath)
 
 	fmt.Println("\nNSRL bloom filter must be placed in the db/ directory as nsrl.bloom.")
-	fmt.Println("Build it with: task nsrl:build-modern (or nsrl:build-mobile, nsrl:build-all)")
+	fmt.Println("Build it with: task nsrl:build-all (recommended, or nsrl:build-mobile, nsrl:build-modern)")
 	fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
 
 	return dbdirerr, logsdirerr, trovedberr, siegfriederr
@@ -50,7 +50,7 @@ func CheckInstall(version string) error {
 	if os.IsNotExist(dberr) {
 		// Check for legacy nsrl.db and provide migration hint
 		if _, legacyErr := os.Stat(filepath.Join("db", "nsrl.db")); legacyErr == nil {
-			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-modern' or rebuild with admftrove --creatensrl to create nsrl.bloom.")
+			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create nsrl.bloom.")
 		} else {
 			fmt.Println("ERROR: nsrl bloom filter does not exist.")
 		}

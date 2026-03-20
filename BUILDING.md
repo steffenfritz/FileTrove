@@ -81,10 +81,12 @@ task build
 FileTrove uses a Bloom filter for NSRL lookups. If you cloned the repo with Git LFS, `db/nsrl.bloom` is already present. Otherwise, build it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`, and a built `admftrove`):
 
 ```sh
-task nsrl:build-modern    # Modern OS software only (~30-45 MB)
+task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
 task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
-task nsrl:build-all       # All subsets including legacy (~80-110 MB)
+task nsrl:build-modern    # Modern OS software only (~30-45 MB)
 ```
+
+For archival and digital preservation work, `build-all` is recommended since legacy software is commonly found on older media and disk images.
 
 Check whether your local bloom file matches the configured upstream version:
 

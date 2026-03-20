@@ -44,10 +44,11 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
 
 3. **Set up the NSRL database.** FileTrove uses a Bloom filter (`db/nsrl.bloom`) for NSRL lookups. If the repository was cloned with Git LFS, the file is already in `db/`. Otherwise, build it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`):
    ```sh
-   task nsrl:build-modern    # Modern OS software only (~30-45 MB)
+   task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
    task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
-   task nsrl:build-all       # All subsets including legacy (~80-110 MB)
+   task nsrl:build-modern    # Modern OS software only (~30-45 MB)
    ```
+   The default (`build-all`) is recommended for archival and digital preservation work, where legacy software from older systems is commonly encountered.
 
 4. **You're ready.**
 
