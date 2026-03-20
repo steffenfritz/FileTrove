@@ -34,25 +34,22 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
 
 ## Installation
 
-1. **Get the binary** — download a release from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or compile from source (see [BUILDING.md](BUILDING.md)). Both a standard dynamic binary (`ftrove`) and a static binary (e.g. `ftrove_amd64_linux_static`) are provided.
-
-2. **Run the installer** from the directory where you want FileTrove to live:
+1. **Get a distribution bundle** — download from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or build one from source (see [BUILDING.md](BUILDING.md)):
    ```sh
+   task dist:bundle    # builds binaries + bundles siegfried.sig + nsrl.bloom
+   ```
+   The bundle at `build/<os>_<arch>/` contains everything you need.
+
+2. **Run the installer** from the bundle directory:
+   ```sh
+   cd build/darwin_arm64   # or linux_amd64, etc.
    ./ftrove --install .
    ```
-   This creates a `db/` directory and downloads the siegfried signature database.
+   This creates the scan database (`db/filetrove.db`) and `logs/` directory. The siegfried signature file and NSRL bloom filter are already included in the bundle.
 
-3. **Set up the NSRL database.** FileTrove uses a Bloom filter (`db/nsrl.bloom`) for NSRL lookups. If the repository was cloned with Git LFS, the file is already in `db/`. Otherwise, build it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`):
-   ```sh
-   task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
-   task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
-   task nsrl:build-modern    # Modern OS software only (~30-45 MB)
-   ```
-   The default (`build-all`) is recommended for archival and digital preservation work, where legacy software from older systems is commonly encountered.
+3. **You're ready.**
 
-   > **Note:** Building from source requires significant temporary disk space (~190 GB for modern, ~350 GB for all) because the NSRL RDS SQLite databases are large. Run `task nsrl:clean` afterwards to reclaim the space. If you cloned with Git LFS, `db/nsrl.bloom` is already present and no build is needed.
-
-4. **You're ready.**
+> **Building from source without `task dist`?** You can also set up the NSRL bloom filter separately. See [BUILDING.md](BUILDING.md) for details on `task nsrl:build-all` and disk space requirements.
 
 ### YARA-X
 
@@ -63,7 +60,7 @@ YARA-X scanning requires a C library that is not bundled with FileTrove. It is b
 
 ### NSRL
 
-FileTrove ships a pre-built NSRL Bloom filter via Git LFS. When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets above.
+FileTrove ships a pre-built NSRL Bloom filter in the repository. When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets above.
 
 You can also build a custom Bloom filter from any newline-delimited list of SHA1 hashes:
 

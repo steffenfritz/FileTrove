@@ -19,6 +19,7 @@ includes:
     dir: ./cmd/admftrove
   pkg: ./Taskfile.package.yml
   nsrl: ./Taskfile.nsrl.yml
+  dist: ./Taskfile.dist.yml
 
 tasks:
   default:

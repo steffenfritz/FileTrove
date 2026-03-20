@@ -33,6 +33,7 @@ func TestCreateFileList(t *testing.T) {
 				"testdata/images/screenshot_1.tiff",
 				"testdata/images/screenshot_1.tiff_original",
 				"testdata/noextension",
+				"testdata/nsrl_known_hashes.txt",
 				"testdata/textfile.txt",
 				"testdata/transparent.png",
 				"testdata/white.jpg",

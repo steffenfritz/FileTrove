@@ -37,11 +37,15 @@ nsrl.db
 # NSRL build artifacts
 tmp/nsrl/
 
+# Distribution bundles
+build/
+
 # Package build output
 dist/
 
 # Misc
 .DS_Store
+.claude
 
 # Taskfile state
 .task/

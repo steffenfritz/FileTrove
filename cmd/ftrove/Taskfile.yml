@@ -153,5 +153,5 @@ tasks:
       - rm -f ftrove_*
       - rm -rf logs
       - rm -f *.tsv
-      - mv db/nsrl.db . 2>/dev/null || true
-      - rm -rf db
+      - rm -f db/filetrove.db db/siegfried.sig
+      - rm -rf db 2>/dev/null || true

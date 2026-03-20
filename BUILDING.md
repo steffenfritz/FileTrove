@@ -76,9 +76,35 @@ task build
 
 ---
 
+## Building a Distribution Bundle
+
+To create a self-contained bundle ready for end users:
+
+```sh
+task dist:bundle
+```
+
+This builds both binaries, downloads `siegfried.sig`, copies `nsrl.bloom`, and packages everything into `build/<os>_<arch>/`. The resulting folder can be used immediately:
+
+```sh
+cd build/darwin_arm64         # or linux_amd64, etc.
+./ftrove --install .          # creates filetrove.db and logs/
+./ftrove -i /path/to/files
+```
+
+To create a `.tar.gz` archive for distribution:
+
+```sh
+task dist:archive
+```
+
+> **Prerequisite:** `db/nsrl.bloom` must exist in the repository root before running `task dist:bundle`. Build it with `task nsrl:build-all` if it doesn't exist yet. See below.
+
+---
+
 ## Building the NSRL Bloom filter
 
-FileTrove uses a Bloom filter for NSRL lookups. If you cloned the repo with Git LFS, `db/nsrl.bloom` is already present. Otherwise, build it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`, and a built `admftrove`):
+FileTrove uses a Bloom filter for NSRL lookups. The pre-built `db/nsrl.bloom` is included in the repository. To rebuild it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`, and a built `admftrove`):
 
 ```sh
 task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
