@@ -4,6 +4,7 @@
 # Binaries for programs and plugins
 /ftrove
 /admftrove
+cmd/admftrove/admftrove
 ftrove_*
 admftrove_*
 *.exe
