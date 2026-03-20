@@ -3,10 +3,13 @@ package filetrove
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
-// CheckVersion checks if the filetrove version is compatible to the database
-// Compatible means same version for now. This could change in the future.
+// CheckVersion checks if the binary version is compatible with the database.
+// Only the base version (the part before '+') is compared, so that builds
+// from different commits but the same release (e.g. 1.0.0-BETA-4+abc vs
+// 1.0.0-BETA-4+def) are treated as compatible.
 func CheckVersion(db *sql.DB, version string) (bool, string, error) {
 	var dbversion string
 
@@ -18,7 +21,10 @@ func CheckVersion(db *sql.DB, version string) (bool, string, error) {
 		return false, "", err
 	}
 
-	if dbversion == version {
+	baseVersion := strings.SplitN(version, "+", 2)[0]
+	baseDbVersion := strings.SplitN(dbversion, "+", 2)[0]
+
+	if baseDbVersion == baseVersion {
 		return true, "", nil
 	}
 
