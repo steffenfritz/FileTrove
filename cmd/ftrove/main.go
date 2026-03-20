@@ -146,8 +146,7 @@ func main() {
 			os.Exit(1)
 		}
 		if siegfriederr != nil {
-			logger.Error("Could not download or create siegfried database.", slog.String("error", siegfriederr.Error()))
-			logger.Info("Could not download siegfried signature file. You have to copy siegfried.sig into the db directory. See the documentation.")
+			logger.Error("Could not download siegfried signature file. You have to copy siegfried.sig into the db directory. See the documentation.", slog.String("error", siegfriederr.Error()))
 			os.Exit(1)
 		}
 		// We put an an extra newline here due to the mixed output from install function and the logging here

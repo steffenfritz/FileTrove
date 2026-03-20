@@ -40,9 +40,16 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
    ```sh
    ./ftrove --install .
    ```
-   This creates a `db/` directory, downloads the siegfried signature database, and optionally downloads the NSRL database (1.4 GB compressed). If you already have an NSRL database, copy it into `db/` afterwards.
+   This creates a `db/` directory and downloads the siegfried signature database.
 
-3. **You're ready.**
+3. **Set up the NSRL database.** FileTrove uses a Bloom filter (`db/nsrl.bloom`) for NSRL lookups. If the repository was cloned with Git LFS, the file is already in `db/`. Otherwise, build it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`):
+   ```sh
+   task nsrl:build-modern    # Modern OS software only (~30-45 MB)
+   task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
+   task nsrl:build-all       # All subsets including legacy (~80-110 MB)
+   ```
+
+4. **You're ready.**
 
 ### YARA-X
 
@@ -51,9 +58,17 @@ YARA-X scanning requires a C library that is not bundled with FileTrove. It is b
 - Example rule files: `testdata/yara/`
 - When a rule matches, the rule name, session UUID, and file UUID are recorded in the `yara` table. The rule file itself is not stored.
 
-### NSRL custom databases
+### NSRL
 
-You can build your own NSRL-style database from any newline-delimited list of SHA1 hashes using `admftrove`, which is built alongside `ftrove`.
+FileTrove ships a pre-built NSRL Bloom filter via Git LFS. When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets above.
+
+You can also build a custom Bloom filter from any newline-delimited list of SHA1 hashes:
+
+```sh
+admftrove --creatensrl hashes.txt --nsrlversion "my-hashset-v1"
+```
+
+Optional flags: `--nsrl-estimate` (expected hash count, default 40M) and `--nsrl-fpr` (false positive rate, default 0.0001). Copy the resulting `nsrl.bloom` into `db/`.
 
 ## Running a scan
 

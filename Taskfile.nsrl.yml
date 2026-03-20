@@ -7,6 +7,24 @@ vars:
   NSRL_WORK: "./tmp/nsrl"
 
 tasks:
+  check:
+    desc: Compare local nsrl.bloom version against configured NSRL_VERSION
+    silent: true
+    cmds:
+      - |
+        if [ ! -f db/nsrl.bloom ]; then
+          echo "No local nsrl.bloom found. Run one of the build targets."
+          exit 0
+        fi
+        LOCAL=$(admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep '^Version:' | awk '{print $2}')
+        echo "Local version:      $LOCAL"
+        echo "Configured version: {{.NSRL_VERSION}}"
+        if echo "$LOCAL" | grep -q "^{{.NSRL_VERSION}}"; then
+          echo "Up to date."
+        else
+          echo "Update available. Run a build target to rebuild."
+        fi
+
   download-modern:
     desc: Download NSRL Modern Minimal RDS (SQLite)
     cmds:
@@ -53,6 +71,9 @@ tasks:
     cmds:
       - admftrove --creatensrl {{.NSRL_WORK}}/sha1_modern.txt --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}}
       - mv nsrl.bloom db/nsrl.bloom
+    status:
+      - test -f db/nsrl.bloom
+      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
 
   build-mobile:
     desc: Build Bloom filter from Modern + Android + iOS (~50-65 MB)
@@ -61,6 +82,9 @@ tasks:
       - cat {{.NSRL_WORK}}/sha1_modern.txt {{.NSRL_WORK}}/sha1_android.txt {{.NSRL_WORK}}/sha1_ios.txt | sort -u > {{.NSRL_WORK}}/sha1_combined.txt
       - admftrove --creatensrl {{.NSRL_WORK}}/sha1_combined.txt --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}}
       - mv nsrl.bloom db/nsrl.bloom
+    status:
+      - test -f db/nsrl.bloom
+      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
 
   build-all:
     desc: Build Bloom filter from all RDS subsets (~80-110 MB)
@@ -69,6 +93,9 @@ tasks:
       - cat {{.NSRL_WORK}}/sha1_*.txt | sort -u > {{.NSRL_WORK}}/sha1_all.txt
       - admftrove --creatensrl {{.NSRL_WORK}}/sha1_all.txt --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}}
       - mv nsrl.bloom db/nsrl.bloom
+    status:
+      - test -f db/nsrl.bloom
+      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"
 
   clean:
     desc: Remove NSRL build artifacts

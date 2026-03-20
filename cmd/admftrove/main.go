@@ -21,6 +21,7 @@ func main() {
 
 	// Format of the source file MUST be a SHA1 hash per line
 	createNSRL := flag.String("creatensrl", "", "Create a Bloom filter file from a text file with one SHA1 hash per line.")
+	nsrlInfo := flag.String("nsrl-info", "", "Show version and metadata of an existing nsrl.bloom file.")
 	nsrlversion := flag.String("nsrlversion", "", "NSRL version string used for session information.")
 	nsrlEstimate := flag.Uint("nsrl-estimate", 40_000_000, "Estimated number of hashes for Bloom filter sizing.")
 	nsrlFPR := flag.Float64("nsrl-fpr", 0.0001, "Target false positive rate for the Bloom filter (default: 0.01%).")
@@ -31,6 +32,19 @@ func main() {
 
 	if *version {
 		fmt.Println("admftrove supports FileTrove version: " + Version)
+	}
+
+	if len(*nsrlInfo) != 0 {
+		nf, err := ft.LoadNSRL(*nsrlInfo)
+		if err != nil {
+			logger.Error("Could not load NSRL bloom filter", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		fmt.Printf("Version:  %s\n", nf.Version)
+		fmt.Printf("HashType: %s\n", nf.HashType)
+		fmt.Printf("Items:    %d\n", nf.Items)
+		fmt.Printf("FPR:      %g\n", nf.FPR)
+		return
 	}
 
 	if len(*createNSRL) != 0 {
