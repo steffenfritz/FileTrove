@@ -88,6 +88,14 @@ task nsrl:build-modern    # Modern OS software only (~30-45 MB)
 
 For archival and digital preservation work, `build-all` is recommended since legacy software is commonly found on older media and disk images.
 
+> **Disk space warning:** The build tasks download and extract the NSRL RDS SQLite databases temporarily. The temporary files are stored in `tmp/nsrl/` and can be removed after the build with `task nsrl:clean`. The resulting `nsrl.bloom` file is only 30-110 MB.
+
+| Build target | NSRL subsets | Download | Extracted | Total disk needed | Distinct hashes |
+|---|---|---|---|---|---|
+| `build-modern` | Modern | ~18 GB | ~169 GB | **~190 GB** | ~31M |
+| `build-mobile` | Modern + Android + iOS | ~29 GB | ~242 GB | **~275 GB** | ~81M |
+| `build-all` | Modern + Android + iOS + Legacy | ~40 GB | ~305 GB | **~350 GB** | ~87M |
+
 Check whether your local bloom file matches the configured upstream version:
 
 ```sh

@@ -50,6 +50,8 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
    ```
    The default (`build-all`) is recommended for archival and digital preservation work, where legacy software from older systems is commonly encountered.
 
+   > **Note:** Building from source requires significant temporary disk space (~190 GB for modern, ~350 GB for all) because the NSRL RDS SQLite databases are large. Run `task nsrl:clean` afterwards to reclaim the space. If you cloned with Git LFS, `db/nsrl.bloom` is already present and no build is needed.
+
 4. **You're ready.**
 
 ### YARA-X

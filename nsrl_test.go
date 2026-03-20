@@ -1,6 +1,7 @@
 package filetrove
 
 import (
+	"bufio"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -176,6 +177,43 @@ func TestBloomEmptyFile(t *testing.T) {
 	if nf.Items != 0 {
 		t.Errorf("expected 0 items, got %d", nf.Items)
 	}
+}
+
+func TestBloomWithRealNSRL(t *testing.T) {
+	bloomFile := "db/nsrl.bloom"
+	if _, err := os.Stat(bloomFile); os.IsNotExist(err) {
+		t.Skip("db/nsrl.bloom not present; run 'task nsrl:build-all' first")
+	}
+
+	nf, err := LoadNSRL(bloomFile)
+	if err != nil {
+		t.Fatalf("LoadNSRL failed: %v", err)
+	}
+
+	// Known NSRL hashes from testdata (extracted from RDS 2026.03.1)
+	knownFile := "testdata/nsrl_known_hashes.txt"
+	f, err := os.Open(knownFile)
+	if err != nil {
+		t.Fatalf("open %s: %v", knownFile, err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	line := 0
+	for scanner.Scan() {
+		line++
+		hash := scanner.Text()
+		if hash == "" {
+			continue
+		}
+		if !nf.Contains(hash) {
+			t.Errorf("line %d: known NSRL hash not found: %s", line, hash)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		t.Fatalf("reading %s: %v", knownFile, err)
+	}
+	t.Logf("all %d known hashes found in bloom filter (version: %s, items: %d)", line, nf.Version, nf.Items)
 }
 
 func TestBloomMissingFile(t *testing.T) {

@@ -16,7 +16,7 @@ tasks:
           echo "No local nsrl.bloom found. Run one of the build targets."
           exit 0
         fi
-        LOCAL=$(admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep '^Version:' | awk '{print $2}')
+        LOCAL=$(./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep '^Version:' | awk '{print $2}')
         echo "Local version:      $LOCAL"
         echo "Configured version: {{.NSRL_VERSION}}"
         if echo "$LOCAL" | grep -q "^{{.NSRL_VERSION}}"; then
@@ -27,75 +27,87 @@ tasks:
 
   download-modern:
     desc: Download NSRL Modern Minimal RDS (SQLite)
+    interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/modern
-      - curl -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_modern_minimal.zip -d {{.NSRL_WORK}}/modern
-      - sqlite3 {{.NSRL_WORK}}/modern/*.db "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_modern.txt
+      - sqlite3 "$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_modern.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_modern.txt
 
   download-android:
     desc: Download NSRL Android Minimal RDS (SQLite)
+    interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/android
-      - curl -L -o {{.NSRL_WORK}}/rds_android_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_android_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_android_minimal.zip -d {{.NSRL_WORK}}/android
-      - sqlite3 {{.NSRL_WORK}}/android/*.db "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_android.txt
+      - sqlite3 "$(find {{.NSRL_WORK}}/android -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_android.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_android.txt
 
   download-ios:
     desc: Download NSRL iOS Minimal RDS (SQLite)
+    interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/ios
-      - curl -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_ios_minimal.zip -d {{.NSRL_WORK}}/ios
-      - sqlite3 {{.NSRL_WORK}}/ios/*.db "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_ios.txt
+      - sqlite3 "$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_ios.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_ios.txt
 
   download-legacy:
     desc: Download NSRL Legacy Minimal RDS (SQLite)
+    interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/legacy
-      - curl -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_legacy_minimal.zip -d {{.NSRL_WORK}}/legacy
-      - sqlite3 {{.NSRL_WORK}}/legacy/*.db "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_legacy.txt
+      - sqlite3 "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_legacy.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_legacy.txt
 
   build-modern:
-    desc: Build Bloom filter from Modern RDS only (~30-45 MB)
-    deps: [download-modern]
+    desc: "Build Bloom filter from Modern RDS only (~30-45 MB). Requires ~190 GB temp disk space."
+    interactive: true
     cmds:
-      - admftrove --creatensrl {{.NSRL_WORK}}/sha1_modern.txt --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}}
-      - mv nsrl.bloom db/nsrl.bloom
+      - task: download-modern
+      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_modern.txt --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}}
+      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
     status:
       - test -f db/nsrl.bloom
-      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
 
   build-mobile:
-    desc: Build Bloom filter from Modern + Android + iOS (~50-65 MB)
-    deps: [download-modern, download-android, download-ios]
+    desc: "Build Bloom filter from Modern + Android + iOS (~50-65 MB). Requires ~275 GB temp disk space."
+    interactive: true
     cmds:
-      - cat {{.NSRL_WORK}}/sha1_modern.txt {{.NSRL_WORK}}/sha1_android.txt {{.NSRL_WORK}}/sha1_ios.txt | sort -u > {{.NSRL_WORK}}/sha1_combined.txt
-      - admftrove --creatensrl {{.NSRL_WORK}}/sha1_combined.txt --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}}
-      - mv nsrl.bloom db/nsrl.bloom
+      - task: download-modern
+      - task: download-android
+      - task: download-ios
+      - cat {{.NSRL_WORK}}/sha1_modern.txt {{.NSRL_WORK}}/sha1_android.txt {{.NSRL_WORK}}/sha1_ios.txt > {{.NSRL_WORK}}/sha1_combined.txt
+      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_combined.txt --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}}
+      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
     status:
       - test -f db/nsrl.bloom
-      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
 
   build-all:
-    desc: Build Bloom filter from all RDS subsets (~80-110 MB)
-    deps: [download-modern, download-android, download-ios, download-legacy]
+    desc: "Build Bloom filter from all RDS subsets (~80-110 MB). Requires ~350 GB temp disk space."
+    interactive: true
     cmds:
-      - cat {{.NSRL_WORK}}/sha1_*.txt | sort -u > {{.NSRL_WORK}}/sha1_all.txt
-      - admftrove --creatensrl {{.NSRL_WORK}}/sha1_all.txt --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}}
-      - mv nsrl.bloom db/nsrl.bloom
+      - task: download-modern
+      - task: download-android
+      - task: download-ios
+      - task: download-legacy
+      - cat {{.NSRL_WORK}}/sha1_*.txt > {{.NSRL_WORK}}/sha1_all.txt
+      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_all.txt --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}}
+      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
     status:
       - test -f db/nsrl.bloom
-      - admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"
 
   clean:
     desc: Remove NSRL build artifacts
