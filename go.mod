@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/VirusTotal/yara-x/go v1.14.0
+	github.com/bits-and-blooms/bloom/v3 v3.7.0
 	github.com/djherbis/times v1.6.0
 	github.com/elastic/go-sysinfo v1.15.4
 	github.com/google/uuid v1.6.0
@@ -13,11 +14,11 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/spf13/pflag v1.0.10
-	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.49.0
 )
 
 require (
+	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/elastic/go-windows v1.0.2 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect

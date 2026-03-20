@@ -2,15 +2,12 @@ package filetrove
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
-// InstallFT creates and downloads necessary directories and databases and copies them to installPath
-func InstallFT(installPath string, version string, initdate string) (error, error, error, error, error) {
-	var choice string
+// InstallFT creates necessary directories and databases
+func InstallFT(installPath string, version string, initdate string) (error, error, error, error) {
 
 	// Printing an additional newline
 	fmt.Println()
@@ -18,51 +15,28 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 	fmt.Println("Creating database and logfile directories.")
 	dbdirerr := os.Mkdir(filepath.Join(installPath, "db"), os.ModePerm)
 	if dbdirerr != nil {
-		return dbdirerr, nil, nil, nil, nil
+		return dbdirerr, nil, nil, nil
 	}
 	logsdirerr := os.Mkdir(filepath.Join(installPath, "logs"), os.ModePerm)
 	if logsdirerr != nil {
-		return nil, logsdirerr, nil, nil, nil
+		return nil, logsdirerr, nil, nil
 	}
 	fmt.Println("Creating filetrove database.")
 	trovedberr := CreateFileTroveDB(filepath.Join(installPath, "db"), version, initdate)
 	if trovedberr != nil {
-		return nil, nil, trovedberr, nil, nil
+		return nil, nil, trovedberr, nil
 	}
 	fmt.Println("Downloading signature database.")
 	siegfriederr := GetSiegfriedDB(installPath)
 
-	fmt.Print("\nNext step is to download the NSRL database which is 1.4 GB compressed. Proceed? [y/n]: ")
-	_, err := fmt.Scan(&choice)
-	if err != nil {
-		os.Exit(-1)
-	}
+	fmt.Println("\nNSRL bloom filter must be placed in the db/ directory as nsrl.bloom.")
+	fmt.Println("Build it with: task nsrl:build-modern (or nsrl:build-mobile, nsrl:build-all)")
+	fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
 
-	choice = strings.TrimSpace(choice)
-	choice = strings.ToLower(choice)
-
-	var nsrlerr error
-	if choice == "y" {
-		nsrlerr = GetNSRL(installPath)
-		if nsrlerr == nil {
-			zippedFile := filepath.Join(installPath, "db", "nsrl.db.gz")
-			fmt.Println("\nUnzipping NSRL database.")
-			nsrlerr = UnzipNSRL(zippedFile, filepath.Join(installPath, "db"))
-			if nsrlerr == nil {
-				println()
-				fmt.Println("NSRL database extracted. You can safely delete nsrl.db.gz in the db directory.")
-			}
-		}
-	}
-
-	if choice == "n" {
-		log.Println("Skipping NSRL download. You have to copy an existing nsrl.db into the db directory.")
-	}
-
-	return dbdirerr, logsdirerr, trovedberr, siegfriederr, nsrlerr
+	return dbdirerr, logsdirerr, trovedberr, siegfriederr
 }
 
-// CheckInstall checks if all necessary file are available
+// CheckInstall checks if all necessary files are available
 func CheckInstall(version string) error {
 	_, err := os.Stat(filepath.Join("db", "siegfried.sig"))
 	if os.IsNotExist(err) {
@@ -72,9 +46,14 @@ func CheckInstall(version string) error {
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: filetrove database does not exist.")
 	}
-	_, dberr := os.Stat(filepath.Join("db", "nsrl.db"))
+	_, dberr := os.Stat(filepath.Join("db", "nsrl.bloom"))
 	if os.IsNotExist(dberr) {
-		fmt.Println("ERROR: nsrl database does not exist.")
+		// Check for legacy nsrl.db and provide migration hint
+		if _, legacyErr := os.Stat(filepath.Join("db", "nsrl.db")); legacyErr == nil {
+			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-modern' or rebuild with admftrove --creatensrl to create nsrl.bloom.")
+		} else {
+			fmt.Println("ERROR: nsrl bloom filter does not exist.")
+		}
 	}
 
 	if dberr == nil {

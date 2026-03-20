@@ -13,10 +13,6 @@ import (
 // Version holds the version of FileTrove and is set by the build system
 var Version string = "dev"
 
-// Build is not used anymore since DEV-11
-// Build holds the sha1 fingerprint of the build and is set by the build system
-// var Build string
-
 // logger is the structured logger that is used for all logging levels
 var logger *slog.Logger
 
@@ -24,8 +20,10 @@ func main() {
 	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Format of the source file MUST be a SHA1 hash per line
-	createNSRL := flag.String("creatensrl", "", "Create or update a BoltDB file from a text file. A source file MUST be provided.")
-	nsrlversion := flag.String("nsrlversion", "", "NSRL version flag. This string will be used for ftrove's session information.")
+	createNSRL := flag.String("creatensrl", "", "Create a Bloom filter file from a text file with one SHA1 hash per line.")
+	nsrlversion := flag.String("nsrlversion", "", "NSRL version string used for session information.")
+	nsrlEstimate := flag.Uint("nsrl-estimate", 40_000_000, "Estimated number of hashes for Bloom filter sizing.")
+	nsrlFPR := flag.Float64("nsrl-fpr", 0.0001, "Target false positive rate for the Bloom filter (default: 0.01%).")
 	updateDB := flag.String("updatedb", "", "Update a filetrove sqlite database to the next version. Expects the directory of the database file.")
 	version := flag.Bool("version", false, "Show version")
 
@@ -36,9 +34,9 @@ func main() {
 	}
 
 	if len(*createNSRL) != 0 {
-		err := ft.CreateNSRLBoltDB(*createNSRL, *nsrlversion, "nsrl.db")
+		err := ft.CreateNSRLBloom(*createNSRL, *nsrlversion, "nsrl.bloom", *nsrlEstimate, *nsrlFPR)
 		if err != nil {
-			logger.Error("Could not create BoltDB from NSRL text file", slog.String("error", err.Error()))
+			logger.Error("Could not create Bloom filter from NSRL text file", slog.String("error", err.Error()))
 		}
 		return
 	}

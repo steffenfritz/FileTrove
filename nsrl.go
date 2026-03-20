@@ -2,25 +2,34 @@ package filetrove
 
 import (
 	"bufio"
-	"bytes"
-	"compress/gzip"
+	"encoding/gob"
 	"errors"
-	"io"
-	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/schollz/progressbar/v3"
-	"go.etcd.io/bbolt"
+	"github.com/bits-and-blooms/bloom/v3"
 )
 
-func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile string) error {
-	db, err := bbolt.Open(nsrldbfile, 0600, nil)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+// NSRLFilter wraps a Bloom filter with NSRL metadata
+type NSRLFilter struct {
+	Filter   *bloom.BloomFilter
+	Version  string   // NSRL RDS version (e.g., "2026.03.1-modern")
+	HashType string   // "sha1" (future: "sha256")
+	FPR      float64  // target false positive rate
+	Items    uint     // number of hashes inserted
+	Subsets  []string // e.g., ["modern"], ["modern", "android", "ios"]
+}
+
+// Contains checks if a given SHA1 hash is present in the NSRL Bloom filter
+func (nf *NSRLFilter) Contains(sha1hash string) bool {
+	return nf.Filter.TestString(strings.ToLower(sha1hash))
+}
+
+// CreateNSRLBloom reads a newline-delimited SHA1 hash file and creates a Bloom filter.
+// estimatedItems is the expected number of hashes (e.g., 40_000_000).
+// fpr is the target false positive rate (e.g., 0.0001 for 0.01%).
+func CreateNSRLBloom(nsrlsourcefile string, nsrlversion string, nsrloutfile string, estimatedItems uint, fpr float64) error {
+	filter := bloom.NewWithEstimates(estimatedItems, fpr)
 
 	file, err := os.Open(nsrlsourcefile)
 	if err != nil {
@@ -28,195 +37,61 @@ func CreateNSRLBoltDB(nsrlsourcefile string, nsrlversion string, nsrldbfile stri
 	}
 	defer file.Close()
 
-	batchSize := 100000
-	values := make([]string, 0, batchSize)
-
+	var count uint
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		hash := scanner.Text()
-		values = append(values, hash)
-
-		if len(values) == batchSize {
-			err := db.Update(func(tx *bbolt.Tx) error {
-				bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
-				if err != nil {
-					return err
-				}
-				// Reduce file size
-				bucket.FillPercent = 0.9
-
-				for _, value := range values {
-					err := bucket.Put([]byte(strings.ToLower(value)), []byte("true"))
-					if err != nil {
-						return err
-					}
-				}
-				return nil
-			})
-
-			if err != nil {
-				return err
-			}
-			values = values[:0]
+		hash := strings.TrimSpace(scanner.Text())
+		if len(hash) == 0 {
+			continue
 		}
-
+		filter.AddString(strings.ToLower(hash))
+		count++
 	}
 
-	if len(values) > 0 {
-		err := db.Update(func(tx *bbolt.Tx) error {
-			bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
-			if err != nil {
-				return err
-			}
-
-			for _, value := range values {
-				err := bucket.Put([]byte(strings.ToLower(value)), []byte("true"))
-				if err != nil {
-					return err
-				}
-			}
-
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	if err := scanner.Err(); err != nil {
+		return err
 	}
-	// After the last sha1 was put into the boltdb
-	// we add the key nsrlversion with the value provided via flag
-	err = db.Update(func(tx *bbolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists([]byte("sha1"))
-		if err != nil {
-			return err
-		}
-		err = bucket.Put([]byte("nsrlversion"), []byte(nsrlversion))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+
+	nf := NSRLFilter{
+		Filter:   filter,
+		Version:  nsrlversion,
+		HashType: "sha1",
+		FPR:      fpr,
+		Items:    count,
+		Subsets:  []string{},
+	}
+
+	outFile, err := os.Create(nsrloutfile)
 	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	encoder := gob.NewEncoder(outFile)
+	if err := encoder.Encode(&nf); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// GetNSRL downloads a prepared BoltDB database file from an online storage
-func GetNSRL(install string) error {
-	req, err := http.NewRequest("GET", "https://download.fritz.wtf/nsrl.db.gz", nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return errors.New("Could not download NSRL database. Server returned: " + resp.Status)
-	}
-
-	f, err := os.OpenFile(filepath.Join(install, "db", "nsrl.db.gz"), os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	bar := progressbar.DefaultBytes(
-		resp.ContentLength,
-		"downloading",
-	)
-	io.Copy(io.MultiWriter(f, bar), resp.Body)
-
-	return nil
-}
-
-// UnzipNSRL unzips the nsrl.db.gz file and returns an error if it fails
-func UnzipNSRL(nsrlZipFile string, outputDir string) error {
-	// Open the gzip file for reading
-	gzipFile, err := os.Open(nsrlZipFile)
-	if err != nil {
-		return errors.New("Could not open nsrl.db.gz file: " + err.Error())
-	}
-	defer gzipFile.Close()
-
-	// Create the corresponding output file
-	outputFile, err := os.Create(filepath.Join(outputDir, "nsrl.db"))
-	if err != nil {
-		return errors.New("Could not create output file: " + err.Error())
-	}
-	defer outputFile.Close()
-
-	// Create a gzip reader
-	gzipReader, err := gzip.NewReader(gzipFile)
-	if err != nil {
-		return errors.New("Could not create gzip reader:" + err.Error())
-	}
-	defer gzipReader.Close()
-
-	// Set up progress bar
-	bar := progressbar.DefaultBytes(
-		-1,
-		"Uncompressing NSRL database",
-	)
-	// Copy the contents of the gzip file to the output file
-	_, err = io.Copy(io.MultiWriter(outputFile, bar), gzipReader)
-	if err != nil {
-		return errors.New("Could not copy gzip content: " + err.Error())
-	}
-	return err
-}
-
-// ChecksumNSRL checks a NSRL BoltDB's checksum that is provided with a sidecar file
-func ChecksumNSRL(nsrldbfile string) {
-	Hashit(nsrldbfile, "blake2b-512")
-}
-
-// ConnectNSRL connects to local bbolt NSRL file
-func ConnectNSRL(nsrldbfile string) (*bbolt.DB, error) {
-	db, err := bbolt.Open(nsrldbfile, 0600, nil)
+// LoadNSRL loads a serialized NSRLFilter from a .bloom file into memory
+func LoadNSRL(nsrlbloomfile string) (*NSRLFilter, error) {
+	file, err := os.Open(nsrlbloomfile)
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
-	return db, nil
-}
+	var nf NSRLFilter
+	decoder := gob.NewDecoder(file)
+	if err := decoder.Decode(&nf); err != nil {
+		return nil, errors.New("could not decode NSRL bloom filter: " + err.Error())
+	}
 
-// GetValueNSRL reads bbolt database and checks if a given sha1 hash is present in the database
-func GetValueNSRL(db *bbolt.DB, sha1hash []byte) (bool, error) {
-	var fileIsInNSRL bool
+	if nf.Filter == nil {
+		return nil, errors.New("NSRL bloom filter is empty or corrupt")
+	}
 
-	err := db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte("sha1"))
-		if b == nil {
-			return errors.New("Could not connect to bucket.")
-		}
-
-		// the byte array translates to UTF-8 "true"
-		fileIsInNSRL = bytes.Equal(b.Get(sha1hash), []byte{116, 114, 117, 101})
-		// return nil to complete the transaction
-		return nil
-	})
-	return fileIsInNSRL, err
-}
-
-// GetNSRLVersion from BoltDB
-func GetNSRLVersion(db *bbolt.DB) (string, error) {
-	var nsrlVersion string
-
-	err := db.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte("sha1"))
-		if b == nil {
-			return errors.New("Could not connect to bucket.")
-		}
-
-		// the byte array translates to UTF-8 "true"
-		nsrlVersion = string(b.Get([]byte("nsrlversion")))
-		// return nil to complete the transaction
-		return nil
-	})
-	return nsrlVersion, err
+	return &nf, nil
 }

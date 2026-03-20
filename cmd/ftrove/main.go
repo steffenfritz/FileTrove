@@ -132,7 +132,7 @@ func main() {
 			*install = strings.TrimRight(*install, "/")
 		}
 		logger.Info("FileTrove installation started. Version: " + Version)
-		direrr, logserr, trovedberr, siegfriederr, nsrlerr := ft.InstallFT(*install, Version, tsStartedFormated)
+		direrr, logserr, trovedberr, siegfriederr := ft.InstallFT(*install, Version, tsStartedFormated)
 		if direrr != nil {
 			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
 			os.Exit(1)
@@ -147,16 +147,7 @@ func main() {
 		}
 		if siegfriederr != nil {
 			logger.Error("Could not download or create siegfried database.", slog.String("error", siegfriederr.Error()))
-			if strings.HasPrefix(nsrlerr.Error(), "Could not download siegfried") {
-				logger.Info("Could not download siegfried signature file. You have to copy siegfried.sig into the db directory. See the documentation.")
-			}
-			os.Exit(1)
-		}
-		if nsrlerr != nil {
-			logger.Error("Could not download or create NSRL database.", slog.String("error", nsrlerr.Error()))
-			if strings.HasPrefix(nsrlerr.Error(), "Could not download NSRL") {
-				logger.Info("Could not download NSRL database. You have to copy a nsrl.db into the db directory. See the documentation.")
-			}
+			logger.Info("Could not download siegfried signature file. You have to copy siegfried.sig into the db directory. See the documentation.")
 			os.Exit(1)
 		}
 		// We put an an extra newline here due to the mixed output from install function and the logging here
@@ -312,10 +303,10 @@ func main() {
 	// Set up the counter for files that are in NSRL. This is just relevant for the short summary and log file entry.
 	nsrlcount := 0
 
-	// Prepare BoltDB for reading hashes
-	db, err := ft.ConnectNSRL(filepath.Join("db", "nsrl.db"))
+	// Load NSRL Bloom filter into memory
+	nsrlFilter, err := ft.LoadNSRL(filepath.Join("db", "nsrl.bloom"))
 	if err != nil {
-		logger.Error("Could not connect to NSRL database", slog.String("error", err.Error()))
+		logger.Error("Could not load NSRL bloom filter", slog.String("error", err.Error()))
 		err = ftdb.Close()
 		if err != nil {
 			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
@@ -326,11 +317,7 @@ func main() {
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
 	if len(*resumeuuid) == 0 {
 		// Add new session to database
-		nsrlversion, err := ft.GetNSRLVersion(db)
-		if err != nil {
-			logger.Error("Could not get NSRL version from NSRL database.", slog.String("error", err.Error()))
-		}
-		sessionmd.Nsrlversion = nsrlversion
+		sessionmd.Nsrlversion = nsrlFilter.Version
 
 		err = ft.InsertSession(ftdb, sessionmd)
 		if err != nil {
@@ -536,14 +523,8 @@ func main() {
 			filemd.Filemtime = filetime.Mtime.String()
 		}
 
-		// Check if the hash sum of the file is in the NSRL.
-		// We use the db connection created by ft.ConnectNSRL()
-		fileIsInNSRL, err := ft.GetValueNSRL(db, []byte(filemd.Filesha1))
-		if err != nil {
-			logger.Warn("Could not get value from NSRL database.", slog.String("warn", err.Error()))
-		}
-
-		if fileIsInNSRL {
+		// Check if the hash sum of the file is in the NSRL bloom filter
+		if nsrlFilter.Contains(filemd.Filesha1) {
 			filemd.Filensrl = "TRUE"
 			nsrlcount += 1
 		} else {
