@@ -122,12 +122,14 @@ tasks:
       - |
         # yara-x v1.14+ requires Rust edition 2024 (stabilised in Rust 1.85 / Cargo 1.85).
         # Install cargo if missing; upgrade if the detected version is too old.
+        # Use grep -oE to extract the semver reliably (Homebrew appends a commit hash to the output).
         if ! command -v cargo >/dev/null 2>&1; then
           brew install rust
         else
-          CARGO_MINOR=$(cargo --version | awk '{print $2}' | cut -d. -f2)
+          CARGO_VERSION=$(cargo --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          CARGO_MINOR=$(echo "$CARGO_VERSION" | cut -d. -f2)
           if [ "$CARGO_MINOR" -lt 85 ]; then
-            echo "cargo $(cargo --version | awk '{print $2}') is too old (need >= 1.85). Upgrading via rustup or brew..."
+            echo "cargo $CARGO_VERSION is too old (need >= 1.85). Upgrading via rustup or brew..."
             if command -v rustup >/dev/null 2>&1; then
               rustup update stable
             else
@@ -138,23 +140,31 @@ tasks:
       - command -v zig         >/dev/null 2>&1 || brew install zig
       - command -v sqlite3     >/dev/null 2>&1 || brew install sqlite
       - command -v pkg-config  >/dev/null 2>&1 || brew install pkg-config
-      - command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
       - |
-        if [ ! -d "$HOME/yara-x" ]; then
-          git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git $HOME/yara-x
-        fi
-      - |
-        if [ ! -d "$HOME/yara_install" ]; then
+        # Skip the source build entirely if yara_x_capi is already available (e.g. via brew install yara-x)
+        if pkg-config --exists yara_x_capi 2>/dev/null; then
+          echo "yara_x_capi already available via pkg-config, skipping source build."
+        else
+          command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+          if [ ! -d "$HOME/yara-x" ]; then
+            git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git $HOME/yara-x
+          fi
           cd $HOME/yara-x
           cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
         fi
       - |
-        PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
-        PC_DIR=$(dirname "$PC_FILE")
-        LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+        if pkg-config --exists yara_x_capi 2>/dev/null; then
+          PC_DIR=$(pkg-config --variable=pcfiledir yara_x_capi)
+          LIB_DIR=$(pkg-config --variable=libdir yara_x_capi)
+          PREFIX=$(pkg-config --variable=prefix yara_x_capi)
+        else
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
+          PC_DIR=$(dirname "$PC_FILE")
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+          PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
+        fi
         echo "PKG_CONFIG_PATH=$PC_DIR" > .yara_env
-        PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
-        echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> .yara_env
+        echo "CGO_CFLAGS=-I${PREFIX}/include" >> .yara_env
         echo "CGO_LDFLAGS=-L$LIB_DIR" >> .yara_env
         echo "Setup complete. YARA-X env written to cmd/ftrove/.yara_env and will be auto-loaded by task."
 
@@ -172,12 +182,14 @@ tasks:
         if [ -n "$pkgs" ]; then sudo apt update && sudo apt install -y $pkgs; fi
       - |
         # yara-x v1.14+ requires Rust edition 2024 (stabilised in Rust 1.85 / Cargo 1.85).
+        # Use grep -oE to extract the semver reliably (some distributions append extra info to the output).
         if ! command -v cargo >/dev/null 2>&1; then
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         else
-          CARGO_MINOR=$(cargo --version | awk '{print $2}' | cut -d. -f2)
+          CARGO_VERSION=$(cargo --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          CARGO_MINOR=$(echo "$CARGO_VERSION" | cut -d. -f2)
           if [ "$CARGO_MINOR" -lt 85 ]; then
-            echo "cargo $(cargo --version | awk '{print $2}') is too old (need >= 1.85). Running: rustup update stable"
+            echo "cargo $CARGO_VERSION is too old (need >= 1.85). Running: rustup update stable"
             rustup update stable
           fi
         fi
