@@ -114,7 +114,22 @@ tasks:
     desc: Install all development dependencies on macOS and build the YARA-X C library
     cmds:
       - command -v go          >/dev/null 2>&1 || brew install go
-      - command -v cargo       >/dev/null 2>&1 || brew install rust
+      - |
+        # yara-x v1.14+ requires Rust edition 2024 (stabilised in Rust 1.85 / Cargo 1.85).
+        # Install cargo if missing; upgrade if the detected version is too old.
+        if ! command -v cargo >/dev/null 2>&1; then
+          brew install rust
+        else
+          CARGO_MINOR=$(cargo --version | awk '{print $2}' | cut -d. -f2)
+          if [ "$CARGO_MINOR" -lt 85 ]; then
+            echo "cargo $(cargo --version | awk '{print $2}') is too old (need >= 1.85). Upgrading via rustup or brew..."
+            if command -v rustup >/dev/null 2>&1; then
+              rustup update stable
+            else
+              brew upgrade rust
+            fi
+          fi
+        fi
       - command -v zig         >/dev/null 2>&1 || brew install zig
       - command -v sqlite3     >/dev/null 2>&1 || brew install sqlite
       - command -v pkg-config  >/dev/null 2>&1 || brew install pkg-config
@@ -150,7 +165,17 @@ tasks:
         command -v sqlite3    >/dev/null 2>&1 || pkgs="$pkgs sqlite3"
         command -v go         >/dev/null 2>&1 || pkgs="$pkgs golang"
         if [ -n "$pkgs" ]; then sudo apt update && sudo apt install -y $pkgs; fi
-      - command -v cargo >/dev/null 2>&1 || (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y)
+      - |
+        # yara-x v1.14+ requires Rust edition 2024 (stabilised in Rust 1.85 / Cargo 1.85).
+        if ! command -v cargo >/dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        else
+          CARGO_MINOR=$(cargo --version | awk '{print $2}' | cut -d. -f2)
+          if [ "$CARGO_MINOR" -lt 85 ]; then
+            echo "cargo $(cargo --version | awk '{print $2}') is too old (need >= 1.85). Running: rustup update stable"
+            rustup update stable
+          fi
+        fi
       - |
         source "$HOME/.cargo/env"
         command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
