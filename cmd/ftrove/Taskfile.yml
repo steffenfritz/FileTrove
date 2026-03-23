@@ -34,7 +34,7 @@ tasks:
       # The extra -extldflags libs are required by CGO (go-sqlite3, yara-x-capi) when linking statically on Linux
       - |
         if [ "{{OS}}" = "linux" ]; then
-          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil'" -o ftrove_{{ARCH}}_{{OS}}_static
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s -extldflags '-static -static-libgcc -lm -ldl -lpthread -lrt -lutil'" -o ftrove_{{ARCH}}_{{OS}}_static
         else
           go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o ftrove_{{ARCH}}_{{OS}}_static
         fi
