@@ -33,8 +33,13 @@ tasks:
       # -tags static_link is required for yara-x go bindings to use --static pkg-config
       # The extra -extldflags libs are required by CGO (go-sqlite3, yara-x-capi) when linking statically on Linux
       - |
+        # Go's CGO linker adds -lgcc_s which only exists as a shared lib; we provide an empty stub archive so the
+        # linker is satisfied (actual symbols come from the static -lgcc which is always available)
         if [ "{{OS}}" = "linux" ]; then
-          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s -extldflags '-static -static-libgcc -lm -ldl -lpthread -lrt -lutil'" -o ftrove_{{ARCH}}_{{OS}}_static
+          STUBDIR=$(mktemp -d)
+          ar rcs "$STUBDIR/libgcc_s.a"
+          go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s -extldflags '-static -lm -ldl -lpthread -lrt -lutil -L$STUBDIR'" -o ftrove_{{ARCH}}_{{OS}}_static
+          rm -rf "$STUBDIR"
         else
           go build -tags static_link -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o ftrove_{{ARCH}}_{{OS}}_static
         fi
