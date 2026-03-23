@@ -65,6 +65,39 @@ tasks:
       CC: "zig cc -target x86_64-linux-musl"
       CXX: "zig cc -target x86_64-linux-musl"
 
+  build-mac-amd:
+    desc: Cross-compile for macOS amd64 (x86_64) using zig — local dev only, not used by release runners
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o ftrove_amd64_darwin
+    env:
+      GOOS: "darwin"
+      GOARCH: "amd64"
+      CC: "zig cc -target x86_64-macos"
+      CXX: "zig cc -target x86_64-macos"
+
+  build-mac-arm:
+    desc: Cross-compile for macOS arm64 (Apple Silicon) using zig — local dev only, not used by release runners
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o ftrove_arm64_darwin
+    env:
+      GOOS: "darwin"
+      GOARCH: "arm64"
+      CC: "zig cc -target aarch64-macos"
+      CXX: "zig cc -target aarch64-macos"
+
+  build-linux-arm:
+    desc: Cross-compile for Linux arm64 using zig — local dev only, not used by release runners
+    deps: [yara:setup-capi]
+    cmds:
+      - go build -buildmode=pie -ldflags "-X main.Version={{.VERSION}}+{{.GIT_COMMIT}} -w -s" -o ftrove_arm64_linux
+    env:
+      GOOS: "linux"
+      GOARCH: "arm64"
+      CC: "zig cc -target aarch64-linux-musl"
+      CXX: "zig cc -target aarch64-linux-musl"
+
   build-windows-amd:
     desc: Cross-compile for Windows amd64 using zig
     deps: [yara:setup-capi]
