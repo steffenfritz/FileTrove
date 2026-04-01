@@ -85,17 +85,29 @@ jobs:
             echo "Error: yara_x_capi.pc not found"; exit 1
           fi
           PC_DIR=$(dirname "$PC_FILE")
-          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.so*" -exec dirname {} \; | sort -u | head -1)
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+          PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
           echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
-          echo "CGO_CFLAGS=-I$HOME/yara_install/usr/local/include" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> $GITHUB_ENV
           echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
 
       - name: Verify pkg-config
         run: pkg-config --cflags --libs yara_x_capi
 
-      - name: Build Go binaries
-        run: task build
+      - name: Build Go binaries (dynamic only)
+        # Build dynamic binaries only — the .deb package does not include static builds,
+        # and static linking with CGO requires libgcc_s.a which is absent on Ubuntu runners.
+        run: |
+          GIT_COMMIT=$(git log -n 1 --format=%h)
+          cd cmd/ftrove
+          go build -gcflags="-m" -buildmode=pie \
+            -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
+            -o ftrove
+          cd ../../cmd/admftrove
+          go build \
+            -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
+            -o admftrove
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
@@ -177,10 +189,10 @@ jobs:
             echo "Error: yara_x_capi.pc not found"; exit 1
           fi
           PC_DIR=$(dirname "$PC_FILE")
-          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.dylib" -exec dirname {} \; | head -1)
-          INC_DIR=$(find $HOME/yara_install -name "yara_x_capi.h" -exec dirname {} \; | head -1)
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi*" -exec dirname {} \; | head -1)
+          PREFIX=$(PKG_CONFIG_PATH=$PC_DIR pkg-config --variable=prefix yara_x_capi)
           echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
-          echo "CGO_CFLAGS=-I$INC_DIR" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install$PREFIX/include" >> $GITHUB_ENV
           echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
           echo "YARA_LIB_DIR=$LIB_DIR" >> $GITHUB_ENV
@@ -188,8 +200,18 @@ jobs:
       - name: Verify pkg-config
         run: pkg-config --cflags --libs yara_x_capi
 
-      - name: Build Go binaries
-        run: task build
+      - name: Build Go binaries (dynamic only)
+        # Build dynamic binaries only — macOS cannot produce a fully static CGO binary.
+        run: |
+          GIT_COMMIT=$(git log -n 1 --format=%h)
+          cd cmd/ftrove
+          go build -gcflags="-m" -buildmode=pie \
+            -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
+            -o ftrove
+          cd ../../cmd/admftrove
+          go build \
+            -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
+            -o admftrove
 
       - name: Bundle macOS archive
         run: |
