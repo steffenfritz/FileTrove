@@ -2,67 +2,106 @@ package filetrove
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
-// InstallFT creates and downloads necessary directories and databases and copies them to installPath
-func InstallFT(installPath string, version string, initdate string) (error, error, error, error, error) {
-	var choice string
+// InstallFT creates necessary directories and databases
+func InstallFT(installPath string, version string, initdate string) (error, error, error, error) {
 
 	// Printing an additional newline
 	fmt.Println()
 
 	fmt.Println("Creating database and logfile directories.")
-	dbdirerr := os.Mkdir(filepath.Join(installPath, "db"), os.ModePerm)
+	dbdirerr := os.MkdirAll(filepath.Join(installPath, "db"), os.ModePerm)
 	if dbdirerr != nil {
-		return dbdirerr, nil, nil, nil, nil
+		return dbdirerr, nil, nil, nil
 	}
-	logsdirerr := os.Mkdir(filepath.Join(installPath, "logs"), os.ModePerm)
+	logsdirerr := os.MkdirAll(filepath.Join(installPath, "logs"), os.ModePerm)
 	if logsdirerr != nil {
-		return nil, logsdirerr, nil, nil, nil
+		return nil, logsdirerr, nil, nil
 	}
 	fmt.Println("Creating filetrove database.")
 	trovedberr := CreateFileTroveDB(filepath.Join(installPath, "db"), version, initdate)
 	if trovedberr != nil {
-		return nil, nil, trovedberr, nil, nil
+		return nil, nil, trovedberr, nil
 	}
-	fmt.Println("Downloading signature database.")
-	siegfriederr := GetSiegfriedDB(installPath)
-
-	fmt.Print("\nNext step is to download the NSRL database which is 1.4 GB compressed. Proceed? [y/n]: ")
-	_, err := fmt.Scan(&choice)
-	if err != nil {
-		os.Exit(-1)
+	var siegfriederr error
+	sigPath := filepath.Join(installPath, "db", "siegfried.sig")
+	if _, err := os.Stat(sigPath); err == nil {
+		fmt.Println("Siegfried signature file already present.")
+	} else {
+		fmt.Println("Downloading signature database.")
+		siegfriederr = GetSiegfriedDB(installPath)
 	}
 
-	choice = strings.TrimSpace(choice)
-	choice = strings.ToLower(choice)
-
-	var nsrlerr error
-	if choice == "y" {
-		nsrlerr = GetNSRL(installPath)
-		if nsrlerr == nil {
-			zippedFile := filepath.Join(installPath, "db", "nsrl.db.gz")
-			fmt.Println("\nUnzipping NSRL database.")
-			nsrlerr = UnzipNSRL(zippedFile, filepath.Join(installPath, "db"))
-			if nsrlerr == nil {
-				println()
-				fmt.Println("NSRL database extracted. You can safely delete nsrl.db.gz in the db directory.")
-			}
+	// Try to copy the shipped nsrl.bloom into the install path
+	nsrlDst := filepath.Join(installPath, "db", "nsrl.bloom")
+	if _, err := os.Stat(nsrlDst); os.IsNotExist(err) {
+		if err := copyNSRLBloom(nsrlDst); err != nil {
+			fmt.Println("\nNSRL bloom filter not found. Build it with: task nsrl:build-all")
+			fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
+		} else {
+			fmt.Println("Copied NSRL bloom filter to " + nsrlDst)
 		}
+	} else {
+		fmt.Println("NSRL bloom filter already present.")
 	}
 
-	if choice == "n" {
-		log.Println("Skipping NSRL download. You have to copy an existing nsrl.db into the db directory.")
-	}
-
-	return dbdirerr, logsdirerr, trovedberr, siegfriederr, nsrlerr
+	return dbdirerr, logsdirerr, trovedberr, siegfriederr
 }
 
-// CheckInstall checks if all necessary file are available
+// copyNSRLBloom tries to find and copy nsrl.bloom from known locations
+// into the destination path. It looks next to the binary and in db/.
+func copyNSRLBloom(dst string) error {
+	candidates := []string{
+		// Relative to CWD (repo root or dist bundle)
+		filepath.Join("db", "nsrl.bloom"),
+		// Two levels up from cmd/ftrove/ to repo root
+		filepath.Join("..", "..", "db", "nsrl.bloom"),
+	}
+	// Also check next to the running binary
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "db", "nsrl.bloom"),
+			// Binary in cmd/ftrove/, bloom in repo root db/
+			filepath.Join(exeDir, "..", "..", "db", "nsrl.bloom"),
+		)
+	}
+
+	for _, src := range candidates {
+		absSrc, _ := filepath.Abs(src)
+		absDst, _ := filepath.Abs(dst)
+		if absSrc == absDst {
+			continue // already in place
+		}
+		if _, err := os.Stat(src); err == nil {
+			return copyFile(src, dst)
+		}
+	}
+	return fmt.Errorf("nsrl.bloom not found in any known location")
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+// CheckInstall checks if all necessary files are available
 func CheckInstall(version string) error {
 	_, err := os.Stat(filepath.Join("db", "siegfried.sig"))
 	if os.IsNotExist(err) {
@@ -72,9 +111,14 @@ func CheckInstall(version string) error {
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: filetrove database does not exist.")
 	}
-	_, dberr := os.Stat(filepath.Join("db", "nsrl.db"))
+	_, dberr := os.Stat(filepath.Join("db", "nsrl.bloom"))
 	if os.IsNotExist(dberr) {
-		fmt.Println("ERROR: nsrl database does not exist.")
+		// Check for legacy nsrl.db and provide migration hint
+		if _, legacyErr := os.Stat(filepath.Join("db", "nsrl.db")); legacyErr == nil {
+			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create nsrl.bloom.")
+		} else {
+			fmt.Println("ERROR: nsrl bloom filter does not exist.")
+		}
 	}
 
 	if dberr == nil {
