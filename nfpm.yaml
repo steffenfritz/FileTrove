@@ -1,5 +1,5 @@
 name: ftrove
-arch: amd64
+arch: ${ARCH}
 platform: linux
 version: ${VERSION}
 maintainer: FileTrove Contributors <https://github.com/steffenfritz/FileTrove>
