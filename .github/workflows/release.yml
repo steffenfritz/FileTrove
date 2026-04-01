@@ -1,0 +1,245 @@
+name: Release — Build and Publish Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+
+  # ── Linux .deb packages ─────────────────────────────────────────────────
+  # Builds for AMD64 (ubuntu-24.04) and ARM64 (ubuntu-24.04-arm).
+  # A single .deb is compatible with both Debian 13+ and Ubuntu 24.04+
+  # because they share the same glibc generation.
+  build-linux:
+    name: Linux ${{ matrix.pkg_arch }} .deb
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg_arch: amd64
+            runner: ubuntu-24.04
+          - pkg_arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+
+      - name: Cache Rust
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ matrix.pkg_arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.pkg_arch }}-cargo-
+
+      - name: Install cargo-c
+        run: command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+
+      - name: Set up Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: '1.26.1'
+          cache: true
+
+      - name: Install Task
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1.1.0
+        with:
+          version: "3.x"
+
+      - name: Extract version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "ARCH=${{ matrix.pkg_arch }}" >> $GITHUB_ENV
+          # Update the VERSION file so Taskfiles read the correct release version
+          echo "$VERSION" > VERSION
+
+      - name: Clone YARA-X
+        run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API
+        run: |
+          cd yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
+          if [ -z "$PC_FILE" ]; then
+            echo "Error: yara_x_capi.pc not found"; exit 1
+          fi
+          PC_DIR=$(dirname "$PC_FILE")
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.so*" -exec dirname {} \; | sort -u | head -1)
+          echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$HOME/yara_install/usr/local/include" >> $GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
+          echo "CGO_ENABLED=1" >> $GITHUB_ENV
+
+      - name: Verify pkg-config
+        run: pkg-config --cflags --libs yara_x_capi
+
+      - name: Build Go binaries
+        run: task build
+
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+      - name: Stage and package .deb
+        run: |
+          task pkg:stage
+          "$(go env GOPATH)/bin/nfpm" package --packager deb --config nfpm.yaml --target dist/
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: deb-${{ matrix.pkg_arch }}
+          path: dist/*.deb
+          retention-days: 1
+
+  # ── macOS binary archive (Apple Silicon / M chip) ───────────────────────
+  # Produces a .tar.gz containing the ftrove and admftrove binaries together
+  # with the bundled libyara_x_capi.dylib. The dylib install name is rewritten
+  # to @executable_path/lib/ so no system-wide library installation is needed.
+  build-macos-arm64:
+    name: macOS arm64 archive
+    runs-on: macos-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+
+      - name: Cache Rust
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install cargo-c
+        run: command -v cargo-cinstall >/dev/null 2>&1 || cargo install cargo-c
+
+      - name: Set up Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
+        with:
+          go-version: '1.26.1'
+          cache: true
+
+      - name: Install Task
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1.1.0
+        with:
+          version: "3.x"
+
+      - name: Extract version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "$VERSION" > VERSION
+
+      - name: Clone YARA-X
+        run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
+
+      - name: Build YARA-X C API
+        run: |
+          cd yara-x
+          cargo cinstall -p yara-x-capi --release --destdir=$HOME/yara_install
+          PC_FILE=$(find $HOME/yara_install -name yara_x_capi.pc | head -1)
+          if [ -z "$PC_FILE" ]; then
+            echo "Error: yara_x_capi.pc not found"; exit 1
+          fi
+          PC_DIR=$(dirname "$PC_FILE")
+          LIB_DIR=$(find $HOME/yara_install -name "libyara_x_capi.dylib" -exec dirname {} \; | head -1)
+          INC_DIR=$(find $HOME/yara_install -name "yara_x_capi.h" -exec dirname {} \; | head -1)
+          echo "PKG_CONFIG_PATH=$PC_DIR" >> $GITHUB_ENV
+          echo "CGO_CFLAGS=-I$INC_DIR" >> $GITHUB_ENV
+          echo "CGO_LDFLAGS=-L$LIB_DIR" >> $GITHUB_ENV
+          echo "CGO_ENABLED=1" >> $GITHUB_ENV
+          echo "YARA_LIB_DIR=$LIB_DIR" >> $GITHUB_ENV
+
+      - name: Verify pkg-config
+        run: pkg-config --cflags --libs yara_x_capi
+
+      - name: Build Go binaries
+        run: task build
+
+      - name: Bundle macOS archive
+        run: |
+          mkdir -p staging/lib
+          cp cmd/ftrove/ftrove staging/
+          cp cmd/admftrove/admftrove staging/
+          cp "$YARA_LIB_DIR/libyara_x_capi.dylib" staging/lib/
+
+          # Rewrite dylib install names so binaries find the bundled lib
+          for bin in staging/ftrove staging/admftrove; do
+            OLD=$(otool -L "$bin" 2>/dev/null | awk '/yara_x_capi/{print $1}')
+            if [ -n "$OLD" ]; then
+              install_name_tool -change "$OLD" "@executable_path/lib/libyara_x_capi.dylib" "$bin"
+            fi
+          done
+
+          ARCHIVE="ftrove_${VERSION}_macos_arm64.tar.gz"
+          tar -czf "$ARCHIVE" -C staging .
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: macos-arm64
+          path: ftrove_*_macos_arm64.tar.gz
+          retention-days: 1
+
+  # ── Create GitHub Release and attach all assets ─────────────────────────
+  release:
+    name: Publish GitHub Release
+    needs: [build-linux, build-macos-arm64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: release-assets/
+          merge-multiple: true
+
+      - name: List release assets
+        run: find release-assets/ -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        with:
+          files: release-assets/**
+          generate_release_notes: true
+          fail_on_unmatched_files: true
