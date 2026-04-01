@@ -1,0 +1,105 @@
+version: '3'
+
+vars:
+  VERSION:
+    sh: cat VERSION
+  GIT_COMMIT:
+    sh: git log -n 1 --format=%h
+  DIST_DIR: build/{{OS}}_{{ARCH}}
+  SF_VERSION: "1_11"
+  SF_URL: "https://www.itforarchivists.com/siegfried/latest/{{.SF_VERSION}}/default"
+
+tasks:
+  bundle:
+    desc: Build a self-contained distribution bundle for the current platform
+    cmds:
+      - task: setup
+      - task: binaries
+      - task: siegfried
+      - task: nsrl
+      - task: readme
+      - echo "Distribution bundle ready at {{.DIST_DIR}}/"
+
+  setup:
+    desc: Create the distribution directory structure
+    cmds:
+      - mkdir -p {{.DIST_DIR}}/db
+    status:
+      - test -d {{.DIST_DIR}}/db
+
+  binaries:
+    desc: Build and copy binaries into the distribution folder
+    deps: [setup]
+    cmds:
+      - task: ftrove:build
+      - task: admftrove:build
+      - cp cmd/ftrove/ftrove {{.DIST_DIR}}/
+      - cp cmd/admftrove/admftrove {{.DIST_DIR}}/
+      # Copy static binaries if they exist (not built on all platforms)
+      - cp cmd/ftrove/ftrove_*_static {{.DIST_DIR}}/ 2>/dev/null || true
+      - cp cmd/admftrove/admftrove_*_static {{.DIST_DIR}}/ 2>/dev/null || true
+
+  siegfried:
+    desc: Download siegfried signature file into the distribution folder
+    deps: [setup]
+    cmds:
+      - curl --progress-bar -L -o {{.DIST_DIR}}/db/siegfried.sig "{{.SF_URL}}"
+    interactive: true
+    status:
+      - test -f {{.DIST_DIR}}/db/siegfried.sig
+
+  nsrl:
+    desc: Copy nsrl.bloom into the distribution folder
+    deps: [setup]
+    preconditions:
+      - sh: test -f db/nsrl.bloom
+        msg: "db/nsrl.bloom not found. Build it first with: task nsrl:build-all"
+    cmds:
+      - cp db/nsrl.bloom {{.DIST_DIR}}/db/nsrl.bloom
+    status:
+      - test -f {{.DIST_DIR}}/db/nsrl.bloom
+
+  readme:
+    desc: Generate a quick-start README for the distribution bundle
+    deps: [setup]
+    cmds:
+      - |
+        cat > {{.DIST_DIR}}/README.txt <<'READMEEOF'
+        FileTrove {{.VERSION}}
+        ========================
+
+        Quick Start
+        -----------
+        1. cd into this directory
+        2. Run the installer to create the scan database:
+
+             ./ftrove --install .
+
+        3. Scan a directory:
+
+             ./ftrove -i /path/to/files
+
+        4. View results:
+
+             ./ftrove -l                    # list sessions
+             ./ftrove -t <session-uuid>     # export to TSV
+
+        The db/ folder contains:
+          - siegfried.sig   PRONOM signature database (pre-installed)
+          - nsrl.bloom      NSRL Bloom filter (pre-installed)
+          - filetrove.db    created by --install (per-project scan database)
+
+        For full documentation see: https://github.com/steffenfritz/FileTrove
+        READMEEOF
+
+  archive:
+    desc: Create a compressed tar archive of the distribution bundle
+    deps: [bundle]
+    cmds:
+      - tar -czf build/filetrove_{{.VERSION}}_{{OS}}_{{ARCH}}.tar.gz -C build {{OS}}_{{ARCH}}
+      - echo "Archive created at build/filetrove_{{.VERSION}}_{{OS}}_{{ARCH}}.tar.gz"
+
+  clean:
+    desc: Remove all distribution bundles
+    cmds:
+      - rm -rf build/

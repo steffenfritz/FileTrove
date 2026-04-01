@@ -18,6 +18,8 @@ includes:
     taskfile: ./cmd/admftrove/Taskfile.yml
     dir: ./cmd/admftrove
   pkg: ./Taskfile.package.yml
+  nsrl: ./Taskfile.nsrl.yml
+  dist: ./Taskfile.dist.yml
 
 tasks:
   default:

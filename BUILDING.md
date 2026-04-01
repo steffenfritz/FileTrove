@@ -91,25 +91,63 @@ task build
 
 ---
 
-## Cross-Compilation
+## Building a Distribution Bundle
 
-All cross-compile tasks use [Zig](https://ziglang.org/) as the C cross-compiler (`brew install zig` / `apt install zig`). They produce a single dynamic binary and are **not** used by the CI release runners — intended for local developer use only.
+To create a self-contained bundle ready for end users:
 
-Run from `cmd/ftrove/` (or `cmd/admftrove/` for the admin tool):
+```sh
+task dist:bundle
+```
 
-| Target | Task | Output |
-|--------|------|--------|
-| Linux x86\_64 | `task build-linux-amd` | `ftrove_linux` |
-| Linux arm64 | `task build-linux-arm` | `ftrove_arm64_linux` |
-| macOS x86\_64 | `task build-mac-amd` | `ftrove_amd64_darwin` |
-| macOS arm64 | `task build-mac-arm` | `ftrove_arm64_darwin` |
-| Windows x86\_64 | `task build-windows-amd` | `ftrove.exe` |
+This builds both binaries, downloads `siegfried.sig`, copies `nsrl.bloom`, and packages everything into `build/<os>_<arch>/`. The resulting folder can be used immediately:
 
-The same task names are available in `cmd/admftrove/` and produce equivalently named `admftrove_*` binaries.
+```sh
+cd build/darwin_arm64         # or linux_amd64, etc.
+./ftrove --install .          # creates filetrove.db and logs/
+./ftrove -i /path/to/files
+```
+
+To create a `.tar.gz` archive for distribution:
+
+```sh
+task dist:archive
+```
+
+> **Prerequisite:** `db/nsrl.bloom` must exist in the repository root before running `task dist:bundle`. Build it with `task nsrl:build-all` if it doesn't exist yet. See below.
 
 ---
 
-## Running Tests
+## Building the NSRL Bloom filter
+
+FileTrove uses a Bloom filter for NSRL lookups. The pre-built `db/nsrl.bloom` is included in the repository. To rebuild it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`, and a built `admftrove`):
+
+```sh
+task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
+task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
+task nsrl:build-modern    # Modern OS software only (~30-45 MB)
+```
+
+For archival and digital preservation work, `build-all` is recommended since legacy software is commonly found on older media and disk images.
+
+> **Disk space warning:** The build tasks download and extract the NSRL RDS SQLite databases temporarily. The temporary files are stored in `tmp/nsrl/` and can be removed after the build with `task nsrl:clean`. The resulting `nsrl.bloom` file is only 30-110 MB.
+
+| Build target | NSRL subsets | Download | Extracted | Total disk needed | Distinct hashes |
+|---|---|---|---|---|---|
+| `build-modern` | Modern | ~18 GB | ~169 GB | **~190 GB** | ~31M |
+| `build-mobile` | Modern + Android + iOS | ~29 GB | ~242 GB | **~275 GB** | ~81M |
+| `build-all` | Modern + Android + iOS + Legacy | ~40 GB | ~305 GB | **~350 GB** | ~87M |
+
+Check whether your local bloom file matches the configured upstream version:
+
+```sh
+task nsrl:check
+```
+
+To update, bump `NSRL_VERSION` in `Taskfile.nsrl.yml` to the latest [NIST RDS release](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl/nsrl-download/current-rds), run `task nsrl:clean`, and rebuild.
+
+---
+
+## Running tests
 
 From the repository root:
 

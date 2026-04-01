@@ -10,7 +10,19 @@ import (
 
 func TestSiegfriedIdent(t *testing.T) {
 	// Prepare siegfried signature for SiegfriedIdent test
-	s, err := siegfried.Load(filepath.Join("resources", "siegfried.sig"))
+	// Try db/ first (where --install and dist:bundle place it), fall back to legacy resources/
+	sigPaths := []string{
+		filepath.Join("db", "siegfried.sig"),
+		filepath.Join("resources", "siegfried.sig"),
+	}
+	var s *siegfried.Siegfried
+	var err error
+	for _, p := range sigPaths {
+		s, err = siegfried.Load(p)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		t.Skip("Skipping: could not read siegfried's database:", err)
 	}

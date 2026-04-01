@@ -34,15 +34,22 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
 
 ## Installation
 
-1. **Get the binary** — download a release from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or compile from source (see [BUILDING.md](BUILDING.md)). Both a standard dynamic binary (`ftrove`) and a static binary (e.g. `ftrove_amd64_linux_static`) are provided.
-
-2. **Run the installer** from the directory where you want FileTrove to live:
+1. **Get a distribution bundle** — download from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or build one from source (see [BUILDING.md](BUILDING.md)):
    ```sh
+   task dist:bundle    # builds binaries + bundles siegfried.sig + nsrl.bloom
+   ```
+   The bundle at `build/<os>_<arch>/` contains everything you need.
+
+2. **Run the installer** from the bundle directory:
+   ```sh
+   cd build/darwin_arm64   # or linux_amd64, etc.
    ./ftrove --install .
    ```
-   This creates a `db/` directory, downloads the siegfried signature database, and optionally downloads the NSRL database (1.4 GB compressed). If you already have an NSRL database, copy it into `db/` afterwards.
+   This creates the scan database (`db/filetrove.db`) and `logs/` directory. The siegfried signature file and NSRL bloom filter are already included in the bundle.
 
 3. **You're ready.**
+
+> **Building from source without `task dist`?** You can also set up the NSRL bloom filter separately. See [BUILDING.md](BUILDING.md) for details on `task nsrl:build-all` and disk space requirements.
 
 ### YARA-X
 
@@ -51,9 +58,17 @@ YARA-X scanning requires a C library that is not bundled with FileTrove. It is b
 - Example rule files: `testdata/yara/`
 - When a rule matches, the rule name, session UUID, and file UUID are recorded in the `yara` table. The rule file itself is not stored.
 
-### NSRL custom databases
+### NSRL
 
-You can build your own NSRL-style database from any newline-delimited list of SHA1 hashes using `admftrove`, which is built alongside `ftrove`.
+FileTrove ships a pre-built NSRL Bloom filter in the repository. When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets above.
+
+You can also build a custom Bloom filter from any newline-delimited list of SHA1 hashes:
+
+```sh
+admftrove --creatensrl hashes.txt --nsrlversion "my-hashset-v1"
+```
+
+Optional flags: `--nsrl-estimate` (expected hash count, default 40M) and `--nsrl-fpr` (false positive rate, default 0.0001). Copy the resulting `nsrl.bloom` into `db/`.
 
 ## Running a scan
 

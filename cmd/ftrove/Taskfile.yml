@@ -32,6 +32,8 @@ tasks:
     cmds:
       # -tags static_link is required for yara-x go bindings to use --static pkg-config
       # The extra -extldflags libs are required by CGO (go-sqlite3, yara-x-capi) when linking statically on Linux
+      # Go's CGO linker adds -lgcc_s which only exists as a shared lib; we provide an empty stub archive so the
+      # linker is satisfied (actual symbols come from the static -lgcc which is always available)
       - |
         # Go's CGO linker adds -lgcc_s which only exists as a shared lib; we provide an empty stub archive so the
         # linker is satisfied (actual symbols come from the static -lgcc which is always available)
@@ -223,5 +225,5 @@ tasks:
       - rm -f ftrove_*
       - rm -rf logs
       - rm -f *.tsv
-      - mv db/nsrl.db . 2>/dev/null || true
-      - rm -rf db
+      - rm -f db/filetrove.db db/siegfried.sig
+      - rm -rf db 2>/dev/null || true
