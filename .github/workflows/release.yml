@@ -114,7 +114,14 @@ jobs:
 
       - name: Stage and package .deb
         run: |
-          task pkg:stage
+          # task pkg:stage uses `pkg-config --libs-only-L` which returns the prefix
+          # from the .pc file (/usr/local/lib/...), not the --destdir path used in CI.
+          # Derive the correct library directory from CGO_LDFLAGS instead.
+          LIB_DIR=$(echo "$CGO_LDFLAGS" | tr ' ' '\n' | grep '^-L' | head -1 | sed 's/^-L//')
+          mkdir -p dist/libs
+          cp cmd/ftrove/ftrove dist/
+          cp cmd/admftrove/admftrove dist/
+          cp -P "$LIB_DIR"/libyara_x_capi.so* dist/libs/
           "$(go env GOPATH)/bin/nfpm" package --packager deb --config nfpm.yaml --target dist/
 
       - name: Upload .deb artifact
