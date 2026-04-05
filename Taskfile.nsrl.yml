@@ -32,7 +32,7 @@ tasks:
       - mkdir -p {{.NSRL_WORK}}/modern
       - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_modern_minimal.zip -d {{.NSRL_WORK}}/modern
-      - sqlite3 "$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_modern.txt
+      - sqlite3 -readonly "$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_modern.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_modern.txt
 
@@ -43,7 +43,7 @@ tasks:
       - mkdir -p {{.NSRL_WORK}}/android
       - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_android_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_android_minimal.zip -d {{.NSRL_WORK}}/android
-      - sqlite3 "$(find {{.NSRL_WORK}}/android -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_android.txt
+      - sqlite3 -readonly "$(find {{.NSRL_WORK}}/android -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_android.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_android.txt
 
@@ -54,7 +54,7 @@ tasks:
       - mkdir -p {{.NSRL_WORK}}/ios
       - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_ios_minimal.zip -d {{.NSRL_WORK}}/ios
-      - sqlite3 "$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_ios.txt
+      - sqlite3 -readonly "$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_ios.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_ios.txt
 
@@ -65,7 +65,7 @@ tasks:
       - mkdir -p {{.NSRL_WORK}}/legacy
       - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip
       - unzip -o {{.NSRL_WORK}}/rds_legacy_minimal.zip -d {{.NSRL_WORK}}/legacy
-      - sqlite3 "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_legacy.txt
+      - sqlite3 -readonly "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_legacy.txt
     status:
       - test -f {{.NSRL_WORK}}/sha1_legacy.txt
 
