@@ -302,21 +302,22 @@ func main() {
 	// Set up the counter for files that are in NSRL. This is just relevant for the short summary and log file entry.
 	nsrlcount := 0
 
-	// Load NSRL Bloom filter into memory
-	nsrlFilter, err := ft.LoadNSRL(filepath.Join("db", "nsrl.bloom"))
+	// Load NSRL Bloom filter into memory (optional — scanning continues without it)
+	var nsrlFilter *ft.NSRLFilter
+	nsrlFilter, err = ft.LoadNSRL(filepath.Join("db", "nsrl.bloom"))
 	if err != nil {
-		logger.Error("Could not load NSRL bloom filter", slog.String("error", err.Error()))
-		err = ftdb.Close()
-		if err != nil {
-			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
-		}
-		os.Exit(1)
+		logger.Warn("NSRL bloom filter not available, NSRL checks disabled", slog.String("reason", err.Error()))
+		nsrlFilter = nil
 	}
 
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
 	if len(*resumeuuid) == 0 {
 		// Add new session to database
-		sessionmd.Nsrlversion = nsrlFilter.Version
+		if nsrlFilter != nil {
+			sessionmd.Nsrlversion = nsrlFilter.Version
+		} else {
+			sessionmd.Nsrlversion = "none"
+		}
 
 		err = ft.InsertSession(ftdb, sessionmd)
 		if err != nil {
@@ -523,7 +524,7 @@ func main() {
 		}
 
 		// Check if the hash sum of the file is in the NSRL bloom filter
-		if nsrlFilter.Contains(filemd.Filesha1) {
+		if nsrlFilter != nil && nsrlFilter.Contains(filemd.Filesha1) {
 			filemd.Filensrl = "TRUE"
 			nsrlcount += 1
 		} else {

@@ -1,11 +1,17 @@
 package filetrove
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 )
+
+// NSRLBloomURL is the download URL for the pre-built NSRL bloom filter.
+// Update this constant when a new NSRL build is published to GitHub Releases.
+const NSRLBloomURL = "https://github.com/steffenfritz/FileTrove/releases/download/nsrl-2026.03.1/nsrl.bloom"
 
 // InstallFT creates necessary directories and databases
 func InstallFT(installPath string, version string, initdate string) (error, error, error, error) {
@@ -36,20 +42,49 @@ func InstallFT(installPath string, version string, initdate string) (error, erro
 		siegfriederr = GetSiegfriedDB(installPath)
 	}
 
-	// Try to copy the shipped nsrl.bloom into the install path
+	// Try to find, copy, or download the NSRL bloom filter
 	nsrlDst := filepath.Join(installPath, "db", "nsrl.bloom")
 	if _, err := os.Stat(nsrlDst); os.IsNotExist(err) {
-		if err := copyNSRLBloom(nsrlDst); err != nil {
-			fmt.Println("\nNSRL bloom filter not found. Build it with: task nsrl:build-all")
-			fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
-		} else {
+		if err := copyNSRLBloom(nsrlDst); err == nil {
 			fmt.Println("Copied NSRL bloom filter to " + nsrlDst)
+		} else {
+			fmt.Println("Downloading NSRL bloom filter (~150 MB, this may take a while)...")
+			if dlErr := DownloadNSRLBloom(nsrlDst); dlErr != nil {
+				fmt.Println("\nNSRL bloom filter could not be downloaded: " + dlErr.Error())
+				fmt.Println("Build it manually with: task nsrl:build-modern")
+				fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
+				fmt.Println("Scanning will work without it; NSRL checks will be skipped.")
+			} else {
+				fmt.Println("Downloaded NSRL bloom filter to " + nsrlDst)
+			}
 		}
 	} else {
 		fmt.Println("NSRL bloom filter already present.")
 	}
 
 	return dbdirerr, logsdirerr, trovedberr, siegfriederr
+}
+
+// DownloadNSRLBloom downloads the pre-built NSRL bloom filter from NSRLBloomURL.
+func DownloadNSRLBloom(dst string) error {
+	resp, err := http.Get(NSRLBloomURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return errors.New("could not download NSRL bloom filter, server returned: " + resp.Status)
+	}
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
 
 // copyNSRLBloom tries to find and copy nsrl.bloom from known locations
