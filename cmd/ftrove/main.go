@@ -48,6 +48,7 @@ func main() {
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
+	nsrlVariant := flag.StringP("nsrl-variant", "", "all", "NSRL bloom filter variant to download during install (modern, mobile, all).")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	listSession := flag.StringP("list-session", "L", "", "List information about a single session.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
@@ -132,7 +133,7 @@ func main() {
 			*install = strings.TrimRight(*install, "/")
 		}
 		logger.Info("FileTrove installation started. Version: " + Version)
-		direrr, logserr, trovedberr, siegfriederr := ft.InstallFT(*install, Version, tsStartedFormated)
+		direrr, logserr, trovedberr, siegfriederr := ft.InstallFT(*install, Version, tsStartedFormated, *nsrlVariant)
 		if direrr != nil {
 			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
 			os.Exit(1)

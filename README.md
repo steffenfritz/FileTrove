@@ -36,7 +36,7 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
 
 1. **Get a distribution bundle** — download from the [releases page](https://github.com/steffenfritz/FileTrove/releases), or build one from source (see [BUILDING.md](BUILDING.md)):
    ```sh
-   task dist:bundle    # builds binaries + bundles siegfried.sig + nsrl.bloom
+   task dist:bundle    # builds binaries + bundles siegfried.sig
    ```
    The bundle at `build/<os>_<arch>/` contains everything you need.
 
@@ -45,11 +45,11 @@ Each file and directory gets a UUIDv4 as a unique identifier. All results land i
    cd build/darwin_arm64   # or linux_amd64, etc.
    ./ftrove --install .
    ```
-   This creates the scan database (`db/filetrove.db`) and `logs/` directory. The siegfried signature file and NSRL bloom filter are already included in the bundle.
+   This creates the scan database (`db/filetrove.db`) and `logs/` directory. The siegfried signature file is included in the bundle. The NSRL bloom filter (~150–240 MB depending on variant) is downloaded automatically during install. Use `--nsrl-variant` to select which subset to download (default: `all`).
 
 3. **You're ready.**
 
-> **Building from source without `task dist`?** You can also set up the NSRL bloom filter separately. See [BUILDING.md](BUILDING.md) for details on `task nsrl:build-all` and disk space requirements.
+> **Building from source without `task dist`?** You can build the NSRL bloom filter locally. See [BUILDING.md](BUILDING.md) for details on `task nsrl:build-all` and disk space requirements.
 
 ### YARA-X
 
@@ -60,7 +60,22 @@ YARA-X scanning requires a C library that is not bundled with FileTrove. It is b
 
 ### NSRL
 
-FileTrove ships a pre-built NSRL Bloom filter in the repository. When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets above.
+The NSRL bloom filter is not bundled in the repository. It is downloaded automatically during `ftrove --install` from the GitHub Releases page. Three variants are available:
+
+| Variant | Subsets | Size |
+|---------|---------|------|
+| `modern` | Modern OS software | ~150 MB |
+| `mobile` | Modern + Android + iOS | ~200 MB |
+| `all` | Modern + Android + iOS + Legacy | ~240 MB |
+
+```sh
+./ftrove --install . --nsrl-variant all     # default
+./ftrove --install . --nsrl-variant modern  # smallest
+```
+
+NSRL checks are skipped gracefully if no bloom filter is present — scanning still works.
+
+When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets. See [BUILDING.md](BUILDING.md) for details.
 
 You can also build a custom Bloom filter from any newline-delimited list of SHA1 hashes:
 
@@ -68,7 +83,7 @@ You can also build a custom Bloom filter from any newline-delimited list of SHA1
 admftrove --creatensrl hashes.txt --nsrlversion "my-hashset-v1"
 ```
 
-Optional flags: `--nsrl-estimate` (expected hash count, default 40M) and `--nsrl-fpr` (false positive rate, default 0.0001). Copy the resulting `nsrl.bloom` into `db/`.
+Optional flags: `--nsrl-estimate` (expected hash count; auto-counted from file if omitted) and `--nsrl-fpr` (false positive rate, default `0.01`). Copy the resulting `nsrl.bloom` into `db/`.
 
 ## Running a scan
 
