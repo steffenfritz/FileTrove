@@ -79,6 +79,15 @@ func CreateNSRLBloom(nsrlsourcefile string, nsrlversion string, nsrloutfile stri
 		return err
 	}
 
+	fmt.Printf("Bloom filter stats: estimated items: %d, actual items inserted: %d, target FPR: %.6f\n",
+		estimatedItems, count, fpr)
+	if count > estimatedItems {
+		fmt.Printf("WARNING: actual item count (%d) exceeds estimated items (%d). "+
+			"The real false positive rate will be significantly higher than the target %.6f. "+
+			"Re-create the filter with --nsrl-estimate >= %d.\n",
+			count, estimatedItems, fpr, count)
+	}
+
 	nf := NSRLFilter{
 		Filter:   filter,
 		Version:  nsrlversion,
