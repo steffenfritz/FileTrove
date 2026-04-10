@@ -6,18 +6,18 @@ import (
 )
 
 type ExifParsed struct {
-	ExifVersion  string
-	DateTime     string
-	DateTimeOrig string
-	Artist       string
-	Copyright    string
-	Make         string
-	Software     string
-	XPTitle      string
-	XPComment    string
-	XPAuthor     string
-	XPKeywords   string
-	XPSubject    string
+	ExifVersion  string `json:"exifversion"`
+	DateTime     string `json:"datetime"`
+	DateTimeOrig string `json:"datetimeorig"`
+	Artist       string `json:"artist"`
+	Copyright    string `json:"copyright"`
+	Make         string `json:"make"`
+	Software     string `json:"software"`
+	XPTitle      string `json:"xptitle"`
+	XPComment    string `json:"xpcomment"`
+	XPAuthor     string `json:"xpauthor"`
+	XPKeywords   string `json:"xpkeywords"`
+	XPSubject    string `json:"xpsubject"`
 }
 
 func ExifDecode(fileName string) (ExifParsed, error) {

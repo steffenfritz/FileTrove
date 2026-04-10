@@ -46,6 +46,7 @@ func main() {
 	dublincore := flag.StringP("dublincore", "d", "", "Add DublinCore metadata as a JSON file for a session (not single files).")
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
+	exportSessionToJSONL := flag.StringP("export-jsonl", "j", "", "Export a session from the database to JSONL on stdout. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
@@ -193,6 +194,16 @@ func main() {
 		fmt.Println("File Count:\t" + strconv.Itoa(smd.Filecount))
 		fmt.Println("NSRL Count:\t" + strconv.Itoa(smd.Nsrlcount))
 
+		return
+	}
+
+	// Export a specific session to JSONL on stdout
+	if len(*exportSessionToJSONL) != 0 {
+		logger.Info("Export session " + *exportSessionToJSONL + " to JSONL on stdout.")
+		if err := ft.ExportSessionJSONL(*exportSessionToJSONL, os.Stdout); err != nil {
+			logger.Error("Error while exporting session to JSONL.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
 		return
 	}
 

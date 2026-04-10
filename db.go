@@ -17,24 +17,24 @@ import (
 
 // SessionMD holds the metadata written to table sessionsmd
 type SessionMD struct {
-	UUID               string
-	Starttime          string
-	Endtime            string
-	Project            string
-	Archivistname      string
-	Mountpoint         string
-	Pathseparator      string
-	ExifFlag           string
-	Dublincoreflag     string
-	Yaraflag           string
-	Yarasource         string
-	XattrFlag          string
-	NtfsadsFlag        string
-	Filetroveversion   string
-	Nsrlversion        string
-	Sfversion          string
-	Filetrovedbversion string
-	Goversion          string
+	UUID               string `json:"uuid"`
+	Starttime          string `json:"starttime"`
+	Endtime            string `json:"endtime"`
+	Project            string `json:"project"`
+	Archivistname      string `json:"archivistname"`
+	Mountpoint         string `json:"mountpoint"`
+	Pathseparator      string `json:"pathseparator"`
+	ExifFlag           string `json:"exifflag"`
+	Dublincoreflag     string `json:"dublincoreflag"`
+	Yaraflag           string `json:"yaraflag"`
+	Yarasource         string `json:"yarasource"`
+	XattrFlag          string `json:"xattrflag"`
+	NtfsadsFlag        string `json:"ntfsadsflag"`
+	Filetroveversion   string `json:"filetroveversion"`
+	Nsrlversion        string `json:"nsrlversion"`
+	Sfversion          string `json:"siegfriedversion"`
+	Filetrovedbversion string `json:"filetrovedbversion"`
+	Goversion          string `json:"goversion"`
 }
 
 // SessionInfo holds information about a single session
@@ -52,35 +52,35 @@ type SessionInfoMD struct {
 
 // FileMD holds the metadata for each inspected file and that is written to the table files
 type FileMD struct {
-	Filename            string
-	Filepath            string
-	Filenameextension   string
-	Filesize            int64
-	Filemd5             string
-	Filesha1            string
-	Filesha256          string
-	Filesha512          string
-	Fileblake2b         string
-	Filesffmt           string
-	Filesfmime          string
-	Filesfformatname    string
-	Filesfformatversion string
-	Filesfidentnote     string
-	Filesfidentproof    string
-	Filesfregistry      string
-	Filectime           string
-	Filemtime           string
-	Fileatime           string
-	Filensrl            string
-	Fileentropy         float64
+	Filename            string  `json:"filename"`
+	Filepath            string  `json:"filepath"`
+	Filenameextension   string  `json:"filenameextension"`
+	Filesize            int64   `json:"filesize"`
+	Filemd5             string  `json:"filemd5"`
+	Filesha1            string  `json:"filesha1"`
+	Filesha256          string  `json:"filesha256"`
+	Filesha512          string  `json:"filesha512"`
+	Fileblake2b         string  `json:"fileblake2b"`
+	Filesffmt           string  `json:"filesffmt"`
+	Filesfmime          string  `json:"filesfmime"`
+	Filesfformatname    string  `json:"filesfformatname"`
+	Filesfformatversion string  `json:"filesfformatversion"`
+	Filesfidentnote     string  `json:"filesfidentnote"`
+	Filesfidentproof    string  `json:"filesfidentproof"`
+	Filesfregistry      string  `json:"filesfregistry"`
+	Filectime           string  `json:"filectime"`
+	Filemtime           string  `json:"filemtime"`
+	Fileatime           string  `json:"fileatime"`
+	Filensrl            string  `json:"filensrl"`
+	Fileentropy         float64 `json:"fileentropy"`
 }
 
 type DirMD struct {
-	Dirname  string
-	Dirpath  string
-	Dirctime string
-	Dirmtime string
-	Diratime string
+	Dirname  string `json:"dirname"`
+	Dirpath  string `json:"dirpath"`
+	Dirctime string `json:"dirctime"`
+	Dirmtime string `json:"dirmtime"`
+	Diratime string `json:"diratime"`
 }
 
 // ResumeInfo holds information from the database needed for resuming a session
