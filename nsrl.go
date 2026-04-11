@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -27,19 +28,44 @@ func (nf *NSRLFilter) Contains(sha1hash string) bool {
 }
 
 // CreateNSRLBloom reads a newline-delimited SHA1 hash file and creates a Bloom filter.
-// estimatedItems is the expected number of hashes (e.g., 40_000_000).
+// nsrlsourcefile may be "-" to read from stdin, in which case estimatedItems must be > 0.
+// estimatedItems is a hint for filter sizing. If 0, the file is pre-scanned to count
+// the actual number of hashes, which guarantees the target FPR is met.
 // fpr is the target false positive rate (e.g., 0.0001 for 0.01%).
 func CreateNSRLBloom(nsrlsourcefile string, nsrlversion string, nsrloutfile string, estimatedItems uint, fpr float64) error {
+	var r io.Reader
+
+	if nsrlsourcefile == "-" {
+		if estimatedItems == 0 {
+			return fmt.Errorf("--nsrl-estimate must be provided when reading from stdin")
+		}
+		r = os.Stdin
+	} else {
+		// If no estimate provided, count actual lines first so the filter is correctly sized.
+		if estimatedItems == 0 {
+			n, err := countNonEmptyLines(nsrlsourcefile)
+			if err != nil {
+				return fmt.Errorf("counting hashes: %w", err)
+			}
+			estimatedItems = n
+		}
+		f, err := os.Open(nsrlsourcefile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		r = f
+	}
+
+	// Ensure at least 1 to avoid zero-size filter
+	if estimatedItems == 0 {
+		estimatedItems = 1
+	}
+
 	filter := bloom.NewWithEstimates(estimatedItems, fpr)
 
-	file, err := os.Open(nsrlsourcefile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
 	var count uint
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		hash := strings.TrimSpace(scanner.Text())
 		if len(hash) == 0 {
@@ -83,6 +109,24 @@ func CreateNSRLBloom(nsrlsourcefile string, nsrlversion string, nsrloutfile stri
 	}
 
 	return nil
+}
+
+// countNonEmptyLines counts non-empty lines in a file (single pass).
+func countNonEmptyLines(path string) (uint, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	var n uint
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) != "" {
+			n++
+		}
+	}
+	return n, scanner.Err()
 }
 
 // LoadNSRL loads a serialized NSRLFilter from a .bloom file into memory
