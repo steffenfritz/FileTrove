@@ -23,7 +23,7 @@ func main() {
 	createNSRL := flag.String("creatensrl", "", "Create a Bloom filter file from a text file with one SHA1 hash per line.")
 	nsrlInfo := flag.String("nsrl-info", "", "Show version and metadata of an existing nsrl.bloom file.")
 	nsrlversion := flag.String("nsrlversion", "", "NSRL version string used for session information.")
-	nsrlEstimate := flag.Uint("nsrl-estimate", 40_000_000, "Estimated number of hashes for Bloom filter sizing.")
+	nsrlEstimate := flag.Uint("nsrl-estimate", 0, "Estimated number of hashes for Bloom filter sizing. 0 = auto-count from input file.")
 	nsrlFPR := flag.Float64("nsrl-fpr", 0.0001, "Target false positive rate for the Bloom filter (default: 0.01%).")
 	updateDB := flag.String("updatedb", "", "Update a filetrove sqlite database to the next version. Expects the directory of the database file.")
 	version := flag.Bool("version", false, "Show version")

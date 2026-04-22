@@ -3,7 +3,7 @@ version: '3'
 vars:
   NSRL_VERSION: "2026.03.1"
   NSRL_BASE: "https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/rds_{{.NSRL_VERSION}}"
-  NSRL_FPR: "0.0001"
+  NSRL_FPR: "0.01"
   NSRL_WORK: "./tmp/nsrl"
 
 tasks:
@@ -26,85 +26,144 @@ tasks:
         fi
 
   download-modern:
-    desc: Download NSRL Modern Minimal RDS (SQLite)
+    desc: Download, verify, and extract NSRL Modern Minimal RDS (SQLite)
     interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/modern
-      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip     {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_modern_minimal.zip.sha  {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_modern_minimal.zip.sha
+      - |
+        EXPECTED=$(awk -F'= ' '{print $2}' {{.NSRL_WORK}}/rds_modern_minimal.zip.sha)
+        echo "$EXPECTED  {{.NSRL_WORK}}/rds_modern_minimal.zip" | sha1sum -c
       - unzip -o {{.NSRL_WORK}}/rds_modern_minimal.zip -d {{.NSRL_WORK}}/modern
-      - sqlite3 "$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_modern.txt
     status:
-      - test -f {{.NSRL_WORK}}/sha1_modern.txt
+      - test -n "$(find {{.NSRL_WORK}}/modern -name '*.db' -type f 2>/dev/null)"
 
   download-android:
-    desc: Download NSRL Android Minimal RDS (SQLite)
+    desc: Download, verify, and extract NSRL Android Minimal RDS (SQLite)
     interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/android
-      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_android_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_android_minimal.zip     {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_android_minimal.zip.sha  {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_android_minimal.zip.sha
+      - |
+        EXPECTED=$(awk -F'= ' '{print $2}' {{.NSRL_WORK}}/rds_android_minimal.zip.sha)
+        echo "$EXPECTED  {{.NSRL_WORK}}/rds_android_minimal.zip" | sha1sum -c
       - unzip -o {{.NSRL_WORK}}/rds_android_minimal.zip -d {{.NSRL_WORK}}/android
-      - sqlite3 "$(find {{.NSRL_WORK}}/android -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_android.txt
     status:
-      - test -f {{.NSRL_WORK}}/sha1_android.txt
+      - test -n "$(find {{.NSRL_WORK}}/android -name '*.db' -type f 2>/dev/null)"
 
   download-ios:
-    desc: Download NSRL iOS Minimal RDS (SQLite)
+    desc: Download, verify, and extract NSRL iOS Minimal RDS (SQLite)
     interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/ios
-      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip     {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_ios_minimal.zip.sha  {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_ios_minimal.zip.sha
+      - |
+        EXPECTED=$(awk -F'= ' '{print $2}' {{.NSRL_WORK}}/rds_ios_minimal.zip.sha)
+        echo "$EXPECTED  {{.NSRL_WORK}}/rds_ios_minimal.zip" | sha1sum -c
       - unzip -o {{.NSRL_WORK}}/rds_ios_minimal.zip -d {{.NSRL_WORK}}/ios
-      - sqlite3 "$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_ios.txt
     status:
-      - test -f {{.NSRL_WORK}}/sha1_ios.txt
+      - test -n "$(find {{.NSRL_WORK}}/ios -name '*.db' -type f 2>/dev/null)"
 
   download-legacy:
-    desc: Download NSRL Legacy Minimal RDS (SQLite)
+    desc: Download, verify, and extract NSRL Legacy Minimal RDS (SQLite)
     interactive: true
     cmds:
       - mkdir -p {{.NSRL_WORK}}/legacy
-      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip     {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip
+      - curl --progress-bar -L -o {{.NSRL_WORK}}/rds_legacy_minimal.zip.sha  {{.NSRL_BASE}}/RDS_{{.NSRL_VERSION}}_legacy_minimal.zip.sha
+      - |
+        EXPECTED=$(awk -F'= ' '{print $2}' {{.NSRL_WORK}}/rds_legacy_minimal.zip.sha)
+        echo "$EXPECTED  {{.NSRL_WORK}}/rds_legacy_minimal.zip" | sha1sum -c
       - unzip -o {{.NSRL_WORK}}/rds_legacy_minimal.zip -d {{.NSRL_WORK}}/legacy
-      - sqlite3 "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f)" "SELECT sha1 FROM DISTINCT_HASH;" > {{.NSRL_WORK}}/sha1_legacy.txt
     status:
-      - test -f {{.NSRL_WORK}}/sha1_legacy.txt
+      - test -n "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f 2>/dev/null)"
+
+  test:
+    desc: Verify db/nsrl.bloom contains all known NSRL hashes from testdata
+    cmds:
+      - go test -v -count=1 -run TestBloomWithRealNSRL .
 
   build-modern:
-    desc: "Build Bloom filter from Modern RDS only (~30-45 MB). Requires ~190 GB temp disk space."
+    desc: "Build Bloom filter from Modern RDS only (~150 MB at 1% FPR)."
     interactive: true
     cmds:
       - task: download-modern
-      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_modern.txt --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}}
+      - |
+        DB=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
+        COUNT=$(sqlite3 -readonly "$DB" "SELECT COUNT(*) FROM DISTINCT_HASH;")
+        sqlite3 -readonly "$DB" "SELECT sha1 FROM DISTINCT_HASH;" | \
+          ./cmd/admftrove/admftrove --creatensrl - --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}} --nsrl-estimate "$COUNT"
       - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
+      - task: test
     status:
       - test -f db/nsrl.bloom
       - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
 
   build-mobile:
-    desc: "Build Bloom filter from Modern + Android + iOS (~50-65 MB). Requires ~275 GB temp disk space."
+    desc: "Build Bloom filter from Modern + Android + iOS (~200 MB at 1% FPR)."
     interactive: true
     cmds:
       - task: download-modern
       - task: download-android
       - task: download-ios
-      - cat {{.NSRL_WORK}}/sha1_modern.txt {{.NSRL_WORK}}/sha1_android.txt {{.NSRL_WORK}}/sha1_ios.txt > {{.NSRL_WORK}}/sha1_combined.txt
-      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_combined.txt --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}}
+      - |
+        DB_MODERN=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
+        DB_ANDROID=$(find {{.NSRL_WORK}}/android -name '*.db' -type f)
+        DB_IOS=$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)
+        COUNT=$(( \
+          $(sqlite3 -readonly "$DB_MODERN"  "SELECT COUNT(*) FROM DISTINCT_HASH;") + \
+          $(sqlite3 -readonly "$DB_ANDROID" "SELECT COUNT(*) FROM DISTINCT_HASH;") + \
+          $(sqlite3 -readonly "$DB_IOS"     "SELECT COUNT(*) FROM DISTINCT_HASH;") \
+        ))
+        DB_MODERN="$DB_MODERN" DB_ANDROID="$DB_ANDROID" DB_IOS="$DB_IOS" COUNT="$COUNT" \
+        bash -eo pipefail -c '
+          { sqlite3 -readonly "$DB_MODERN"  "SELECT sha1 FROM DISTINCT_HASH;"; \
+            sqlite3 -readonly "$DB_ANDROID" "SELECT sha1 FROM DISTINCT_HASH;"; \
+            sqlite3 -readonly "$DB_IOS"     "SELECT sha1 FROM DISTINCT_HASH;"; \
+          } | ./cmd/admftrove/admftrove --creatensrl - \
+              --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}} \
+              --nsrl-estimate "$COUNT"
+        '
       - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
+      - task: test
     status:
       - test -f db/nsrl.bloom
       - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
 
   build-all:
-    desc: "Build Bloom filter from all RDS subsets (~80-110 MB). Requires ~350 GB temp disk space."
+    desc: "Build Bloom filter from all RDS subsets (~240 MB at 1% FPR)."
     interactive: true
     cmds:
       - task: download-modern
       - task: download-android
       - task: download-ios
       - task: download-legacy
-      - cat {{.NSRL_WORK}}/sha1_*.txt > {{.NSRL_WORK}}/sha1_all.txt
-      - ./cmd/admftrove/admftrove --creatensrl {{.NSRL_WORK}}/sha1_all.txt --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}}
+      - |
+        DB_MODERN=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
+        DB_ANDROID=$(find {{.NSRL_WORK}}/android -name '*.db' -type f)
+        DB_IOS=$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)
+        DB_LEGACY=$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f)
+        COUNT=$(( \
+          $(sqlite3 -readonly "$DB_MODERN"  "SELECT COUNT(*) FROM DISTINCT_HASH;") + \
+          $(sqlite3 -readonly "$DB_ANDROID" "SELECT COUNT(*) FROM DISTINCT_HASH;") + \
+          $(sqlite3 -readonly "$DB_IOS"     "SELECT COUNT(*) FROM DISTINCT_HASH;") + \
+          $(sqlite3 -readonly "$DB_LEGACY"  "SELECT COUNT(*) FROM DISTINCT_HASH;") \
+        ))
+        DB_MODERN="$DB_MODERN" DB_ANDROID="$DB_ANDROID" DB_IOS="$DB_IOS" DB_LEGACY="$DB_LEGACY" COUNT="$COUNT" \
+        bash -eo pipefail -c '
+          { sqlite3 -readonly "$DB_MODERN"  "SELECT sha1 FROM DISTINCT_HASH;"; \
+            sqlite3 -readonly "$DB_ANDROID" "SELECT sha1 FROM DISTINCT_HASH;"; \
+            sqlite3 -readonly "$DB_IOS"     "SELECT sha1 FROM DISTINCT_HASH;"; \
+            sqlite3 -readonly "$DB_LEGACY"  "SELECT sha1 FROM DISTINCT_HASH;"; \
+          } | ./cmd/admftrove/admftrove --creatensrl - \
+              --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}} \
+              --nsrl-estimate "$COUNT"
+        '
       - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
+      - task: test
     status:
       - test -f db/nsrl.bloom
       - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"

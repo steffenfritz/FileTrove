@@ -47,7 +47,7 @@ func TestCreateFileList(t *testing.T) {
 				"testdata/images",
 				"testdata/yara",
 			},
-			wantSkipped: nil,
+			wantSkipped: []string{"testdata/noaccess.rtf", "testdata/testpipe"},
 			wantErr:     false,
 		},
 	}

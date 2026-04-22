@@ -99,12 +99,20 @@ To create a self-contained bundle ready for end users:
 task dist:bundle
 ```
 
-This builds both binaries, downloads `siegfried.sig`, copies `nsrl.bloom`, and packages everything into `build/<os>_<arch>/`. The resulting folder can be used immediately:
+This builds both binaries, downloads `siegfried.sig`, and packages everything into `build/<os>_<arch>/`. The resulting folder can be used immediately:
 
 ```sh
 cd build/darwin_arm64         # or linux_amd64, etc.
-./ftrove --install .          # creates filetrove.db and logs/
+./ftrove --install .          # creates filetrove.db, logs/, downloads nsrl.bloom
 ./ftrove -i /path/to/files
+```
+
+The NSRL bloom filter is downloaded automatically during `--install` from the GitHub Releases page. Use `--nsrl-variant` to select which subset (default: `all`):
+
+```sh
+./ftrove --install . --nsrl-variant modern   # ~150 MB, modern OS software only
+./ftrove --install . --nsrl-variant mobile   # ~200 MB, modern + Android + iOS
+./ftrove --install . --nsrl-variant all      # ~240 MB, all subsets including legacy
 ```
 
 To create a `.tar.gz` archive for distribution:
@@ -113,29 +121,27 @@ To create a `.tar.gz` archive for distribution:
 task dist:archive
 ```
 
-> **Prerequisite:** `db/nsrl.bloom` must exist in the repository root before running `task dist:bundle`. Build it with `task nsrl:build-all` if it doesn't exist yet. See below.
-
 ---
 
 ## Building the NSRL Bloom filter
 
-FileTrove uses a Bloom filter for NSRL lookups. The pre-built `db/nsrl.bloom` is included in the repository. To rebuild it from upstream NIST data (requires `sqlite3`, `curl`, `unzip`, and a built `admftrove`):
+The NSRL bloom filter is not bundled in the repository. For most users it is downloaded automatically during `ftrove --install`. If you need to build it locally (e.g. to publish a new release asset, or to use a different FPR), use the Taskfile targets. Requirements: `sqlite3`, `curl`, `unzip`, and a built `admftrove`.
 
 ```sh
-task nsrl:build-all       # All subsets including legacy (~80-110 MB, recommended)
-task nsrl:build-mobile    # Modern + Android + iOS (~50-65 MB)
-task nsrl:build-modern    # Modern OS software only (~30-45 MB)
+task nsrl:build-all       # All subsets including legacy (~240 MB, recommended)
+task nsrl:build-mobile    # Modern + Android + iOS (~200 MB)
+task nsrl:build-modern    # Modern OS software only (~150 MB)
 ```
 
 For archival and digital preservation work, `build-all` is recommended since legacy software is commonly found on older media and disk images.
 
-> **Disk space warning:** The build tasks download and extract the NSRL RDS SQLite databases temporarily. The temporary files are stored in `tmp/nsrl/` and can be removed after the build with `task nsrl:clean`. The resulting `nsrl.bloom` file is only 30-110 MB.
+> **Disk space warning:** The build tasks download and extract the NSRL RDS SQLite databases temporarily. The temporary files are stored in `tmp/nsrl/` and can be removed after the build with `task nsrl:clean`.
 
-| Build target | NSRL subsets | Download | Extracted | Total disk needed | Distinct hashes |
-|---|---|---|---|---|---|
-| `build-modern` | Modern | ~18 GB | ~169 GB | **~190 GB** | ~31M |
-| `build-mobile` | Modern + Android + iOS | ~29 GB | ~242 GB | **~275 GB** | ~81M |
-| `build-all` | Modern + Android + iOS + Legacy | ~40 GB | ~305 GB | **~350 GB** | ~87M |
+| Build target | NSRL subsets | Download | Extracted | Total disk needed | Distinct hashes | Bloom size (1% FPR) |
+|---|---|---|---|---|---|---|
+| `build-modern` | Modern | ~18 GB | ~169 GB | **~190 GB** | ~31M | ~150 MB |
+| `build-mobile` | Modern + Android + iOS | ~29 GB | ~242 GB | **~275 GB** | ~81M | ~200 MB |
+| `build-all` | Modern + Android + iOS + Legacy | ~40 GB | ~305 GB | **~350 GB** | ~87M | ~240 MB |
 
 Check whether your local bloom file matches the configured upstream version:
 
@@ -143,7 +149,7 @@ Check whether your local bloom file matches the configured upstream version:
 task nsrl:check
 ```
 
-To update, bump `NSRL_VERSION` in `Taskfile.nsrl.yml` to the latest [NIST RDS release](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl/nsrl-download/current-rds), run `task nsrl:clean`, and rebuild.
+To update to a new NIST release: bump `NSRL_VERSION` in `Taskfile.nsrl.yml` to the latest [NIST RDS release](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl/nsrl-download/current-rds), run `task nsrl:clean`, rebuild all three variants, upload them to a new GitHub Release tag, and update the URL constants in `install.go`.
 
 ---
 
