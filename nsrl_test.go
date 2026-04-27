@@ -180,9 +180,12 @@ func TestBloomEmptyFile(t *testing.T) {
 }
 
 func TestBloomWithRealNSRL(t *testing.T) {
-	bloomFile := "db/nsrl.bloom"
+	bloomFile := os.Getenv("NSRL_BLOOM_FILE")
+	if bloomFile == "" {
+		bloomFile = "db/nsrl.bloom"
+	}
 	if _, err := os.Stat(bloomFile); os.IsNotExist(err) {
-		t.Skip("db/nsrl.bloom not present; run 'task nsrl:build-all' first")
+		t.Skipf("%s not present; run 'task nsrl:build-modern/mobile/all' or set NSRL_BLOOM_FILE", bloomFile)
 	}
 
 	nf, err := LoadNSRL(bloomFile)

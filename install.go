@@ -66,7 +66,7 @@ func InstallFT(installPath string, version string, initdate string, nsrlVariant 
 	}
 
 	// Try to find, copy, or download the NSRL bloom filter
-	nsrlDst := filepath.Join(installPath, "db", "nsrl.bloom")
+	nsrlDst := filepath.Join(installPath, "db", "nsrl-"+nsrlVariant+".bloom")
 	if _, err := os.Stat(nsrlDst); os.IsNotExist(err) {
 		if err := copyNSRLBloom(nsrlDst); err == nil {
 			fmt.Println("Copied NSRL bloom filter to " + nsrlDst)
@@ -75,7 +75,7 @@ func InstallFT(installPath string, version string, initdate string, nsrlVariant 
 			if dlErr := DownloadNSRLBloom(nsrlDst, nsrlURL); dlErr != nil {
 				fmt.Println("\nNSRL bloom filter could not be downloaded: " + dlErr.Error())
 				fmt.Println("Build it manually with: task nsrl:build-" + nsrlVariant)
-				fmt.Println("Or copy an existing nsrl.bloom file into the db/ directory.")
+				fmt.Printf("Or copy an existing nsrl-%s.bloom file into the db/ directory.\n", nsrlVariant)
 				fmt.Println("Scanning will work without it; NSRL checks will be skipped.")
 			} else {
 				fmt.Println("Downloaded NSRL bloom filter to " + nsrlDst)
@@ -110,22 +110,23 @@ func DownloadNSRLBloom(dst string, url string) error {
 	return err
 }
 
-// copyNSRLBloom tries to find and copy nsrl.bloom from known locations
+// copyNSRLBloom tries to find and copy the bloom filter from known locations
 // into the destination path. It looks next to the binary and in db/.
 func copyNSRLBloom(dst string) error {
+	bloomName := filepath.Base(dst)
 	candidates := []string{
 		// Relative to CWD (repo root or dist bundle)
-		filepath.Join("db", "nsrl.bloom"),
+		filepath.Join("db", bloomName),
 		// Two levels up from cmd/ftrove/ to repo root
-		filepath.Join("..", "..", "db", "nsrl.bloom"),
+		filepath.Join("..", "..", "db", bloomName),
 	}
 	// Also check next to the running binary
 	if exe, err := os.Executable(); err == nil {
 		exeDir := filepath.Dir(exe)
 		candidates = append(candidates,
-			filepath.Join(exeDir, "db", "nsrl.bloom"),
+			filepath.Join(exeDir, "db", bloomName),
 			// Binary in cmd/ftrove/, bloom in repo root db/
-			filepath.Join(exeDir, "..", "..", "db", "nsrl.bloom"),
+			filepath.Join(exeDir, "..", "..", "db", bloomName),
 		)
 	}
 
@@ -139,7 +140,7 @@ func copyNSRLBloom(dst string) error {
 			return copyFile(src, dst)
 		}
 	}
-	return fmt.Errorf("nsrl.bloom not found in any known location")
+	return fmt.Errorf("%s not found in any known location", bloomName)
 }
 
 func copyFile(src, dst string) error {
@@ -169,17 +170,20 @@ func CheckInstall(version string) error {
 	if os.IsNotExist(err) {
 		fmt.Println("ERROR: filetrove database does not exist.")
 	}
-	_, dberr := os.Stat(filepath.Join("db", "nsrl.bloom"))
-	if os.IsNotExist(dberr) {
-		// Check for legacy nsrl.db and provide migration hint
+	bloomMatches, _ := filepath.Glob(filepath.Join("db", "nsrl-*.bloom"))
+	// Also accept legacy nsrl.bloom for backward compatibility
+	if _, legacyBloom := os.Stat(filepath.Join("db", "nsrl.bloom")); legacyBloom == nil {
+		bloomMatches = append(bloomMatches, filepath.Join("db", "nsrl.bloom"))
+	}
+	if len(bloomMatches) == 0 {
 		if _, legacyErr := os.Stat(filepath.Join("db", "nsrl.db")); legacyErr == nil {
-			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create nsrl.bloom.")
+			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create an nsrl-<variant>.bloom file.")
 		} else {
 			fmt.Println("ERROR: nsrl bloom filter does not exist.")
 		}
 	}
 
-	if dberr == nil {
+	if len(bloomMatches) > 0 {
 		ftdb, connerr := ConnectFileTroveDB("db")
 		if connerr != nil {
 			fmt.Println("Could not connect or open database. Error: " + connerr.Error())
