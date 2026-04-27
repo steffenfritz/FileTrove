@@ -25,6 +25,7 @@ func main() {
 	nsrlversion := flag.String("nsrlversion", "", "NSRL version string used for session information.")
 	nsrlEstimate := flag.Uint("nsrl-estimate", 0, "Estimated number of hashes for Bloom filter sizing. 0 = auto-count from input file.")
 	nsrlFPR := flag.Float64("nsrl-fpr", 0.0001, "Target false positive rate for the Bloom filter (default: 0.01%).")
+	nsrlOut := flag.String("nsrl-out", "nsrl.bloom", "Output filename for the created Bloom filter file.")
 	updateDB := flag.String("updatedb", "", "Update a filetrove sqlite database to the next version. Expects the directory of the database file.")
 	version := flag.Bool("version", false, "Show version")
 
@@ -48,7 +49,7 @@ func main() {
 	}
 
 	if len(*createNSRL) != 0 {
-		err := ft.CreateNSRLBloom(*createNSRL, *nsrlversion, "nsrl.bloom", *nsrlEstimate, *nsrlFPR)
+		err := ft.CreateNSRLBloom(*createNSRL, *nsrlversion, *nsrlOut, *nsrlEstimate, *nsrlFPR)
 		if err != nil {
 			logger.Error("Could not create Bloom filter from NSRL text file", slog.String("error", err.Error()))
 		}

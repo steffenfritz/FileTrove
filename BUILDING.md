@@ -103,7 +103,7 @@ This builds both binaries, downloads `siegfried.sig`, and packages everything in
 
 ```sh
 cd build/darwin_arm64         # or linux_amd64, etc.
-./ftrove --install .          # creates filetrove.db, logs/, downloads nsrl.bloom
+./ftrove --install .          # creates filetrove.db, logs/, downloads nsrl-<variant>.bloom
 ./ftrove -i /path/to/files
 ```
 
@@ -150,6 +150,31 @@ task nsrl:check
 ```
 
 To update to a new NIST release: bump `NSRL_VERSION` in `Taskfile.nsrl.yml` to the latest [NIST RDS release](https://www.nist.gov/itl/ssd/software-quality-group/national-software-reference-library-nsrl/nsrl-download/current-rds), run `task nsrl:clean`, rebuild all three variants, upload them to a new GitHub Release tag, and update the URL constants in `install.go`.
+
+### Publishing bloom files to GitHub Releases (maintainers)
+
+The asset filenames must match `nsrl-modern.bloom`, `nsrl-mobile.bloom`, `nsrl-all.bloom` exactly — these are the filenames `install.go` downloads from `NSRLBloomURL{Modern,Mobile,All}`.
+
+1. Bump `NSRL_VERSION` in `Taskfile.nsrl.yml` and run a fresh build of all three variants:
+   ```sh
+   task nsrl:clean
+   task nsrl:build-modern
+   task nsrl:build-mobile
+   task nsrl:build-all
+   ```
+2. Create the release with tag `nsrl-<NSRL_VERSION>` (e.g. `nsrl-2026.03.1`) and attach the three bloom files:
+   ```sh
+   VERSION=$(grep '^  NSRL_VERSION:' Taskfile.nsrl.yml | awk -F'"' '{print $2}')
+   gh release create "nsrl-${VERSION}" \
+     --title "NSRL ${VERSION}" \
+     --notes "NSRL RDS ${VERSION} bloom filters (FPR 1%)." \
+     db/nsrl-modern.bloom db/nsrl-mobile.bloom db/nsrl-all.bloom
+   ```
+3. Update the three `NSRLBloomURL*` constants in `install.go` to point at the new tag, commit, and open a PR.
+4. Verify a fresh install picks up the new files:
+   ```sh
+   ./ftrove --install /tmp/ft-test --nsrl-variant all
+   ```
 
 ---
 

@@ -8,22 +8,24 @@ vars:
 
 tasks:
   check:
-    desc: Compare local nsrl.bloom version against configured NSRL_VERSION
+    desc: Compare local nsrl bloom filter versions against configured NSRL_VERSION
     silent: true
     cmds:
       - |
-        if [ ! -f db/nsrl.bloom ]; then
-          echo "No local nsrl.bloom found. Run one of the build targets."
+        FOUND=0
+        for VARIANT in modern mobile all; do
+          FILE="db/nsrl-${VARIANT}.bloom"
+          if [ -f "$FILE" ]; then
+            FOUND=1
+            LOCAL=$(./cmd/admftrove/admftrove --nsrl-info "$FILE" 2>/dev/null | grep '^Version:' | awk '{print $2}')
+            printf "%-8s %s\n" "${VARIANT}:" "$LOCAL"
+          fi
+        done
+        if [ "$FOUND" -eq 0 ]; then
+          echo "No local bloom files found. Run one of the build targets."
           exit 0
         fi
-        LOCAL=$(./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep '^Version:' | awk '{print $2}')
-        echo "Local version:      $LOCAL"
         echo "Configured version: {{.NSRL_VERSION}}"
-        if echo "$LOCAL" | grep -q "^{{.NSRL_VERSION}}"; then
-          echo "Up to date."
-        else
-          echo "Update available. Run a build target to rebuild."
-        fi
 
   download-modern:
     desc: Download, verify, and extract NSRL Modern Minimal RDS (SQLite)
@@ -82,9 +84,11 @@ tasks:
       - test -n "$(find {{.NSRL_WORK}}/legacy -name '*.db' -type f 2>/dev/null)"
 
   test:
-    desc: Verify db/nsrl.bloom contains all known NSRL hashes from testdata
+    desc: Verify a bloom file contains all known NSRL hashes from testdata
+    vars:
+      NSRL_BLOOM_FILE: '{{default "db/nsrl.bloom" .NSRL_BLOOM_FILE}}'
     cmds:
-      - go test -v -count=1 -run TestBloomWithRealNSRL .
+      - NSRL_BLOOM_FILE={{.NSRL_BLOOM_FILE}} go test -v -count=1 -run TestBloomWithRealNSRL .
 
   build-modern:
     desc: "Build Bloom filter from Modern RDS only (~150 MB at 1% FPR)."
@@ -92,15 +96,17 @@ tasks:
     cmds:
       - task: download-modern
       - |
+        mkdir -p db
         DB=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
         COUNT=$(sqlite3 -readonly "$DB" "SELECT COUNT(*) FROM DISTINCT_HASH;")
         sqlite3 -readonly "$DB" "SELECT sha1 FROM DISTINCT_HASH;" | \
-          ./cmd/admftrove/admftrove --creatensrl - --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}} --nsrl-estimate "$COUNT"
-      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
+          ./cmd/admftrove/admftrove --creatensrl - --nsrlversion "{{.NSRL_VERSION}}-modern" --nsrl-fpr {{.NSRL_FPR}} --nsrl-estimate "$COUNT" --nsrl-out db/nsrl-modern.bloom
       - task: test
+        vars:
+          NSRL_BLOOM_FILE: db/nsrl-modern.bloom
     status:
-      - test -f db/nsrl.bloom
-      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
+      - test -f db/nsrl-modern.bloom
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl-modern.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-modern"
 
   build-mobile:
     desc: "Build Bloom filter from Modern + Android + iOS (~200 MB at 1% FPR)."
@@ -110,6 +116,7 @@ tasks:
       - task: download-android
       - task: download-ios
       - |
+        mkdir -p db
         DB_MODERN=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
         DB_ANDROID=$(find {{.NSRL_WORK}}/android -name '*.db' -type f)
         DB_IOS=$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)
@@ -125,13 +132,14 @@ tasks:
             sqlite3 -readonly "$DB_IOS"     "SELECT sha1 FROM DISTINCT_HASH;"; \
           } | ./cmd/admftrove/admftrove --creatensrl - \
               --nsrlversion "{{.NSRL_VERSION}}-mobile" --nsrl-fpr {{.NSRL_FPR}} \
-              --nsrl-estimate "$COUNT"
+              --nsrl-estimate "$COUNT" --nsrl-out db/nsrl-mobile.bloom
         '
-      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
       - task: test
+        vars:
+          NSRL_BLOOM_FILE: db/nsrl-mobile.bloom
     status:
-      - test -f db/nsrl.bloom
-      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
+      - test -f db/nsrl-mobile.bloom
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl-mobile.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-mobile"
 
   build-all:
     desc: "Build Bloom filter from all RDS subsets (~240 MB at 1% FPR)."
@@ -142,6 +150,7 @@ tasks:
       - task: download-ios
       - task: download-legacy
       - |
+        mkdir -p db
         DB_MODERN=$(find {{.NSRL_WORK}}/modern -name '*.db' -type f)
         DB_ANDROID=$(find {{.NSRL_WORK}}/android -name '*.db' -type f)
         DB_IOS=$(find {{.NSRL_WORK}}/ios -name '*.db' -type f)
@@ -160,13 +169,14 @@ tasks:
             sqlite3 -readonly "$DB_LEGACY"  "SELECT sha1 FROM DISTINCT_HASH;"; \
           } | ./cmd/admftrove/admftrove --creatensrl - \
               --nsrlversion "{{.NSRL_VERSION}}-all" --nsrl-fpr {{.NSRL_FPR}} \
-              --nsrl-estimate "$COUNT"
+              --nsrl-estimate "$COUNT" --nsrl-out db/nsrl-all.bloom
         '
-      - mkdir -p db && mv nsrl.bloom db/nsrl.bloom
       - task: test
+        vars:
+          NSRL_BLOOM_FILE: db/nsrl-all.bloom
     status:
-      - test -f db/nsrl.bloom
-      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"
+      - test -f db/nsrl-all.bloom
+      - ./cmd/admftrove/admftrove --nsrl-info db/nsrl-all.bloom 2>/dev/null | grep -q "^Version:.*{{.NSRL_VERSION}}-all"
 
   clean:
     desc: Remove NSRL build artifacts
