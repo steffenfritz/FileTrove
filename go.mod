@@ -3,12 +3,12 @@ module github.com/steffenfritz/FileTrove
 go 1.26.1
 
 require (
-	github.com/VirusTotal/yara-x/go v1.14.0
-	github.com/bits-and-blooms/bloom/v3 v3.7.0
+	github.com/VirusTotal/yara-x/go v1.15.0
+	github.com/bits-and-blooms/bloom/v3 v3.7.1
 	github.com/djherbis/times v1.6.0
 	github.com/elastic/go-sysinfo v1.15.4
 	github.com/google/uuid v1.6.0
-	github.com/mattn/go-sqlite3 v1.14.34
+	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/pkg/xattr v0.4.12
 	github.com/richardlehane/siegfried v1.11.4
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	github.com/bits-and-blooms/bitset v1.10.0 // indirect
+	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/elastic/go-windows v1.0.2 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
