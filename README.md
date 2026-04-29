@@ -10,7 +10,7 @@
   <a href="https://www.bestpractices.dev/projects/8952"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/8952/badge"></a>
 </p>
 
-**VERSION: v1.0.0-BETA-4**
+**VERSION: v1.0.0-BETA-7**
 
 ---
 
