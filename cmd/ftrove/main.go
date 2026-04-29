@@ -316,7 +316,11 @@ func main() {
 
 	// Load NSRL Bloom filter into memory (optional — scanning continues without it)
 	var nsrlFilter *ft.NSRLFilter
-	nsrlFilter, err = ft.LoadNSRL(filepath.Join("db", "nsrl.bloom"))
+	bloomPath := filepath.Join("db", "nsrl-"+*nsrlVariant+".bloom")
+	if _, statErr := os.Stat(bloomPath); os.IsNotExist(statErr) {
+		bloomPath = filepath.Join("db", "nsrl.bloom")
+	}
+	nsrlFilter, err = ft.LoadNSRL(bloomPath)
 	if err != nil {
 		logger.Warn("NSRL bloom filter not available, NSRL checks disabled", slog.String("reason", err.Error()))
 		nsrlFilter = nil

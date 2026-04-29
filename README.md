@@ -83,7 +83,7 @@ You can also build a custom Bloom filter from any newline-delimited list of SHA1
 admftrove --creatensrl hashes.txt --nsrlversion "my-hashset-v1"
 ```
 
-Optional flags: `--nsrl-estimate` (expected hash count; auto-counted from file if omitted) and `--nsrl-fpr` (false positive rate, default `0.01`). Copy the resulting `nsrl.bloom` into `db/`.
+Optional flags: `--nsrl-out` (output filename, default `nsrl.bloom`), `--nsrl-estimate` (expected hash count; auto-counted from file if omitted) and `--nsrl-fpr` (false positive rate, default `0.01`). Copy the resulting bloom file into `db/`. ftrove loads `db/nsrl-<variant>.bloom` based on `--nsrl-variant` (default `all`), with a fallback to `db/nsrl.bloom`.
 
 ## Running a scan
 
