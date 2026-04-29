@@ -33,6 +33,7 @@ cmd/ftrove/db
 # Databases
 nsrl_sha1_uniq_*
 nsrl.db
+db/
 
 # NSRL build artifacts
 tmp/nsrl/
