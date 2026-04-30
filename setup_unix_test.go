@@ -19,6 +19,10 @@ func TestMain(m *testing.M) {
 		pipe     = "testdata/testpipe"
 	)
 
+	// Remove any leftover from a prior failed run (may have 0o000 perms).
+	_ = os.Chmod(noaccess, 0o600)
+	_ = os.Remove(noaccess)
+
 	if err := os.WriteFile(noaccess, []byte{}, 0o000); err != nil {
 		fmt.Fprintf(os.Stderr, "test setup: create %s: %v\n", noaccess, err)
 		os.Exit(1)

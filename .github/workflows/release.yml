@@ -74,7 +74,7 @@ jobs:
           echo "$VERSION" > VERSION
 
       - name: Clone YARA-X
-        run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
+        run: git clone --depth 1 --branch v1.15.0 https://github.com/VirusTotal/yara-x.git
 
       - name: Build YARA-X C API
         run: |
@@ -185,7 +185,7 @@ jobs:
           echo "$VERSION" > VERSION
 
       - name: Clone YARA-X
-        run: git clone --depth 1 --branch v1.14.0 https://github.com/VirusTotal/yara-x.git
+        run: git clone --depth 1 --branch v1.15.0 https://github.com/VirusTotal/yara-x.git
 
       - name: Build YARA-X C API
         run: |

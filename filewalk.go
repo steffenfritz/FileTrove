@@ -30,13 +30,13 @@ func CreateFileList(rootDir string) ([]string, []string, []string, error) {
 
 		switch {
 		case info.Type().IsRegular():
+			fileList = append(fileList, path)
 			f, openErr := os.Open(path)
 			if openErr != nil {
 				skippedList = append(skippedList, path)
 				break
 			}
 			f.Close()
-			fileList = append(fileList, path)
 		case info.IsDir():
 			dirList = append(dirList, path)
 		case info.Type()&fs.ModeSymlink != 0:
