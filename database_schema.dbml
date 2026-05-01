@@ -11,10 +11,13 @@ Table sessionsmd {
   project TEXT
   archivistname TEXT
   mountpoint TEXT
+  pathseparator TEXT
   exifflag TEXT
   dublincoreflag TEXT
   yaraflag TEXT
   yarasource TEXT
+  xattrflag TEXT
+  ntfsadsflag TEXT
   filetroveversion TEXT
   filetrovedbversion TEXT
   nsrlversion TEXT
@@ -64,7 +67,7 @@ TABLE files {
   filemtime TEXT
   fileatime TEXT
   filensrl TEXT
-  fileentropy INTEGER
+  fileentropy REAL
   hierarchy INTEGER
 }
 
@@ -73,7 +76,7 @@ TABLE directories{
   sessionuuid TEXT
   dirname TEXT
   dirpath TEXT
-  dirctime TEXT
+  dircttime TEXT
   dirmtime TEXT
   diratime TEXT
   hierarchy INTEGER
@@ -88,6 +91,7 @@ TABLE exif{
   datetimeorig TEXT
   artist TEXT
   copyright TEXT
+  make TEXT
   xptitle TEXT
   xpcomment TEXT
   xpauthor TEXT
