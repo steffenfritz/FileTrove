@@ -212,13 +212,20 @@ func QueryFiles(db *sql.DB, sessionUUID string, f FileFilters) ([]WebFileMD, int
 
 	where := strings.Join(conds, " AND ")
 
-	allowedSort := map[string]bool{
-		"filename": true, "filesize": true, "filemtime": true,
-		"fileentropy": true, "filenameextension": true, "filesfmime": true,
-	}
-	sortCol := "filename"
-	if allowedSort[f.SortBy] {
-		sortCol = f.SortBy
+	var sortCol string
+	switch f.SortBy {
+	case "filesize":
+		sortCol = "filesize"
+	case "filemtime":
+		sortCol = "filemtime"
+	case "fileentropy":
+		sortCol = "fileentropy"
+	case "filenameextension":
+		sortCol = "filenameextension"
+	case "filesfmime":
+		sortCol = "filesfmime"
+	default:
+		sortCol = "filename"
 	}
 	order := "ASC"
 	if strings.ToUpper(f.Order) == "DESC" {
