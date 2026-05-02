@@ -1,0 +1,64 @@
+{{define "breadcrumb"}}<span class="text-gray-500 dark:text-gray-400">Sessions</span>{{end}}
+
+{{define "content"}}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">Sessions</h1>
+  <p class="text-gray-500 text-sm mt-1">{{len .Summaries}} session(s) found</p>
+</div>
+
+{{if .Summaries}}
+<div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
+      <tr>
+        <th class="px-4 py-3 text-left">Project</th>
+        <th class="px-4 py-3 text-left">Archivist</th>
+        <th class="px-4 py-3 text-left">Start</th>
+        <th class="px-4 py-3 text-left">End</th>
+        <th class="px-4 py-3 text-left">Mount Point</th>
+        <th class="px-4 py-3 text-right">Files</th>
+        <th class="px-4 py-3 text-right">Dirs</th>
+        <th class="px-4 py-3 text-left">Version</th>
+        <th class="px-4 py-3 text-left">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+      {{range .Summaries}}
+      <tr class="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+        <td class="px-4 py-3 font-medium">
+          {{if .Session.Project}}{{.Session.Project}}{{else}}<span class="text-gray-400 italic">—</span>{{end}}
+        </td>
+        <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+          {{if .Session.Archivistname}}{{.Session.Archivistname}}{{else}}<span class="text-gray-400">—</span>{{end}}
+        </td>
+        <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{.Session.Starttime}}</td>
+        <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+          {{if .Session.Endtime}}{{.Session.Endtime}}{{else}}<span class="text-yellow-500">running</span>{{end}}
+        </td>
+        <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{.Session.Mountpoint}}</td>
+        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{{.FileCount}}</td>
+        <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{{.DirCount}}</td>
+        <td class="px-4 py-3 text-gray-400 text-xs">{{.Session.Filetroveversion}}</td>
+        <td class="px-4 py-3">
+          <div class="flex gap-2">
+            <a href="/session/{{.Session.UUID}}"
+               class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium transition-colors">
+              Files
+            </a>
+            <a href="/session/{{.Session.UUID}}/dirs"
+               class="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-medium transition-colors">
+              Dirs
+            </a>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="text-center py-20 text-gray-500">
+  <p class="text-lg">No sessions found in this database.</p>
+</div>
+{{end}}
+{{end}}

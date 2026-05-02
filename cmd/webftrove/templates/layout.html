@@ -1,0 +1,59 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FileTrove Web</title>
+  <script>
+    // Apply theme before body renders to prevent flash
+    if ((localStorage.getItem('theme') || 'dark') === 'dark') {
+      document.documentElement.classList.add('dark')
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"></script>
+  <style>
+    .hash-cell { font-family: monospace; font-size: 0.75rem; word-break: break-all; }
+    .not-btn {
+      border: 1px solid #9ca3af; color: #6b7280;
+      border-radius: 0.375rem; padding: 0.5rem 0.75rem;
+      font-size: 0.75rem; font-weight: 500; cursor: pointer;
+      white-space: nowrap; transition: all 0.15s; background: transparent;
+    }
+    .not-btn:hover { border-color: #6b7280; }
+    .not-btn.active { background: #fff7ed; border-color: #f97316; color: #c2410c; }
+    .dark .not-btn { border-color: #4b5563; color: #9ca3af; background: transparent; }
+    .dark .not-btn:hover { border-color: #6b7280; }
+    .dark .not-btn.active { background: #431407; border-color: #ea580c; color: #fed7aa; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-150">
+  <nav class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-3 text-sm">
+    <a href="/" class="text-blue-600 dark:text-blue-400 font-bold text-base tracking-wide hover:text-blue-500 dark:hover:text-blue-300">FileTrove</a>
+    <span class="text-gray-300 dark:text-gray-600">/</span>
+    {{block "breadcrumb" .}}{{end}}
+    <button onclick="toggleTheme()"
+            class="ml-auto p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            title="Toggle light/dark theme">
+      <span id="theme-icon"></span>
+    </button>
+  </nav>
+  <main class="p-6 max-w-screen-2xl mx-auto">
+    {{block "content" .}}{{end}}
+  </main>
+  <script>
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark')
+      localStorage.setItem('theme', isDark ? 'dark' : 'light')
+      updateIcon()
+    }
+    function updateIcon() {
+      const el = document.getElementById('theme-icon')
+      if (el) el.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙'
+    }
+    updateIcon()
+  </script>
+</body>
+</html>
+{{end}}

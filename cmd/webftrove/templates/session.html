@@ -1,0 +1,175 @@
+{{define "breadcrumb"}}
+<a href="/" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Sessions</a>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<span class="text-gray-700 dark:text-gray-300">{{if .Session.Project}}{{.Session.Project}}{{else}}{{.Session.UUID}}{{end}}</span>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<span class="text-blue-600 dark:text-blue-400">Files</span>
+{{end}}
+
+{{define "content"}}
+<div class="mb-5 flex items-start justify-between gap-4 flex-wrap">
+  <div>
+    <h1 class="text-2xl font-bold">
+      {{if .Session.Project}}{{.Session.Project}}{{else}}Session{{end}}
+    </h1>
+    <p class="text-gray-400 text-xs font-mono mt-1">{{.Session.UUID}}</p>
+  </div>
+  <a href="/session/{{.Session.UUID}}/dirs"
+     class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded text-sm font-medium transition-colors">
+    View Directories
+  </a>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+  <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+    <p class="text-gray-500 text-xs uppercase tracking-wider">Total Files</p>
+    <p class="text-2xl font-bold mt-1">{{.Stats.Filecount}}</p>
+  </div>
+  <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+    <p class="text-gray-500 text-xs uppercase tracking-wider">NSRL Known</p>
+    <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{{.Stats.Nsrlcount}}</p>
+  </div>
+  <div id="filtered-count-card" class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
+    <p class="text-gray-500 text-xs uppercase tracking-wider">Filtered</p>
+    <p class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{{.Total}}</p>
+  </div>
+  <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+    <p class="text-gray-500 text-xs uppercase tracking-wider">Started</p>
+    <p class="text-sm font-medium text-gray-600 dark:text-gray-300 mt-1">{{.Session.Starttime}}</p>
+  </div>
+  <div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+    <p class="text-gray-500 text-xs uppercase tracking-wider">Mount Point</p>
+    <p class="text-sm font-mono text-gray-600 dark:text-gray-300 mt-1 truncate" title="{{.Session.Mountpoint}}">{{.Session.Mountpoint}}</p>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-5">
+  <form id="filter-form"
+        hx-get="/session/{{.Session.UUID}}/files"
+        hx-target="#files-section"
+        hx-swap="outerHTML"
+        hx-trigger="input delay:400ms from:#q-input, change from:select, change from:input[name='mime'], change from:#yara-check, not-toggle">
+
+    <div class="flex flex-wrap gap-3 items-end">
+      <div class="flex-1 min-w-48">
+        <label class="block text-xs text-gray-500 mb-1">Search filename / path</label>
+        <div class="flex gap-2">
+          <button type="button" id="qneg-btn"
+                  class="not-btn {{if .Filters.QueryNegate}}active{{end}}"
+                  onclick="toggleNot(this)"
+                  title="NOT: show only files that do NOT contain this string">NOT</button>
+          <input type="hidden" id="qneg-hidden" name="qneg" value="{{if .Filters.QueryNegate}}1{{end}}">
+          <input id="q-input" type="text" name="q" value="{{.Filters.Query}}"
+                 placeholder="e.g. report, .docx, /home/user"
+                 class="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <div class="min-w-36">
+        <label class="block text-xs text-gray-500 mb-1">Extension</label>
+        <select name="ext" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+          <option value="">All</option>
+          {{range .Exts}}
+          <option value="{{.}}" {{if eq . $.Filters.Ext}}selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="min-w-48">
+        <p class="block text-xs text-gray-500 mb-1">MIME Type</p>
+        <details class="relative" id="mime-details">
+          <summary class="cursor-pointer select-none bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white list-none flex items-center justify-between gap-2">
+            <span id="mime-summary-text">
+              {{if .Filters.Mimes}}{{len .Filters.Mimes}} selected{{else}}All{{end}}
+            </span>
+            <span class="text-gray-400">▾</span>
+          </summary>
+          <div class="absolute z-10 mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded shadow-lg max-h-64 overflow-y-auto">
+            {{if .Mimes}}
+            <label class="flex items-center gap-2 px-3 py-2 text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+              <input type="checkbox" id="mime-select-all" class="rounded border-gray-400 dark:border-gray-600"
+                     onclick="toggleAllMimes(this)"> Select all
+            </label>
+            {{range .Mimes}}
+            <label class="flex items-center gap-2 px-3 py-2 text-sm text-gray-800 dark:text-gray-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+              <input type="checkbox" name="mime" value="{{.}}"
+                     {{if contains $.Filters.Mimes .}}checked{{end}}
+                     class="mime-cb rounded border-gray-400 dark:border-gray-600 text-blue-500 focus:ring-0">
+              {{.}}
+            </label>
+            {{end}}
+            {{else}}
+            <p class="px-3 py-2 text-sm text-gray-500">No MIME types in this session.</p>
+            {{end}}
+          </div>
+        </details>
+      </div>
+      <div class="min-w-40">
+        <label class="block text-xs text-gray-500 mb-1">NSRL</label>
+        <select name="nsrl" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+          <option value=""        {{if eq .Filters.NSRL ""}}selected{{end}}>All</option>
+          <option value="only"    {{if eq .Filters.NSRL "only"}}selected{{end}}>Known (NSRL)</option>
+          <option value="exclude" {{if eq .Filters.NSRL "exclude"}}selected{{end}}>Unknown (non-NSRL)</option>
+        </select>
+      </div>
+      <div class="min-w-36">
+        <label class="block text-xs text-gray-500 mb-1">Sort by</label>
+        <select name="sort" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+          <option value="filename"          {{if eq .Filters.SortBy "filename"}}selected{{end}}>Filename</option>
+          <option value="filesize"          {{if eq .Filters.SortBy "filesize"}}selected{{end}}>Size</option>
+          <option value="filemtime"         {{if eq .Filters.SortBy "filemtime"}}selected{{end}}>Modified</option>
+          <option value="fileentropy"       {{if eq .Filters.SortBy "fileentropy"}}selected{{end}}>Entropy</option>
+          <option value="filenameextension" {{if eq .Filters.SortBy "filenameextension"}}selected{{end}}>Extension</option>
+          <option value="filesfmime"        {{if eq .Filters.SortBy "filesfmime"}}selected{{end}}>MIME</option>
+        </select>
+      </div>
+      <div class="min-w-24">
+        <label class="block text-xs text-gray-500 mb-1">Order</label>
+        <select name="order" class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-blue-500">
+          <option value="ASC"  {{if eq .Filters.Order "ASC"}}selected{{end}}>ASC</option>
+          <option value="DESC" {{if eq .Filters.Order "DESC"}}selected{{end}}>DESC</option>
+        </select>
+      </div>
+      <div class="flex gap-4 pb-2">
+        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+          <input id="yara-check" type="checkbox" name="yara" value="1" {{if .Filters.YaraOnly}}checked{{end}}
+                 class="rounded border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-red-500 focus:ring-0">
+          YARA hits only
+        </label>
+      </div>
+    </div>
+  </form>
+</div>
+
+{{template "files_section" .}}
+
+<script>
+function toggleNot(btn) {
+  const hidden = document.getElementById('qneg-hidden')
+  const isActive = btn.classList.contains('active')
+  hidden.value = isActive ? '' : '1'
+  btn.classList.toggle('active')
+  htmx.trigger(document.getElementById('filter-form'), 'not-toggle')
+}
+
+function toggleAllMimes(master) {
+  document.querySelectorAll('.mime-cb').forEach(cb => cb.checked = master.checked)
+  updateMimeSummary()
+  document.getElementById('filter-form').dispatchEvent(new Event('change'))
+}
+
+function updateMimeSummary() {
+  const checked = document.querySelectorAll('.mime-cb:checked')
+  const el = document.getElementById('mime-summary-text')
+  if (el) el.textContent = checked.length ? checked.length + ' selected' : 'All'
+}
+
+document.addEventListener('change', e => {
+  if (e.target.classList.contains('mime-cb')) updateMimeSummary()
+})
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  const d = document.getElementById('mime-details')
+  if (d && !d.contains(e.target)) d.removeAttribute('open')
+})
+</script>
+{{end}}

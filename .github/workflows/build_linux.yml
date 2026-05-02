@@ -91,6 +91,11 @@ jobs:
       - name: Build Go binaries
         run: task build
 
+      - name: Build webftrove
+        run: |
+          cd $GITHUB_WORKSPACE/cmd/webftrove
+          go build -ldflags "-w -s" -o webftrove
+
       - name: Build packages
         run: |
           task pkg:stage
@@ -107,6 +112,7 @@ jobs:
           cp $GITHUB_WORKSPACE/cmd/ftrove/ftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/cmd/admftrove/admftrove_amd64_linux_static $GITHUB_WORKSPACE/artifacts/
+          cp $GITHUB_WORKSPACE/cmd/webftrove/webftrove $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/dist/*.deb $GITHUB_WORKSPACE/artifacts/
           cp $GITHUB_WORKSPACE/dist/*.rpm $GITHUB_WORKSPACE/artifacts/
 

@@ -108,6 +108,65 @@ You can also query the SQLite database directly:
 - **GUI:** [sqlitebrowser](https://sqlitebrowser.org/)
 - **Visualisation:** [Sqliteviz](https://sqliteviz.com/app/#/)
 
+## webftrove — Web Interface
+
+`webftrove` is a companion tool that opens a read-only web interface for an existing FileTrove database. It runs a local HTTP server on port 9000 and opens your default browser automatically.
+
+### Features
+
+- Browse all sessions with file and directory counts
+- Filter files by name/path (with optional NOT negation), extension, MIME type (multi-select), NSRL status, and YARA hits
+- Sort by filename, size, modification time, entropy, extension, or MIME type
+- Live filtering via HTMX — results update without page reload
+- File detail view: all hashes, EXIF metadata, YARA matches, extended attributes, NTFS ADS
+- Directory listing with full-text search
+- Click 📂 next to any path to open the containing directory in the local file browser
+- Light and dark theme, toggle in the navigation bar
+
+### Building
+
+`webftrove` is not included in the standard distribution bundle and must be built from source:
+
+```sh
+git clone https://github.com/steffenfritz/FileTrove.git
+cd FileTrove
+go build ./cmd/webftrove/
+```
+
+This produces a single self-contained `webftrove` binary (templates are embedded). Copy it to any location you like, e.g.:
+
+```sh
+cp webftrove /usr/local/bin/
+```
+
+No additional files are required — `webftrove` carries everything it needs inside the binary.
+
+### Usage
+
+Point `webftrove` at any `filetrove.db` file using the `--db` flag:
+
+```sh
+webftrove --db /path/to/db/filetrove.db
+```
+
+The browser opens automatically at `http://localhost:9000`. The database is opened in read-only mode; no data is ever written or modified.
+
+**Typical workflow after a scan:**
+
+```sh
+# 1. Run a scan with ftrove
+./ftrove -i /media/evidence -p "Case 2025-042" -a "J. Smith"
+
+# 2. Open the results in the browser
+webftrove --db db/filetrove.db
+```
+
+### Requirements
+
+- The `filetrove.db` must exist and be a valid FileTrove database (created by `ftrove --install` or a previous scan).
+- Port 9000 must be available on localhost.
+- An internet connection is required on first load to fetch Tailwind CSS and HTMX from CDN. Subsequent loads are cached by the browser.
+
 ## Background
 
 FileTrove is the successor of [filedriller](https://github.com/steffenfritz/filedriller), based on the iPres 2021 paper [Marrying siegfried and the National Software Reference Library](https://phaidra.univie.ac.at/detail/o:1424904).

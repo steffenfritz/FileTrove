@@ -1,0 +1,37 @@
+{{define "dirs_table"}}
+<div id="dirs-table-container">
+  <p class="text-sm text-gray-500 mb-3">{{.Total}} director{{if eq .Total 1}}y{{else}}ies{{end}} matched</p>
+  {{if .Dirs}}
+  <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
+        <tr>
+          <th class="px-4 py-3 text-left">Directory Name</th>
+          <th class="px-4 py-3 text-left">Path</th>
+          <th class="px-4 py-3 text-right">Depth</th>
+          <th class="px-4 py-3 text-left">Created</th>
+          <th class="px-4 py-3 text-left">Modified</th>
+          <th class="px-4 py-3 text-left">Accessed</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+        {{range .Dirs}}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+          <td class="px-4 py-2 font-medium">{{.Dirname}}</td>
+          <td class="px-4 py-2 text-gray-500 font-mono text-xs max-w-md truncate" title="{{.Dirpath}}">{{.Dirpath}}</td>
+          <td class="px-4 py-2 text-right text-gray-400">{{.Hierarchy}}</td>
+          <td class="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{{.Dirctime}}</td>
+          <td class="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{{.Dirmtime}}</td>
+          <td class="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{{.Diratime}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="text-center py-20 text-gray-500">
+    <p>No directories match the current search.</p>
+  </div>
+  {{end}}
+</div>
+{{end}}

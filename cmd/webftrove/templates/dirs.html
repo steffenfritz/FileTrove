@@ -1,0 +1,37 @@
+{{define "breadcrumb"}}
+<a href="/" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Sessions</a>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<a href="/session/{{.Session.UUID}}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+  {{if .Session.Project}}{{.Session.Project}}{{else}}Session{{end}}
+</a>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<span class="text-blue-600 dark:text-blue-400">Directories</span>
+{{end}}
+
+{{define "content"}}
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-2xl font-bold">Directories</h1>
+  <a href="/session/{{.Session.UUID}}"
+     class="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded text-sm font-medium transition-colors">
+    ← Files
+  </a>
+</div>
+
+<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 mb-5">
+  <form hx-get="/session/{{.Session.UUID}}/dirs"
+        hx-target="#dirs-table-container"
+        hx-swap="outerHTML"
+        hx-trigger="input delay:400ms from:#dirs-q">
+    <div class="flex gap-3 items-end">
+      <div class="flex-1 max-w-lg">
+        <label class="block text-xs text-gray-500 mb-1">Search directory name / path</label>
+        <input id="dirs-q" type="text" name="q" value="{{.Query}}"
+               placeholder="e.g. documents, /home/user"
+               class="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:border-blue-500">
+      </div>
+    </div>
+  </form>
+</div>
+
+{{template "dirs_table" .}}
+{{end}}
