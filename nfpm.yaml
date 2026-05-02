@@ -23,6 +23,11 @@ contents:
     file_info:
       mode: 0755
 
+  - src: ./cmd/webftrove/webftrove
+    dst: /usr/bin/webftrove
+    file_info:
+      mode: 0755
+
   # YARA-X C API shared library — staged into dist/libs/ by `task pkg:stage`
   - src: ./dist/libs/libyara_x_capi.so*
     dst: /usr/local/lib/

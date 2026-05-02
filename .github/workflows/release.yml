@@ -108,6 +108,10 @@ jobs:
           go build \
             -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
             -o admftrove
+          cd ../../cmd/webftrove
+          go build \
+            -ldflags "-w -s" \
+            -o webftrove
 
       - name: Install nfpm
         run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
@@ -121,6 +125,7 @@ jobs:
           mkdir -p dist/libs
           cp cmd/ftrove/ftrove dist/
           cp cmd/admftrove/admftrove dist/
+          cp cmd/webftrove/webftrove dist/
           cp -P "$LIB_DIR"/libyara_x_capi.so* dist/libs/
           "$(go env GOPATH)/bin/nfpm" package --packager deb --config nfpm.yaml --target dist/
 
@@ -219,12 +224,17 @@ jobs:
           go build \
             -ldflags "-X main.Version=${VERSION}+${GIT_COMMIT} -w -s" \
             -o admftrove
+          cd ../../cmd/webftrove
+          go build \
+            -ldflags "-w -s" \
+            -o webftrove
 
       - name: Bundle macOS archive
         run: |
           mkdir -p staging/lib
           cp cmd/ftrove/ftrove staging/
           cp cmd/admftrove/admftrove staging/
+          cp cmd/webftrove/webftrove staging/
           cp "$YARA_LIB_DIR/libyara_x_capi.dylib" staging/lib/
 
           # Rewrite dylib install names so binaries find the bundled lib
