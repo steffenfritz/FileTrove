@@ -3,6 +3,7 @@ package filetrove
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -52,5 +53,5 @@ func PrintLicense(version string) {
 
 // PrintBanner prints a pre-generated ascii banner with the program name
 func PrintBanner() {
-	fmt.Println("\no--o   o     o-O-o                   \n|    o |       |                     \nO-o    | o-o   |   o-o o-o o   o o-o \n|    | | |-'   |   |   | |  \\ /  |-' \no    | o o-o   o   o   o-o   o   o-o \n                                     \n                                     ")
+	fmt.Fprintln(os.Stderr, "\no--o   o     o-O-o                   \n|    o |       |                     \nO-o    | o-o   |   o-o o-o o   o o-o \n|    | | |-'   |   |   | |  \\ /  |-' \no    | o o-o   o   o   o-o   o   o-o \n                                     \n                                     ")
 }

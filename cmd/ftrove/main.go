@@ -34,7 +34,7 @@ var logger *slog.Logger
 func init() {
 	tsStarted := time.Now()
 	tsStartedFormated = tsStarted.Format("2006-01-02_15:04:05")
-	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 }
 
 func main() {
@@ -47,6 +47,7 @@ func main() {
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
 	exportSessionToJSONL := flag.StringP("export-jsonl", "j", "", "Export a session from the database to JSONL on stdout. Provide the session uuid.")
+	exportSessionToPREMIS := flag.StringP("export-premis", "P", "", "Export a session from the database to PREMIS v3 XML on stdout. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
 	nsrlVariant := flag.StringP("nsrl-variant", "", "all", "NSRL bloom filter variant to download during install (modern, mobile, all).")
@@ -203,6 +204,16 @@ func main() {
 		logger.Info("Export session " + *exportSessionToJSONL + " to JSONL on stdout.")
 		if err := ft.ExportSessionJSONL(*exportSessionToJSONL, os.Stdout); err != nil {
 			logger.Error("Error while exporting session to JSONL.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Export a specific session to PREMIS v3 XML on stdout
+	if len(*exportSessionToPREMIS) != 0 {
+		logger.Info("Export session " + *exportSessionToPREMIS + " to PREMIS v3 XML on stdout.")
+		if err := ft.ExportSessionPREMIS(*exportSessionToPREMIS, os.Stdout); err != nil {
+			logger.Error("Error while exporting session to PREMIS v3 XML.", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
 		return
