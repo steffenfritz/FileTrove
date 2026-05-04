@@ -34,7 +34,7 @@ var logger *slog.Logger
 func init() {
 	tsStarted := time.Now()
 	tsStartedFormated = tsStarted.Format("2006-01-02_15:04:05")
-	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 }
 
 func main() {
