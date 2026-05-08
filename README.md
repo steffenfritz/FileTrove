@@ -10,7 +10,7 @@
   <a href="https://www.bestpractices.dev/projects/8952"><img alt="OpenSSF Best Practices" src="https://www.bestpractices.dev/projects/8952/badge"></a>
 </p>
 
-**VERSION: v1.0.0-BETA-7**
+**VERSION: v1.0.0-BETA-9**
 
 ---
 
@@ -108,6 +108,22 @@ You can also query the SQLite database directly:
 - **GUI:** [sqlitebrowser](https://sqlitebrowser.org/)
 - **Visualisation:** [Sqliteviz](https://sqliteviz.com/app/#/)
 
+## Exporting to PREMIS v3 XML
+
+FileTrove can export the metadata of a session as [PREMIS v3](https://www.loc.gov/standards/premis/) XML. The export includes one `premis:object` per file (with fixity values, format information, file size, and storage location) as well as a `premis:event` for the scan event, written to stdout.
+
+```sh
+./ftrove -P 926be141-ab75-4106-8236-34edfcf102f2
+```
+
+Redirect stdout to save the output to a file:
+
+```sh
+./ftrove -P 926be141-ab75-4106-8236-34edfcf102f2 > session.premis.xml
+```
+
+Use `./ftrove -l` to list available session UUIDs.
+
 ## webftrove — Web Interface
 
 `webftrove` is a companion tool that opens a read-only web interface for an existing FileTrove database. It runs a local HTTP server on port 9000 and opens your default browser automatically.
@@ -123,9 +139,11 @@ You can also query the SQLite database directly:
 - Click 📂 next to any path to open the containing directory in the local file browser
 - Light and dark theme, toggle in the navigation bar
 
-### Building
+### Installation
 
-`webftrove` is not included in the standard distribution bundle and must be built from source:
+`webftrove` is included in the release packages (`.deb` for Linux, `.tar.gz` for macOS). No separate build step is needed — just use the binary from the release bundle.
+
+To build from source instead:
 
 ```sh
 git clone https://github.com/steffenfritz/FileTrove.git
