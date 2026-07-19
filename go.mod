@@ -14,7 +14,7 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 )
 
 require (
@@ -30,8 +30,8 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v1.0.0 // indirect
-	golang.org/x/image v0.40.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/image v0.41.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
