@@ -21,7 +21,7 @@ FileTrove walks a directory tree, identifies every file, computes metadata, and 
 | Category | Details |
 |----------|---------|
 | **File type** | MIME type, [PRONOM](https://www.nationalarchives.gov.uk/PRONOM/) identifier, format version, identification proof/note, extension — via [siegfried](https://github.com/richardlehane/siegfried) |
-| **File & directory timestamps** | Creation, modification, and access times |
+| **File & directory timestamps** | Access, modification, change, and birth times (birth time only for files, where the filesystem supports it) |
 | **Hashes** | MD5, SHA1, SHA256, SHA512, BLAKE2B-512 |
 | **Entropy** | Shannon entropy (files up to 1 GB) |
 | **Extended attributes** | xattr from ext3/ext4, btrfs, APFS, and others |

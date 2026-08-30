@@ -544,10 +544,12 @@ func main() {
 			filemd.Fileatime = filetime.Atime.In(timeIn).String()
 			filemd.Filectime = filetime.Ctime.In(timeIn).String()
 			filemd.Filemtime = filetime.Mtime.In(timeIn).String()
+			filemd.Filebtime = filetime.Btime.In(timeIn).String()
 		} else {
 			filemd.Fileatime = filetime.Atime.String()
 			filemd.Filectime = filetime.Ctime.String()
 			filemd.Filemtime = filetime.Mtime.String()
+			filemd.Filebtime = filetime.Btime.String()
 		}
 
 		// Check if the hash sum of the file is in the NSRL bloom filter
@@ -577,7 +579,7 @@ func main() {
 			filemd.Filesize, filemd.Filemd5, filemd.Filesha1, filemd.Filesha256, filemd.Filesha512, filemd.Fileblake2b,
 			filemd.Filesffmt, filemd.Filesfmime, filemd.Filesfformatname, filemd.Filesfformatversion,
 			filemd.Filesfidentnote, filemd.Filesfidentproof, filemd.Filectime, filemd.Filemtime, filemd.Fileatime,
-			filemd.Filensrl, filemd.Fileentropy, filehierarchy)
+			filemd.Filebtime, filemd.Filensrl, filemd.Fileentropy, filehierarchy)
 
 		if err != nil {
 			logger.Warn("Could not add file entry into FileTrove database. File: "+file, slog.String("warn", err.Error()))

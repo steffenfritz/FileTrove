@@ -148,7 +148,7 @@ func exportFilesJSONL(db *sql.DB, sessionuuid string, enc *json.Encoder) error {
 		"SELECT fileuuid, sessionuuid, filename, filepath, filenameextension, "+
 			"filesize, filemd5, filesha1, filesha256, filesha512, fileblake2b, "+
 			"filesffmt, filesfmime, filesfformatname, filesfformatversion, "+
-			"filesfidentnote, filesfidentproof, filectime, filemtime, fileatime, "+
+			"filesfidentnote, filesfidentproof, filectime, filemtime, fileatime, filebtime, "+
 			"filensrl, fileentropy, hierarchy FROM files WHERE sessionuuid=?", sessionuuid)
 	if err != nil {
 		return err
@@ -165,7 +165,7 @@ func exportFilesJSONL(db *sql.DB, sessionuuid string, enc *json.Encoder) error {
 			&r.FileMD.Filesffmt, &r.FileMD.Filesfmime, &r.FileMD.Filesfformatname,
 			&r.FileMD.Filesfformatversion, &r.FileMD.Filesfidentnote,
 			&r.FileMD.Filesfidentproof, &r.FileMD.Filectime, &r.FileMD.Filemtime,
-			&r.FileMD.Fileatime, &r.FileMD.Filensrl, &r.FileMD.Fileentropy,
+			&r.FileMD.Fileatime, &r.FileMD.Filebtime, &r.FileMD.Filensrl, &r.FileMD.Fileentropy,
 			&r.Hierarchy,
 		); err != nil {
 			return err

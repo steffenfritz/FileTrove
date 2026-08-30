@@ -32,9 +32,10 @@
         <div class="flex justify-between gap-4"><dt class="text-gray-500">SF Format</dt><dd class="font-mono text-xs">{{.Detail.File.Filesffmt}}</dd></div>
         <div class="flex justify-between gap-4"><dt class="text-gray-500">Ident Note</dt><dd class="text-gray-600 dark:text-gray-300 text-xs">{{.Detail.File.Filesfidentnote}}</dd></div>
         <div class="flex justify-between gap-4"><dt class="text-gray-500">Ident Proof</dt><dd class="text-gray-600 dark:text-gray-300 text-xs">{{.Detail.File.Filesfidentproof}}</dd></div>
-        <div class="flex justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800"><dt class="text-gray-500">Created</dt><dd>{{.Detail.File.Filectime}}</dd></div>
+        <div class="flex justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800"><dt class="text-gray-500">Changed</dt><dd>{{.Detail.File.Filectime}}</dd></div>
         <div class="flex justify-between gap-4"><dt class="text-gray-500">Modified</dt><dd>{{.Detail.File.Filemtime}}</dd></div>
         <div class="flex justify-between gap-4"><dt class="text-gray-500">Accessed</dt><dd>{{.Detail.File.Fileatime}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Birth</dt><dd>{{.Detail.File.Filebtime}}</dd></div>
         <div class="flex justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800"><dt class="text-gray-500">NSRL</dt>
           <dd>{{if eq .Detail.File.Filensrl "TRUE"}}<span class="text-green-600 dark:text-green-400 font-medium">Known</span>{{else}}<span class="text-gray-400">—</span>{{end}}</dd>
         </div>

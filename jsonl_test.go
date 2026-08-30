@@ -59,7 +59,7 @@ func TestExportSessionJSONL(t *testing.T) {
 		"test.txt", "/tmp/test/test.txt", ".txt",
 		42, "md5hash", "sha1hash", "sha256hash", "sha512hash", "blake2bhash",
 		"fmt/111", "text/plain", "Plain Text", "1.0",
-		"", "", "2026-01-01", "2026-01-01", "2026-01-01",
+		"", "", "2026-01-01", "2026-01-01", "2026-01-01", "2026-01-01",
 		"FALSE", 0.5, 1,
 	)
 	if err != nil {
