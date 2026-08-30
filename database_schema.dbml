@@ -66,6 +66,7 @@ TABLE files {
   filectime TEXT
   filemtime TEXT
   fileatime TEXT
+  filebtime TEXT
   filensrl TEXT
   fileentropy REAL
   hierarchy INTEGER

@@ -35,6 +35,7 @@ type WebFileMD struct {
 	Filectime           string
 	Filemtime           string
 	Fileatime           string
+	Filebtime           string
 	Filensrl            string
 	Fileentropy         float64
 	HasYara             bool
@@ -257,6 +258,7 @@ func QueryFiles(db *sql.DB, sessionUUID string, f FileFilters) ([]WebFileMD, int
 		       COALESCE(f.filesfformatname,''), COALESCE(f.filesfformatversion,''),
 		       COALESCE(f.filesfidentnote,''), COALESCE(f.filesfidentproof,''),
 		       COALESCE(f.filectime,''), COALESCE(f.filemtime,''), COALESCE(f.fileatime,''),
+		       COALESCE(f.filebtime,''),
 		       COALESCE(f.filensrl,''), COALESCE(f.fileentropy,0),
 		       EXISTS(SELECT 1 FROM yara y WHERE y.fileuuid = f.fileuuid) AS has_yara
 		FROM files f
@@ -280,6 +282,7 @@ func QueryFiles(db *sql.DB, sessionUUID string, f FileFilters) ([]WebFileMD, int
 			&wf.Filesha512, &wf.Fileblake2b, &wf.Filesffmt, &wf.Filesfmime,
 			&wf.Filesfformatname, &wf.Filesfformatversion, &wf.Filesfidentnote,
 			&wf.Filesfidentproof, &wf.Filectime, &wf.Filemtime, &wf.Fileatime,
+			&wf.Filebtime,
 			&wf.Filensrl, &wf.Fileentropy, &wf.HasYara,
 		); err != nil {
 			return nil, 0, err
@@ -303,6 +306,7 @@ func GetFileDetail(db *sql.DB, fileUUID string) (FileDetail, error) {
 		       COALESCE(filesfformatname,''), COALESCE(filesfformatversion,''),
 		       COALESCE(filesfidentnote,''), COALESCE(filesfidentproof,''),
 		       COALESCE(filectime,''), COALESCE(filemtime,''), COALESCE(fileatime,''),
+		       COALESCE(filebtime,''),
 		       COALESCE(filensrl,''), COALESCE(fileentropy,0)
 		FROM files WHERE fileuuid = ?`, fileUUID)
 	if err := row.Scan(
@@ -313,6 +317,7 @@ func GetFileDetail(db *sql.DB, fileUUID string) (FileDetail, error) {
 		&d.File.Filesfmime, &d.File.Filesfformatname, &d.File.Filesfformatversion,
 		&d.File.Filesfidentnote, &d.File.Filesfidentproof,
 		&d.File.Filectime, &d.File.Filemtime, &d.File.Fileatime,
+		&d.File.Filebtime,
 		&d.File.Filensrl, &d.File.Fileentropy,
 	); err != nil {
 		return d, err

@@ -17,6 +17,7 @@
           <th class="px-4 py-3 text-left">MIME</th>
           <th class="px-4 py-3 text-right">Size</th>
           <th class="px-4 py-3 text-left">Modified</th>
+          <th class="px-4 py-3 text-left">Birth</th>
           <th class="px-4 py-3 text-center">NSRL</th>
           <th class="px-4 py-3 text-right">Entropy</th>
           <th class="px-4 py-3 text-center">YARA</th>
@@ -36,6 +37,7 @@
           <td class="px-4 py-2 text-gray-500 text-xs">{{.Filesfmime}}</td>
           <td class="px-4 py-2 text-right text-gray-600 dark:text-gray-300 whitespace-nowrap">{{formatBytes .Filesize}}</td>
           <td class="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{{.Filemtime}}</td>
+          <td class="px-4 py-2 text-gray-500 text-xs whitespace-nowrap">{{.Filebtime}}</td>
           <td class="px-4 py-2 text-center">
             {{if eq .Filensrl "TRUE"}}
               <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded text-xs">known</span>
@@ -58,7 +60,7 @@
         </tr>
         {{else}}
         <tr>
-          <td colspan="10" class="px-4 py-12 text-center text-gray-500">No files match the current filters.</td>
+          <td colspan="11" class="px-4 py-12 text-center text-gray-500">No files match the current filters.</td>
         </tr>
         {{end}}
       </tbody>

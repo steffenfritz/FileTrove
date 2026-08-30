@@ -71,6 +71,7 @@ type FileMD struct {
 	Filectime           string  `json:"filectime"`
 	Filemtime           string  `json:"filemtime"`
 	Fileatime           string  `json:"fileatime"`
+	Filebtime           string  `json:"filebtime"`
 	Filensrl            string  `json:"filensrl"`
 	Fileentropy         float64 `json:"fileentropy"`
 }
@@ -165,6 +166,7 @@ func CreateFileTroveDB(dbpath string, version string, initdate string) error {
 					   	filectime TEXT,
 					   	filemtime TEXT,
 					   	fileatime TEXT,
+					   	filebtime TEXT,
 					   	filensrl TEXT,
 					   	fileentropy REAL,
 						hierarchy INTEGER
@@ -250,7 +252,7 @@ func InsertDC(db *sql.DB, sessionuuid string, dcuuid string, dc DublinCore) erro
 
 // PrepInsertFile prepares a statement for the addition of a single file
 func PrepInsertFile(db *sql.DB) (*sql.Stmt, error) {
-	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+	prepin, err := db.Prepare("INSERT INTO files VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 	return prepin, err
 }
