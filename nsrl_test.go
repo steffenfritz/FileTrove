@@ -180,9 +180,12 @@ func TestBloomEmptyFile(t *testing.T) {
 }
 
 func TestBloomWithRealNSRL(t *testing.T) {
-	bloomFile := "db/nsrl.bloom"
+	bloomFile := os.Getenv("NSRL_BLOOM_FILE")
+	if bloomFile == "" {
+		bloomFile = "db/nsrl.bloom"
+	}
 	if _, err := os.Stat(bloomFile); os.IsNotExist(err) {
-		t.Skip("db/nsrl.bloom not present; run 'task nsrl:build-all' first")
+		t.Skipf("%s not present; run 'task nsrl:build-modern/mobile/all' or set NSRL_BLOOM_FILE", bloomFile)
 	}
 
 	nf, err := LoadNSRL(bloomFile)
@@ -220,5 +223,40 @@ func TestBloomMissingFile(t *testing.T) {
 	_, err := LoadNSRL("/nonexistent/path/nsrl.bloom")
 	if err == nil {
 		t.Error("expected error loading nonexistent file, got nil")
+	}
+}
+
+func TestBloomAutoCount(t *testing.T) {
+	hashes := generateTestHashes(500)
+	hashFile := writeHashFile(t, hashes)
+	bloomFile := filepath.Join(t.TempDir(), "autocount.bloom")
+
+	// estimatedItems=0 triggers auto-count (two-pass: count lines then scan)
+	err := CreateNSRLBloom(hashFile, "test-autocount", bloomFile, 0, 0.0001)
+	if err != nil {
+		t.Fatalf("CreateNSRLBloom with auto-count failed: %v", err)
+	}
+
+	nf, err := LoadNSRL(bloomFile)
+	if err != nil {
+		t.Fatalf("LoadNSRL failed: %v", err)
+	}
+
+	if nf.Items != 500 {
+		t.Errorf("expected 500 items, got %d", nf.Items)
+	}
+	for i, h := range hashes {
+		if !nf.Contains(h) {
+			t.Errorf("hash %d not found after auto-count build: %s", i, h)
+		}
+	}
+}
+
+func TestBloomStdinRequiresEstimate(t *testing.T) {
+	bloomFile := filepath.Join(t.TempDir(), "stdin.bloom")
+
+	err := CreateNSRLBloom("-", "test-stdin", bloomFile, 0, 0.0001)
+	if err == nil {
+		t.Fatal("expected error when reading from stdin without --nsrl-estimate, got nil")
 	}
 }

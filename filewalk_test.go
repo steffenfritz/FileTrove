@@ -32,6 +32,7 @@ func TestCreateFileList(t *testing.T) {
 				"testdata/images/screenshot_1.png_original",
 				"testdata/images/screenshot_1.tiff",
 				"testdata/images/screenshot_1.tiff_original",
+				"testdata/noaccess.rtf",
 				"testdata/noextension",
 				"testdata/nsrl_known_hashes.txt",
 				"testdata/textfile.txt",
@@ -46,7 +47,7 @@ func TestCreateFileList(t *testing.T) {
 				"testdata/images",
 				"testdata/yara",
 			},
-			wantSkipped: nil,
+			wantSkipped: []string{"testdata/noaccess.rtf", "testdata/testpipe"},
 			wantErr:     false,
 		},
 	}

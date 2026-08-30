@@ -1,0 +1,116 @@
+{{define "breadcrumb"}}
+<a href="/" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Sessions</a>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<a href="/session/{{.Session.UUID}}" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+  {{if .Session.Project}}{{.Session.Project}}{{else}}Session{{end}}
+</a>
+<span class="text-gray-300 dark:text-gray-600">/</span>
+<span class="text-blue-600 dark:text-blue-400 truncate max-w-xs">{{.Detail.File.Filename}}</span>
+{{end}}
+
+{{define "content"}}
+<div class="mb-5">
+  <h1 class="text-xl font-bold break-all">{{.Detail.File.Filename}}</h1>
+  <p class="text-gray-500 font-mono text-xs mt-1 break-all">
+    {{.Detail.File.Filepath}}
+    <a hx-get="/open?path={{urlquery .Detail.File.Filepath}}" hx-swap="none"
+       class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer ml-1" title="Open directory">📂</a>
+  </p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <div class="space-y-6">
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">File Info</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Size</dt><dd class="font-medium">{{formatBytes .Detail.File.Filesize}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Extension</dt><dd>{{.Detail.File.Ext}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">MIME Type</dt><dd>{{.Detail.File.Filesfmime}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Format</dt><dd>{{.Detail.File.Filesfformatname}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Format Version</dt><dd>{{.Detail.File.Filesfformatversion}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">SF Format</dt><dd class="font-mono text-xs">{{.Detail.File.Filesffmt}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Ident Note</dt><dd class="text-gray-600 dark:text-gray-300 text-xs">{{.Detail.File.Filesfidentnote}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Ident Proof</dt><dd class="text-gray-600 dark:text-gray-300 text-xs">{{.Detail.File.Filesfidentproof}}</dd></div>
+        <div class="flex justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800"><dt class="text-gray-500">Created</dt><dd>{{.Detail.File.Filectime}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Modified</dt><dd>{{.Detail.File.Filemtime}}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Accessed</dt><dd>{{.Detail.File.Fileatime}}</dd></div>
+        <div class="flex justify-between gap-4 pt-2 border-t border-gray-100 dark:border-gray-800"><dt class="text-gray-500">NSRL</dt>
+          <dd>{{if eq .Detail.File.Filensrl "TRUE"}}<span class="text-green-600 dark:text-green-400 font-medium">Known</span>{{else}}<span class="text-gray-400">—</span>{{end}}</dd>
+        </div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Entropy</dt><dd class="font-mono">{{formatEntropy .Detail.File.Fileentropy}}</dd></div>
+      </dl>
+    </section>
+
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Hashes</h2>
+      <dl class="space-y-3 text-sm">
+        <div><dt class="text-gray-500 text-xs mb-1">MD5</dt><dd class="hash-cell text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{.Detail.File.Filemd5}}</dd></div>
+        <div><dt class="text-gray-500 text-xs mb-1">SHA-1</dt><dd class="hash-cell text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{.Detail.File.Filesha1}}</dd></div>
+        <div><dt class="text-gray-500 text-xs mb-1">SHA-256</dt><dd class="hash-cell text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{.Detail.File.Filesha256}}</dd></div>
+        <div><dt class="text-gray-500 text-xs mb-1">SHA-512</dt><dd class="hash-cell text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{.Detail.File.Filesha512}}</dd></div>
+        <div><dt class="text-gray-500 text-xs mb-1">BLAKE2b</dt><dd class="hash-cell text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{{.Detail.File.Fileblake2b}}</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <div class="space-y-6">
+
+    {{if .Detail.Yara}}
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-red-300 dark:border-red-900 p-5">
+      <h2 class="text-sm font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-4">YARA Matches</h2>
+      <ul class="space-y-1">
+        {{range .Detail.Yara}}
+        <li class="flex items-center gap-2 text-sm">
+          <span class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
+          <span class="font-mono">{{.RuleName}}</span>
+        </li>
+        {{end}}
+      </ul>
+    </section>
+    {{end}}
+
+    {{if .Detail.Exif}}
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">EXIF Metadata</h2>
+      <dl class="space-y-2 text-sm">
+        {{if .Detail.Exif.DateTime}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Date/Time</dt><dd>{{.Detail.Exif.DateTime}}</dd></div>{{end}}
+        {{if .Detail.Exif.DateTimeOrig}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Date/Time Orig</dt><dd>{{.Detail.Exif.DateTimeOrig}}</dd></div>{{end}}
+        {{if .Detail.Exif.Artist}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Artist</dt><dd>{{.Detail.Exif.Artist}}</dd></div>{{end}}
+        {{if .Detail.Exif.Copyright}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Copyright</dt><dd>{{.Detail.Exif.Copyright}}</dd></div>{{end}}
+        {{if .Detail.Exif.Make}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Make</dt><dd>{{.Detail.Exif.Make}}</dd></div>{{end}}
+        {{if .Detail.Exif.XPTitle}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Title</dt><dd>{{.Detail.Exif.XPTitle}}</dd></div>{{end}}
+        {{if .Detail.Exif.XPAuthor}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Author</dt><dd>{{.Detail.Exif.XPAuthor}}</dd></div>{{end}}
+        {{if .Detail.Exif.XPKeywords}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Keywords</dt><dd>{{.Detail.Exif.XPKeywords}}</dd></div>{{end}}
+        {{if .Detail.Exif.XPSubject}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Subject</dt><dd>{{.Detail.Exif.XPSubject}}</dd></div>{{end}}
+        {{if .Detail.Exif.XPComment}}<div class="flex justify-between gap-4"><dt class="text-gray-500">Comment</dt><dd>{{.Detail.Exif.XPComment}}</dd></div>{{end}}
+        {{if .Detail.Exif.ExifVersion}}<div class="flex justify-between gap-4"><dt class="text-gray-500">EXIF Version</dt><dd class="text-gray-500">{{.Detail.Exif.ExifVersion}}</dd></div>{{end}}
+      </dl>
+    </section>
+    {{end}}
+
+    {{if .Detail.Xattr}}
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Extended Attributes</h2>
+      <dl class="space-y-2 text-sm">
+        {{range .Detail.Xattr}}
+        <div><dt class="text-gray-500 text-xs font-mono">{{.Name}}</dt><dd class="text-gray-700 dark:text-gray-300 font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded mt-1 break-all">{{.Value}}</dd></div>
+        {{end}}
+      </dl>
+    </section>
+    {{end}}
+
+    {{if .Detail.NtfsAds}}
+    <section class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">NTFS Alternate Data Streams</h2>
+      <dl class="space-y-2 text-sm">
+        {{range .Detail.NtfsAds}}
+        <div><dt class="text-gray-500 text-xs font-mono">{{.AdsName}}</dt><dd class="text-gray-700 dark:text-gray-300 font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded mt-1 break-all">{{.AdsValue}}</dd></div>
+        {{end}}
+      </dl>
+    </section>
+    {{end}}
+
+  </div>
+</div>
+{{end}}

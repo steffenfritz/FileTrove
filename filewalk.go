@@ -2,6 +2,7 @@ package filetrove
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 )
 
@@ -30,6 +31,12 @@ func CreateFileList(rootDir string) ([]string, []string, []string, error) {
 		switch {
 		case info.Type().IsRegular():
 			fileList = append(fileList, path)
+			f, openErr := os.Open(path)
+			if openErr != nil {
+				skippedList = append(skippedList, path)
+				break
+			}
+			f.Close()
 		case info.IsDir():
 			dirList = append(dirList, path)
 		case info.Type()&fs.ModeSymlink != 0:

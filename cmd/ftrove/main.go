@@ -34,7 +34,7 @@ var logger *slog.Logger
 func init() {
 	tsStarted := time.Now()
 	tsStartedFormated = tsStarted.Format("2006-01-02_15:04:05")
-	logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 }
 
 func main() {
@@ -46,8 +46,11 @@ func main() {
 	dublincore := flag.StringP("dublincore", "d", "", "Add DublinCore metadata as a JSON file for a session (not single files).")
 	exifData := flag.BoolP("exifdata", "e", false, "Get some EXIF metadata from image files.")
 	exportSessionToTSV := flag.StringP("export-tsv", "t", "", "Export a session from the database to a TSV file. Provide the session uuid.")
+	exportSessionToJSONL := flag.StringP("export-jsonl", "j", "", "Export a session from the database to JSONL on stdout. Provide the session uuid.")
+	exportSessionToPREMIS := flag.StringP("export-premis", "P", "", "Export a session from the database to PREMIS v3 XML on stdout. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
+	nsrlVariant := flag.StringP("nsrl-variant", "", "all", "NSRL bloom filter variant to download during install (modern, mobile, all).")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	listSession := flag.StringP("list-session", "L", "", "List information about a single session.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
@@ -132,7 +135,7 @@ func main() {
 			*install = strings.TrimRight(*install, "/")
 		}
 		logger.Info("FileTrove installation started. Version: " + Version)
-		direrr, logserr, trovedberr, siegfriederr := ft.InstallFT(*install, Version, tsStartedFormated)
+		direrr, logserr, trovedberr, siegfriederr := ft.InstallFT(*install, Version, tsStartedFormated, *nsrlVariant)
 		if direrr != nil {
 			logger.Error("Could not create db directory.", slog.String("error", direrr.Error()))
 			os.Exit(1)
@@ -193,6 +196,26 @@ func main() {
 		fmt.Println("File Count:\t" + strconv.Itoa(smd.Filecount))
 		fmt.Println("NSRL Count:\t" + strconv.Itoa(smd.Nsrlcount))
 
+		return
+	}
+
+	// Export a specific session to JSONL on stdout
+	if len(*exportSessionToJSONL) != 0 {
+		logger.Info("Export session " + *exportSessionToJSONL + " to JSONL on stdout.")
+		if err := ft.ExportSessionJSONL(*exportSessionToJSONL, os.Stdout); err != nil {
+			logger.Error("Error while exporting session to JSONL.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Export a specific session to PREMIS v3 XML on stdout
+	if len(*exportSessionToPREMIS) != 0 {
+		logger.Info("Export session " + *exportSessionToPREMIS + " to PREMIS v3 XML on stdout.")
+		if err := ft.ExportSessionPREMIS(*exportSessionToPREMIS, os.Stdout); err != nil {
+			logger.Error("Error while exporting session to PREMIS v3 XML.", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
 		return
 	}
 
@@ -302,21 +325,26 @@ func main() {
 	// Set up the counter for files that are in NSRL. This is just relevant for the short summary and log file entry.
 	nsrlcount := 0
 
-	// Load NSRL Bloom filter into memory
-	nsrlFilter, err := ft.LoadNSRL(filepath.Join("db", "nsrl.bloom"))
+	// Load NSRL Bloom filter into memory (optional — scanning continues without it)
+	var nsrlFilter *ft.NSRLFilter
+	bloomPath := filepath.Join("db", "nsrl-"+*nsrlVariant+".bloom")
+	if _, statErr := os.Stat(bloomPath); os.IsNotExist(statErr) {
+		bloomPath = filepath.Join("db", "nsrl.bloom")
+	}
+	nsrlFilter, err = ft.LoadNSRL(bloomPath)
 	if err != nil {
-		logger.Error("Could not load NSRL bloom filter", slog.String("error", err.Error()))
-		err = ftdb.Close()
-		if err != nil {
-			logger.Error("Could not close database connection to FileTrove.", slog.String("error", err.Error()))
-		}
-		os.Exit(1)
+		logger.Warn("NSRL bloom filter not available, NSRL checks disabled", slog.String("reason", err.Error()))
+		nsrlFilter = nil
 	}
 
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
 	if len(*resumeuuid) == 0 {
 		// Add new session to database
-		sessionmd.Nsrlversion = nsrlFilter.Version
+		if nsrlFilter != nil {
+			sessionmd.Nsrlversion = nsrlFilter.Version
+		} else {
+			sessionmd.Nsrlversion = "none"
+		}
 
 		err = ft.InsertSession(ftdb, sessionmd)
 		if err != nil {
@@ -523,7 +551,7 @@ func main() {
 		}
 
 		// Check if the hash sum of the file is in the NSRL bloom filter
-		if nsrlFilter.Contains(filemd.Filesha1) {
+		if nsrlFilter != nil && nsrlFilter.Contains(filemd.Filesha1) {
 			filemd.Filensrl = "TRUE"
 			nsrlcount += 1
 		} else {

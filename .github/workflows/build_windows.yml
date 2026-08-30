@@ -95,6 +95,11 @@ jobs:
           cd $env:GITHUB_WORKSPACE\cmd\ftrove
           task build
 
+      - name: Build webftrove
+        run: |
+          cd $env:GITHUB_WORKSPACE\cmd\webftrove
+          go build -ldflags "-w -s" -o webftrove.exe
+
       - name: Create artifacts directory
         run: New-Item -ItemType Directory -Force -Path $env:GITHUB_WORKSPACE\artifacts
 
@@ -117,6 +122,7 @@ jobs:
           Copy-Item -Path $dllFile.FullName -Destination "$env:GITHUB_WORKSPACE\artifacts"
           Copy-Item -Path $dllAFile.FullName -Destination "$env:GITHUB_WORKSPACE\artifacts"
           Copy-Item "$env:GITHUB_WORKSPACE\cmd\ftrove\ftrove.exe" -Destination "$env:GITHUB_WORKSPACE\artifacts"
+          Copy-Item "$env:GITHUB_WORKSPACE\cmd\webftrove\webftrove.exe" -Destination "$env:GITHUB_WORKSPACE\artifacts"
 
       - name: Create archive of artifacts
         run: |

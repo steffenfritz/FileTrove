@@ -49,15 +49,17 @@ tasks:
       - test -f {{.DIST_DIR}}/db/siegfried.sig
 
   nsrl:
-    desc: Copy nsrl.bloom into the distribution folder
+    desc: Copy an nsrl bloom filter into the distribution folder (NSRL_VARIANT=modern|mobile|all, default all)
     deps: [setup]
+    vars:
+      NSRL_VARIANT: '{{default "all" .NSRL_VARIANT}}'
     preconditions:
-      - sh: test -f db/nsrl.bloom
-        msg: "db/nsrl.bloom not found. Build it first with: task nsrl:build-all"
+      - sh: test -f db/nsrl-{{.NSRL_VARIANT}}.bloom
+        msg: "db/nsrl-{{.NSRL_VARIANT}}.bloom not found. Build it first with: task nsrl:build-{{.NSRL_VARIANT}}"
     cmds:
-      - cp db/nsrl.bloom {{.DIST_DIR}}/db/nsrl.bloom
+      - cp db/nsrl-{{.NSRL_VARIANT}}.bloom {{.DIST_DIR}}/db/nsrl-{{.NSRL_VARIANT}}.bloom
     status:
-      - test -f {{.DIST_DIR}}/db/nsrl.bloom
+      - test -f {{.DIST_DIR}}/db/nsrl-{{.NSRL_VARIANT}}.bloom
 
   readme:
     desc: Generate a quick-start README for the distribution bundle
@@ -86,7 +88,7 @@ tasks:
 
         The db/ folder contains:
           - siegfried.sig   PRONOM signature database (pre-installed)
-          - nsrl.bloom      NSRL Bloom filter (pre-installed)
+          - nsrl-all.bloom  NSRL Bloom filter (pre-installed, variant: all)
           - filetrove.db    created by --install (per-project scan database)
 
         For full documentation see: https://github.com/steffenfritz/FileTrove

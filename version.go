@@ -3,6 +3,7 @@ package filetrove
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -35,7 +36,7 @@ func CheckVersion(db *sql.DB, version string) (bool, string, error) {
 // func PrintLicense(version string, build string) {
 func PrintLicense(version string) {
 	fmt.Println("\n" +
-		"FileTrove Copyright (C) 2023-2024  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
+		"FileTrove Copyright (C) 2023-2026  Steffen Fritz <steffen@fritz.wtf> \n\n    " +
 		"This program is free software: you can redistribute it and/or modify\n    " +
 		"it under the terms of the GNU Affero General Public License as published\n    " +
 		"by the Free Software Foundation, either version 3 of the License, or\n    " +
@@ -52,5 +53,5 @@ func PrintLicense(version string) {
 
 // PrintBanner prints a pre-generated ascii banner with the program name
 func PrintBanner() {
-	fmt.Println("\no--o   o     o-O-o                   \n|    o |       |                     \nO-o    | o-o   |   o-o o-o o   o o-o \n|    | | |-'   |   |   | |  \\ /  |-' \no    | o o-o   o   o   o-o   o   o-o \n                                     \n                                     ")
+	fmt.Fprintln(os.Stderr, "\no--o   o     o-O-o                   \n|    o |       |                     \nO-o    | o-o   |   o-o o-o o   o o-o \n|    | | |-'   |   |   | |  \\ /  |-' \no    | o o-o   o   o   o-o   o   o-o \n                                     \n                                     ")
 }
