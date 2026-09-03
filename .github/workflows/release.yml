@@ -114,7 +114,7 @@ jobs:
             -o webftrove
 
       - name: Install nfpm
-        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.46.3
 
       - name: Stage and package .deb
         run: |
