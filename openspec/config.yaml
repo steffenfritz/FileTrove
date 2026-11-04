@@ -1,0 +1,69 @@
+schema: spec-driven
+
+context: |
+  Language: English
+  All artifacts must be written in English.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Project: FileTrove walks a directory tree, identifies every file and
+  writes metadata into a SQLite database (exports: TSV, JSONL, PREMIS v3
+  XML, Dublin Core). Users are digital preservation and forensics
+  practitioners; scan results serve as audit-quality manifests.
+
+  Binaries:
+  - cmd/ftrove     main scanner CLI (flags via spf13/pflag)
+  - cmd/admftrove  admin tool (NSRL bloom filter builder)
+  - cmd/webftrove  read-only web UI on an existing database (HTMX, embedded templates)
+  Library code lives in root-level *.go files of package filetrove
+  (db, filewalk, hash, siegfried, exif, yara, nsrl, entropy, xattr, times,
+  uuid, dublincore, premis, jsonl, webdb).
+
+  Tech stack: Go >= 1.26 with CGO; SQLite via mattn/go-sqlite3;
+  siegfried for format identification (PRONOM); YARA-X via its C API
+  (built from source, needs Rust + cargo-c); NSRL as a bloom filter;
+  go-task (Taskfile.yml) for build, test and packaging; nfpm for .deb/.rpm.
+  Release targets: Linux amd64/arm64 (.deb), macOS arm64 (.tar.gz).
+
+  Domain principles (non-negotiable):
+  - Never produce silently incomplete results. If input is ignored,
+    skipped or fails, the user MUST be told (log and/or console).
+  - Hash values, timestamps and identification results are evidence:
+    correctness beats speed and convenience.
+  - The database schema (database_schema.dbml) is a public contract.
+    Before 1.0.0 a beta release MAY change the schema; the proposal must
+    say so and state the impact on existing databases. From 1.0.0 on the
+    schema is stable within a major version; schema changes trigger a
+    major release.
+  - Export formats (TSV, JSONL, PREMIS) are consumed by other tools;
+    treat column/field changes as breaking.
+  - webftrove never writes to the database.
+
+  Conventions:
+  - Code style: Google Go Style Guide.
+  - Tests: table-driven Go tests next to the code (*_test.go), fixtures
+    in testdata/; run with `task test` (go test -v). Aim for >= 80%
+    coverage on new code.
+  - GitHub Actions are pinned to commit SHAs.
+  - Commits are signed off (DCO).
+
+rules:
+  proposal:
+    - Reference the GitHub issue (e.g. #188) if one exists
+    - State explicitly whether the change affects the DB schema, an export format or CLI flags, and if so, whether it is backward compatible
+    - State what is out of scope
+  specs:
+    - Describe observable behavior (CLI output, exit codes, DB contents, export contents), not implementation details
+    - Every requirement needs at least one scenario, including the error or edge case where relevant
+  design:
+    - Only create design.md when the change spans several components or involves a non-obvious technical decision
+  tasks:
+    - Include a task for tests and, where user-facing behavior changes, a task for README/BUILDING.md
+
+operations:
+  apply:
+    guidance:
+      - Run `task test` (or `go test ./...` if the YARA-X library is already set up) before marking test tasks done
+      - Do not change unrelated code
+  archive:
+    guidance:
+      - Summarize which main specs were updated

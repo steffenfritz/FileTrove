@@ -46,7 +46,16 @@ dist/
 
 # Misc
 .DS_Store
-.claude
+
+# Claude Code: keep local settings private, share OpenSpec commands and skills
+.claude/*
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/opsx/
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/openspec-*/
+**/.claude/settings.local.json
 
 # Taskfile state
 .task/
