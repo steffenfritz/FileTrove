@@ -51,10 +51,10 @@ tasks:
       - task: yara:setup-capi
 
   test:
-    desc: Run all library tests
+    desc: Run library and ftrove tests
     deps: [setup-yara-capi]
     cmds:
-      - go test -v
+      - go test -v . ./cmd/ftrove
     sources:
       - '**/*.go'
 
