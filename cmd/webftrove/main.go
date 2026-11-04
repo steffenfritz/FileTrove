@@ -39,6 +39,7 @@ func main() {
 	mux.HandleFunc("GET /session/{uuid}", h.sessionHandler)
 	mux.HandleFunc("GET /session/{uuid}/files", h.filesPartialHandler)
 	mux.HandleFunc("GET /session/{uuid}/file/{fileuuid}", h.fileHandler)
+	mux.HandleFunc("GET /session/{uuid}/file/{fileuuid}/download", h.fileDownloadHandler)
 	mux.HandleFunc("GET /session/{uuid}/dirs", h.dirsHandler)
 	mux.HandleFunc("GET /open", h.openHandler)
 

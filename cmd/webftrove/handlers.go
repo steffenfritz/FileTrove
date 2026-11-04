@@ -234,6 +234,21 @@ func (h *handler) dirsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// fileDownloadHandler serves the file's bytes for download. The path is
+// looked up server-side from the database via fileuuid, never taken
+// directly from client input - unlike openHandler below, which accepts a
+// path query parameter and is only safe for local, single-user use.
+func (h *handler) fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
+	fileuuid := r.PathValue("fileuuid")
+	detail, err := ft.GetFileDetail(h.db, fileuuid)
+	if err != nil {
+		httpError(w, "loading file detail", err)
+		return
+	}
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", detail.File.Filename))
+	http.ServeFile(w, r, detail.File.Filepath)
+}
+
 func (h *handler) openHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	if path == "" {
