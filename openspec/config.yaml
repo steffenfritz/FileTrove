@@ -30,8 +30,10 @@ context: |
   - Hash values, timestamps and identification results are evidence:
     correctness beats speed and convenience.
   - The database schema (database_schema.dbml) is a public contract.
-    Schema changes require a database version bump and a statement on
-    compatibility with existing databases.
+    Before 1.0.0 a beta release MAY change the schema; the proposal must
+    say so and state the impact on existing databases. From 1.0.0 on the
+    schema is stable within a major version; schema changes trigger a
+    major release.
   - Export formats (TSV, JSONL, PREMIS) are consumed by other tools;
     treat column/field changes as breaking.
   - webftrove never writes to the database.
