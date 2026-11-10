@@ -34,7 +34,7 @@ and the number of files written. Without `-V`, nothing else SHALL be written to 
 If writing any TSV file fails, `ftrove` SHALL print to stderr the error, a statement
 that the export is incomplete, and the absolute paths of the TSV files written before
 the failure, and exit with code 1. This SHALL apply with and without `-V`. It SHALL NOT
-print file paths to stdout in this case.
+print the list of TSV file paths to stdout in this case.
 
 #### Scenario: Failure after some files were written
 - **WHEN** `<uuid>_session.tsv` and `<uuid>_files.tsv` were written and writing `<uuid>_directories.tsv` fails
