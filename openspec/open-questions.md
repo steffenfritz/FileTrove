@@ -32,6 +32,6 @@ Timestamps are stored using Go's `time.Time.String()` (e.g.
 | 8 | DB/binary compatibility check only runs when an NSRL bloom filter exists | `install.go:186` |
 | 9 | Exact version match makes every new release reject existing databases, even without schema change; should be based on a schema version (see database spec, schema stability) | `version.go:28` |
 | 10 | Invalid `-z` or YARA compile error leaves a session without end time | `cmd/ftrove/main.go:349` |
-| 11 | Unconsumed positional arguments are ignored silently; missing `-i` is not rejected (#188) | `cmd/ftrove/main.go:51` |
+| 11 | A scan without `-i` (and without `-r`) is not rejected and creates an empty session; unconsumed positional arguments are rejected since change `reject-extra-input-args` (#188) | `cmd/ftrove/main.go:51` |
 | 12 | Resume does not restore the session's feature flags | `cmd/ftrove/main.go:400` |
 | 13 | TSV export requires a full installation, JSONL and PREMIS do not | `cmd/ftrove/main.go:223` |

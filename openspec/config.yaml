@@ -48,7 +48,7 @@ context: |
 
 rules:
   proposal:
-    - Reference the GitHub issue (e.g. #188) if one exists
+    - "Reference the GitHub issue (e.g. #188) if one exists"
     - State explicitly whether the change affects the DB schema, an export format or CLI flags, and if so, whether it is backward compatible
     - State what is out of scope
   specs:

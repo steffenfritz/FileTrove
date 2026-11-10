@@ -91,7 +91,9 @@ Optional flags: `--nsrl-out` (output filename, default `nsrl.bloom`), `--nsrl-es
 ./ftrove -i $DIRECTORY
 ```
 
-FileTrove walks `$DIRECTORY` recursively. Run `./ftrove -h` for all available flags.
+FileTrove walks `$DIRECTORY` recursively, including hidden files. Run `./ftrove -h` for all available flags.
+
+`-i` takes exactly one directory. Do not use a shell glob such as `$DIRECTORY/*`: the shell expands it into many paths and skips hidden files. FileTrove rejects such extra arguments with exit code 1 and suggests the directory to scan instead.
 
 ## Viewing results
 

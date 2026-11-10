@@ -65,6 +65,12 @@ func main() {
 
 	flag.Parse()
 
+	// Reject leftover positional arguments before anything is created, e.g. from a shell-expanded `-i dir/*`
+	if err := checkUnexpectedArgs(flag.Args(), *inDir); err != nil {
+		fmt.Fprintln(os.Stderr, "ERROR: "+err.Error())
+		os.Exit(1)
+	}
+
 	starttime := time.Now()
 
 	var fddebug os.File
