@@ -115,6 +115,8 @@ The NSRL bloom filter is downloaded automatically during `--install` from the Gi
 ./ftrove --install . --nsrl-variant all      # ~240 MB, all subsets including legacy
 ```
 
+Scans pick up the installed variant automatically (see the NSRL section in [README.md](README.md)); `--nsrl-variant` is only needed on a scan to choose between several installed variants.
+
 To create a `.tar.gz` archive for distribution:
 
 ```sh

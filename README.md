@@ -73,7 +73,13 @@ The NSRL bloom filter is not bundled in the repository. It is downloaded automat
 ./ftrove --install . --nsrl-variant modern  # smallest
 ```
 
-NSRL checks are skipped gracefully if no bloom filter is present — scanning still works.
+A scan uses the installed bloom filter automatically, so you do not need to repeat `--nsrl-variant`. If several variants are installed in `db/`, it takes the most comprehensive one (`all`, then `mobile`, then `modern`, then a legacy `nsrl.bloom`). To use a specific variant, pass it to the scan:
+
+```sh
+./ftrove -i /path/to/files --nsrl-variant modern
+```
+
+NSRL checks are skipped if no bloom filter is present or it cannot be loaded — scanning still works, and a warning is printed to the console and the log.
 
 When NIST publishes a new RDS version, rebuild by updating `NSRL_VERSION` in `Taskfile.nsrl.yml` and running one of the build targets. See [BUILDING.md](BUILDING.md) for details.
 
