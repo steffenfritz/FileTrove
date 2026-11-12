@@ -99,7 +99,7 @@ To create a self-contained bundle ready for end users:
 task dist:bundle
 ```
 
-This builds both binaries, downloads `siegfried.sig`, and packages everything into `build/<os>_<arch>/`. The resulting folder can be used immediately:
+This builds both binaries, downloads `siegfried.sig`, and packages everything into `build/<os>_<arch>/`. If a locally built `db/nsrl-<variant>.bloom` exists (`NSRL_VARIANT`, default `all`), it is copied into the bundle as well; otherwise the step is skipped with a notice. The resulting folder can be used immediately:
 
 ```sh
 cd build/darwin_arm64         # or linux_amd64, etc.
