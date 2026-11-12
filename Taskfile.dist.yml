@@ -31,8 +31,8 @@ tasks:
     desc: Build and copy binaries into the distribution folder
     deps: [setup]
     cmds:
-      - task: ftrove:build
-      - task: admftrove:build
+      - task: :ftrove:build
+      - task: :admftrove:build
       - cp cmd/ftrove/ftrove {{.DIST_DIR}}/
       - cp cmd/admftrove/admftrove {{.DIST_DIR}}/
       # Copy static binaries if they exist (not built on all platforms)
@@ -49,15 +49,18 @@ tasks:
       - test -f {{.DIST_DIR}}/db/siegfried.sig
 
   nsrl:
-    desc: Copy an nsrl bloom filter into the distribution folder (NSRL_VARIANT=modern|mobile|all, default all)
+    desc: Copy a locally built nsrl bloom filter into the distribution folder, if present (NSRL_VARIANT=modern|mobile|all, default all)
     deps: [setup]
     vars:
       NSRL_VARIANT: '{{default "all" .NSRL_VARIANT}}'
-    preconditions:
-      - sh: test -f db/nsrl-{{.NSRL_VARIANT}}.bloom
-        msg: "db/nsrl-{{.NSRL_VARIANT}}.bloom not found. Build it first with: task nsrl:build-{{.NSRL_VARIANT}}"
     cmds:
-      - cp db/nsrl-{{.NSRL_VARIANT}}.bloom {{.DIST_DIR}}/db/nsrl-{{.NSRL_VARIANT}}.bloom
+      # Optional: ftrove --install downloads the bloom filter when it is missing
+      - |
+        if [ -f db/nsrl-{{.NSRL_VARIANT}}.bloom ]; then
+          cp db/nsrl-{{.NSRL_VARIANT}}.bloom {{.DIST_DIR}}/db/nsrl-{{.NSRL_VARIANT}}.bloom
+        else
+          echo "db/nsrl-{{.NSRL_VARIANT}}.bloom not found, skipping. ftrove --install will download it."
+        fi
     status:
       - test -f {{.DIST_DIR}}/db/nsrl-{{.NSRL_VARIANT}}.bloom
 
@@ -88,7 +91,7 @@ tasks:
 
         The db/ folder contains:
           - siegfried.sig   PRONOM signature database (pre-installed)
-          - nsrl-all.bloom  NSRL Bloom filter (pre-installed, variant: all)
+          - nsrl-*.bloom    NSRL Bloom filter (downloaded by --install if not bundled)
           - filetrove.db    created by --install (per-project scan database)
 
         For full documentation see: https://github.com/steffenfritz/FileTrove
