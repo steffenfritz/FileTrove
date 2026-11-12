@@ -35,3 +35,4 @@ Timestamps are stored using Go's `time.Time.String()` (e.g.
 | 11 | A scan without `-i` (and without `-r`) is not rejected and creates an empty session; unconsumed positional arguments are rejected since change `reject-extra-input-args` (#188) | `cmd/ftrove/main.go:51` |
 | 12 | Resume does not restore the session's feature flags | `cmd/ftrove/main.go:400` |
 | 13 | TSV export requires a full installation, JSONL and PREMIS do not | `cmd/ftrove/main.go:223` |
+| 14 | `dist:nsrl` bundles the variant from `NSRL_VARIANT`, but `ftrove --install` looks for the one from `--nsrl-variant` (default `all`); a bundled `modern`/`mobile` filter is ignored and `all` is downloaded anyway | `Taskfile.dist.yml:55`, `install.go:69` |
