@@ -57,9 +57,10 @@ _None._
 
 ### Modified Capabilities
 
-- `cli`: the "Working directory layout" requirement defines how a scan selects the NSRL
-  bloom filter when several or non-default variants are installed, and the "Scan
-  session" requirement reports a scan without NSRL checks on stderr.
+- `cli`: adds the requirement "NSRL bloom filter selection" (how a scan selects the
+  bloom filter when several or non-default variants are installed) and the requirement
+  "Warning when NSRL checks are disabled" (stderr warning independent of `-V`). The
+  existing requirements "Working directory layout" and "Scan session" stay unchanged.
 
 ## Impact
 
