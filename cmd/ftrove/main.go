@@ -50,7 +50,7 @@ func main() {
 	exportSessionToPREMIS := flag.StringP("export-premis", "P", "", "Export a session from the database to PREMIS v3 XML on stdout. Provide the session uuid.")
 	inDir := flag.StringP("indir", "i", "", "Input directory to work on.")
 	install := flag.StringP("install", "", "", "Install FileTrove into the given, existing directory.")
-	nsrlVariant := flag.StringP("nsrl-variant", "", "all", "NSRL bloom filter variant to download during install (modern, mobile, all).")
+	nsrlVariant := flag.StringP("nsrl-variant", "", "all", "NSRL bloom filter variant (modern, mobile, all) to download during install. Without this flag, a scan uses the installed filter (all, mobile, modern); with it, only the given variant.")
 	listSessions := flag.BoolP("list-sessions", "l", false, "List session information for all scans. Useful for exports.")
 	listSession := flag.StringP("list-session", "L", "", "List information about a single session.")
 	projectname := flag.StringP("project", "p", "", "A name for the project or scan session.")
@@ -350,14 +350,20 @@ func main() {
 
 	// Load NSRL Bloom filter into memory (optional — scanning continues without it)
 	var nsrlFilter *ft.NSRLFilter
-	bloomPath := filepath.Join("db", "nsrl-"+*nsrlVariant+".bloom")
-	if _, statErr := os.Stat(bloomPath); os.IsNotExist(statErr) {
-		bloomPath = filepath.Join("db", "nsrl.bloom")
+	var nsrlReason string
+	explicitVariant := flag.CommandLine.Changed("nsrl-variant")
+	if bloomPath, found := selectBloomPath("db", *nsrlVariant, explicitVariant); found {
+		nsrlFilter, err = ft.LoadNSRL(bloomPath)
+		if err != nil {
+			nsrlReason = bloomPath + ": " + err.Error()
+			nsrlFilter = nil
+		}
+	} else {
+		nsrlReason = bloomNotFoundReason("db", *nsrlVariant, explicitVariant)
 	}
-	nsrlFilter, err = ft.LoadNSRL(bloomPath)
-	if err != nil {
-		logger.Warn("NSRL bloom filter not available, NSRL checks disabled", slog.String("reason", err.Error()))
-		nsrlFilter = nil
+	if nsrlFilter == nil {
+		logger.Warn("NSRL bloom filter not available, NSRL checks disabled", slog.String("reason", nsrlReason))
+		reportNSRLDisabled(os.Stderr, nsrlReason)
 	}
 
 	// If we resume a session, the following steps will NOT be executed as they are used for new sessions
