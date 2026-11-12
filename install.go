@@ -164,11 +164,11 @@ func copyFile(src, dst string) error {
 func CheckInstall(version string) error {
 	_, err := os.Stat(filepath.Join("db", "siegfried.sig"))
 	if os.IsNotExist(err) {
-		fmt.Println("ERROR: siegfried signature file not installed.")
+		fmt.Fprintln(os.Stderr, "ERROR: siegfried signature file not installed.")
 	}
 	_, err = os.Stat(filepath.Join("db", "filetrove.db"))
 	if os.IsNotExist(err) {
-		fmt.Println("ERROR: filetrove database does not exist.")
+		fmt.Fprintln(os.Stderr, "ERROR: filetrove database does not exist.")
 	}
 	bloomMatches, _ := filepath.Glob(filepath.Join("db", "nsrl-*.bloom"))
 	// Also accept legacy nsrl.bloom for backward compatibility
@@ -177,31 +177,31 @@ func CheckInstall(version string) error {
 	}
 	if len(bloomMatches) == 0 {
 		if _, legacyErr := os.Stat(filepath.Join("db", "nsrl.db")); legacyErr == nil {
-			fmt.Println("ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create an nsrl-<variant>.bloom file.")
+			fmt.Fprintln(os.Stderr, "ERROR: Legacy nsrl.db detected. Run 'task nsrl:build-all' or rebuild with admftrove --creatensrl to create an nsrl-<variant>.bloom file.")
 		} else {
-			fmt.Println("ERROR: nsrl bloom filter does not exist.")
+			fmt.Fprintln(os.Stderr, "ERROR: nsrl bloom filter does not exist.")
 		}
 	}
 
 	if len(bloomMatches) > 0 {
 		ftdb, connerr := ConnectFileTroveDB("db")
 		if connerr != nil {
-			fmt.Println("Could not connect or open database. Error: " + connerr.Error())
+			fmt.Fprintln(os.Stderr, "Could not connect or open database. Error: "+connerr.Error())
 			os.Exit(1)
 		}
 
 		compatible, dbversion, checkerr := CheckVersion(ftdb, version)
 		if checkerr != nil {
-			fmt.Println("Could not check database version. Error: " + checkerr.Error())
+			fmt.Fprintln(os.Stderr, "Could not check database version. Error: "+checkerr.Error())
 		}
 		if !compatible {
-			fmt.Println("Database not compatible with this Version of FileTrove. Database version: " + dbversion)
+			fmt.Fprintln(os.Stderr, "Database not compatible with this Version of FileTrove. Database version: "+dbversion)
 			os.Exit(1)
 		}
 	}
 
 	if err != nil {
-		fmt.Println("ERROR: Some or more checks failed, FileTrove is not ready. Did you run the installation?")
+		fmt.Fprintln(os.Stderr, "ERROR: Some or more checks failed, FileTrove is not ready. Did you run the installation?")
 		return err
 	}
 

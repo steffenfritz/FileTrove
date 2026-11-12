@@ -260,11 +260,15 @@ func main() {
 	// Export a specific session to TSV files
 	if len(*exportSessionToTSV) != 0 {
 		logger.Info("Export session " + *exportSessionToTSV + " to TSV files of the same name.")
+		// tsvFiles holds the TSV files written so far, reported on the console at the end or on failure
+		var tsvFiles []string
 		sessionValues, err := ft.ExportSessionSessionTSV(*exportSessionToTSV)
 		if err != nil {
 			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
+			reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "session"), tsvFiles, err)
 			os.Exit(1)
 		}
+		tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "session"))
 		// DOC: Value 7 MUST be the flag result of EXIF. We translate for clarity.
 		exifFlagSet := sessionValues[7]
 		// DOC: Value 8 MUST be the flag result of DublinCore. We translate for clarity.
@@ -279,28 +283,36 @@ func main() {
 		err = ft.ExportSessionFilesTSV(*exportSessionToTSV)
 		if err != nil {
 			logger.Error("Error while exporting files from session to TSV file.", slog.String("error", err.Error()))
+			reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "files"), tsvFiles, err)
 			os.Exit(1)
 		}
+		tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "files"))
 		err = ft.ExportSessionDirectoriesTSV(*exportSessionToTSV)
 		if err != nil {
 			logger.Error("Error while exporting directories from session to TSV file.", slog.String("error", err.Error()))
+			reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "directories"), tsvFiles, err)
 			os.Exit(1)
 		}
+		tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "directories"))
 
 		if exifFlagSet == "True" {
 			err = ft.ExportSessionEXIFTSV(*exportSessionToTSV)
 			if err != nil {
 				logger.Error("Error while exporting EXIF metadata from session to TSV file.", slog.String("error", err.Error()))
+				reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "exif"), tsvFiles, err)
 				os.Exit(1)
 			}
+			tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "exif"))
 		}
 
 		if dcFlagSet == "True" {
 			err = ft.ExportSessionDCTSV(*exportSessionToTSV)
 			if err != nil {
 				logger.Error("Error while exporting DublinCore metadata from session to TSV file.", slog.String("error", err.Error()))
+				reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "dublincore"), tsvFiles, err)
 				os.Exit(1)
 			}
+			tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "dublincore"))
 
 		}
 
@@ -308,19 +320,24 @@ func main() {
 			err = ft.ExportYaraTSV(*exportSessionToTSV)
 			if err != nil {
 				logger.Error("Error while exporting YARA identified files from session to TSV file.", slog.String("error", err.Error()))
+				reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "yara"), tsvFiles, err)
 				os.Exit(1)
 			}
+			tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "yara"))
 		}
 
 		if xattrFlagSet == "True" {
 			err = ft.ExportXATTRTSV(*exportSessionToTSV)
 			if err != nil {
 				logger.Error("Error while exporting extended attributes from session to TSV file.", slog.String("error", err.Error()))
+				reportTSVExportFailure(os.Stderr, *exportSessionToTSV, tsvFileName(*exportSessionToTSV, "xattr"), tsvFiles, err)
 				os.Exit(1)
 			}
+			tsvFiles = append(tsvFiles, tsvFileName(*exportSessionToTSV, "xattr"))
 		}
 
 		logger.Info("Export successful.")
+		reportTSVExport(os.Stdout, os.Stderr, *exportSessionToTSV, tsvFiles)
 		return
 	}
 

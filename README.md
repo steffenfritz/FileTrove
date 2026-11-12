@@ -104,6 +104,23 @@ List all sessions and export one to TSV:
 ./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2
 ```
 
+The TSV files are written to the current directory. FileTrove prints their absolute paths to stdout, one per line. The banner and a summary line go to stderr:
+
+```text
+Exported session 926be141-ab75-4106-8236-34edfcf102f2 to 3 TSV files:
+/home/user/filetrove/926be141-ab75-4106-8236-34edfcf102f2_session.tsv
+/home/user/filetrove/926be141-ab75-4106-8236-34edfcf102f2_files.tsv
+/home/user/filetrove/926be141-ab75-4106-8236-34edfcf102f2_directories.tsv
+```
+
+Files for EXIF, Dublin Core, YARA and extended attributes are added if the session was scanned with `-e`, `-d`, `-y` or `-x`. Because stdout carries only the paths, you can pipe them into other tools:
+
+```sh
+./ftrove -t 926be141-ab75-4106-8236-34edfcf102f2 | xargs wc -l
+```
+
+With `-V`, log messages are also written to stdout, so leave it out when piping. If the export fails, the error and the files written so far are printed to stderr and FileTrove exits with code 1.
+
 You can also query the SQLite database directly:
 
 - **CLI:** `sqlite3 db/filetrove.db`
